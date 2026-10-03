@@ -7,6 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta id="themeColorMeta" name="theme-color" content="#0e1115" />
+<link rel="icon" type="image/png" sizes="32x32" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="manifest" href="manifest.webmanifest" />
 <title>Qardis</title>
 <style>
   :root{
@@ -421,10 +426,10 @@
         <button class="clear-btn" id="btnClearWHr" title="Wyczyść tętno">✕</button>
         <div class="wheel" id="wHr"></div>
       </div>
-      <div class="input-box" id="boxWWgt">
-        <label for="wWgtInput" data-i18n="wgtLabel">Waga [kg]</label>
+      <div class="wheel-box" id="boxWWgt">
+        <label data-i18n="wgtLabel">Waga [kg]</label>
         <button class="clear-btn" id="btnClearWWgt" title="Wyczyść wagę">✕</button>
-        <input type="number" id="wWgtInput" step="0.1" min="30" max="200" placeholder="75.0">
+        <div class="wheel" id="wWgt"></div>
       </div>
     </div>
     <span id="bpInlineError" class="inline-error" role="alert" hidden></span>
@@ -699,6 +704,7 @@
   var settingsDraft = null;
   var settingsBefore = null;
   var hrActive = true;
+  var wgtActive = true;
   var pendingDeleteEntry = null;
   var deleteTimeout = null;
 
@@ -1248,7 +1254,7 @@
   }
 
   var wheelDefs = {
-    wSys: {min:60, max:250, step:1}, wDia: {min:30, max:180, step:1}, wHr: {min:30, max:220, step:1}
+    wSys: {min:60, max:250, step:1}, wDia: {min:30, max:180, step:1}, wHr: {min:30, max:220, step:1}, wWgt: {min:30, max:200, step:0.1}
   };
   var wheels = {};
   Object.keys(wheelDefs).forEach(function(id){
@@ -1260,19 +1266,9 @@
     document.getElementById("boxWHr").classList.toggle("disabled", !hrActive);
   };
   document.getElementById("btnClearWWgt").onclick = function(){
-    var input = document.getElementById("wWgtInput");
-    if (input.value) {
-      input.value = "";
-      document.getElementById("boxWWgt").classList.add("disabled");
-    } else {
-      var latest = getLatestEntry();
-      input.value = latest ? (latest.wgt || settings.defWgt) : settings.defWgt;
-      document.getElementById("boxWWgt").classList.remove("disabled");
-    }
+    wgtActive = !wgtActive;
+    document.getElementById("boxWWgt").classList.toggle("disabled", !wgtActive);
   };
-  document.getElementById("wWgtInput").addEventListener("input", function(){
-    document.getElementById("boxWWgt").classList.toggle("disabled", !this.value);
-  });
 
   function toLocalInput(ts){
     var d = new Date(ts);
@@ -1298,7 +1294,7 @@
     document.getElementById("boxWSys").style.display = settings.trackSys ? "block" : "none";
     document.getElementById("boxWDia").style.display = settings.trackDia ? "block" : "none";
     document.getElementById("boxWHr").style.display = settings.trackHr ? "block" : "none";
-    document.getElementById("boxWWgt").style.display = settings.trackWgt ? "flex" : "none";
+    document.getElementById("boxWWgt").style.display = settings.trackWgt ? "block" : "none";
 
     hrActive = entry ? (entry.hr != null) : true;
     document.getElementById("boxWHr").classList.toggle("disabled", !hrActive);
@@ -1308,16 +1304,16 @@
     var defaultDia = latest && latest.dia != null ? latest.dia : settings.defDia;
     var defaultHr  = latest && latest.hr != null ? latest.hr : settings.defHr;
     var defaultWgt = latest && latest.wgt != null ? latest.wgt : settings.defWgt;
-    var wgtVal = entry ? entry.wgt : defaultWgt;
 
-    document.getElementById("wWgtInput").value = wgtVal != null ? wgtVal : "";
-    document.getElementById("boxWWgt").classList.toggle("disabled", wgtVal == null);
+    wgtActive = entry ? (entry.wgt != null) : true;
+    document.getElementById("boxWWgt").classList.toggle("disabled", !wgtActive);
 
     setModalState(addOverlay, true);
     setTimeout(function(){
       if (settings.trackSys) wheels.wSys.set(entry ? entry.sys : defaultSys);
       if (settings.trackDia) wheels.wDia.set(entry ? entry.dia : defaultDia);
       if (settings.trackHr) wheels.wHr.set(entry ? (entry.hr || defaultHr) : defaultHr);
+      if (settings.trackWgt) wheels.wWgt.set(entry ? (entry.wgt || defaultWgt) : defaultWgt);
     }, 60);
   }
 
@@ -1327,8 +1323,7 @@
   document.getElementById("btnDeleteEntryHeader").onclick = function(){ if(editingId) deleteEntryWithUndo(editingId); };
 
   document.getElementById("btnSave").onclick = function(){
-    var wgtRaw = document.getElementById("wWgtInput").value;
-    var wgtVal = (settings.trackWgt && wgtRaw !== "") ? parseFloat(wgtRaw) : null;
+    var wgtVal = (settings.trackWgt && wgtActive) ? wheels.wWgt.get() : null;
     var hrVal = (settings.trackHr && hrActive) ? wheels.wHr.get() : null;
     var sysVal = settings.trackSys ? wheels.wSys.get() : null;
     var diaVal = settings.trackDia ? wheels.wDia.get() : null;
@@ -1672,6 +1667,12 @@
   go(0);
   render();
   window.addEventListener("resize", debounce(drawChart, 200));
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(e){ /* instalacja PWA niedostępna; aplikacja działa online */ });
+    });
+  }
 })();
 </script>
 </body>

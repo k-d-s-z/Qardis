@@ -235,7 +235,7 @@
   .wheel::-webkit-scrollbar{display:none;}
   .wheel div{
     scroll-snap-align:center;height:40px;line-height:40px;font-size:1.25rem;cursor:pointer;
-    color:var(--text);opacity:.28;transition:opacity .15s;font-weight:400;
+    color:var(--text);opacity:.45;transition:opacity .15s;font-weight:400;
   }
   .wheel div.sel{opacity:1;font-weight:700;font-size:1.375rem;color:var(--accent);}
   .wheel div.sp{opacity:0;}
@@ -280,30 +280,18 @@
   .slider-box { width: 100%; margin-top: 6px; padding: 12px; background: var(--input); border-radius: 12px; border: 1px solid var(--line); }
   .slider-row { display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
   .slider-desc { font-size: 0.75rem; color: var(--muted); margin-top: 8px; line-height: 1.35; }
-  
-  .double-range-slider { position: relative; width: 100%; height: 36px; display: flex; align-items: center; }
-  .double-range-slider .slider-track {
-    position: absolute; left: 0; right: 0; height: 8px;
-    border-radius: 4px; background: var(--line); z-index: 1;
+
+  /* Threshold steppers (mobile-friendly, WCAG 2.5.5 target size) */
+  .stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+  .stepper-lbl { font-size: 0.875rem; font-weight: 600; color: var(--muted); }
+  .stepper { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; flex-shrink: 0; }
+  .stepper-btn {
+    min-width: 56px; height: 52px; border: none; background: transparent; color: var(--accent);
+    font-size: 1.75rem; font-weight: 700; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   }
-  .double-range-slider .slider-range {
-    position: absolute; height: 8px;
-    border-radius: 4px; background: var(--accent); z-index: 2;
-  }
-  .double-range-slider input[type="range"] {
-    position: absolute; pointer-events: none; -webkit-appearance: none; appearance: none;
-    width: 100%; height: 36px; top: 0; left: 0; background: none; margin: 0; z-index: 3;
-  }
-  .double-range-slider input[type="range"]::-webkit-slider-thumb {
-    pointer-events: auto; -webkit-appearance: none; appearance: none;
-    width: 28px; height: 28px; border-radius: 50%; background: #ffffff;
-    border: 3px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;
-  }
-  .double-range-slider input[type="range"]::-moz-range-thumb {
-    pointer-events: auto; appearance: none;
-    width: 28px; height: 28px; border-radius: 50%; background: #ffffff;
-    border: 3px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;
-  }
+  .stepper-btn:active { background: var(--input); }
+  .stepper-btn[disabled] { color: var(--muted); opacity: 0.35; }
+  .stepper-val { min-width: 64px; text-align: center; font-size: 1.25rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 
   .segmented-control { display: inline-flex; background: rgba(0, 0, 0, 0.05); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 4px; flex-wrap: wrap; }
   html[data-theme="dark"] .segmented-control { background: rgba(255, 255, 255, 0.05); }
@@ -314,7 +302,8 @@
   .segmented-control button.active { background: #e2e8f0; color: #0f172a; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-weight: 700; }
   html[data-theme="dark"] .segmented-control button.active { background: #cbd5e1; color: #0f172a; }
 
-  .toggle{ position:relative;width:52px;height:28px;border-radius:14px;background:var(--line);cursor:pointer;transition:background .25s;flex:none; }
+  .toggle{ position:relative;width:52px;height:28px;border-radius:14px;background:#828a96;cursor:pointer;transition:background .25s;flex:none; }
+  html[data-theme="dark"] .toggle{ background:#5f6878; }
   .toggle::after{ content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .25s; }
   .toggle.on{background:var(--accent);}
   .toggle.on::after{transform:translateX(24px);}
@@ -468,11 +457,21 @@
           <span data-i18n="sysOptTitle">Skurczowe (SYS): Optymalne</span>
           <span id="valSysOptDisplay">120 - 129 mmHg</span>
         </div>
-        <div class="double-range-slider">
-          <div class="slider-track"></div>
-          <div class="slider-range" id="sysSliderRange"></div>
-          <input type="range" id="rangeSysMin" min="90" max="160" value="120" step="1" aria-label="Dolna granica optymalna SYS">
-          <input type="range" id="rangeSysMax" min="90" max="160" value="129" step="1" aria-label="Górna granica optymalna SYS">
+        <div class="stepper-row">
+          <span class="stepper-lbl" data-i18n="lbLower">Dolna granica</span>
+          <div class="stepper" role="group">
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę SYS">−</button>
+            <span class="stepper-val" id="dispSysMin">120</span>
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę SYS">+</button>
+          </div>
+        </div>
+        <div class="stepper-row">
+          <span class="stepper-lbl" data-i18n="lbUpper">Górna granica</span>
+          <div class="stepper" role="group">
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę SYS">−</button>
+            <span class="stepper-val" id="dispSysMax">129</span>
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę SYS">+</button>
+          </div>
         </div>
         <div class="slider-desc" id="descSysRanges">
           Prawidłowe: 105–119 oraz 130–139 | Nieprawidłowe: &lt;105 oraz &gt;139
@@ -484,11 +483,21 @@
           <span data-i18n="diaOptTitle">Rozkurczowe (DIA): Optymalne</span>
           <span id="valDiaOptDisplay">70 - 79 mmHg</span>
         </div>
-        <div class="double-range-slider">
-          <div class="slider-track"></div>
-          <div class="slider-range" id="diaSliderRange"></div>
-          <input type="range" id="rangeDiaMin" min="50" max="110" value="70" step="1" aria-label="Dolna granica optymalna DIA">
-          <input type="range" id="rangeDiaMax" min="50" max="110" value="79" step="1" aria-label="Górna granica optymalna DIA">
+        <div class="stepper-row">
+          <span class="stepper-lbl" data-i18n="lbLower">Dolna granica</span>
+          <div class="stepper" role="group">
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę DIA">−</button>
+            <span class="stepper-val" id="dispDiaMin">70</span>
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę DIA">+</button>
+          </div>
+        </div>
+        <div class="stepper-row">
+          <span class="stepper-lbl" data-i18n="lbUpper">Górna granica</span>
+          <div class="stepper" role="group">
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę DIA">−</button>
+            <span class="stepper-val" id="dispDiaMax">79</span>
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę DIA">+</button>
+          </div>
         </div>
         <div class="slider-desc" id="descDiaRanges">
           Prawidłowe: 60–69 oraz 80–89 | Nieprawidłowe: &lt;60 oraz &gt;89
@@ -592,7 +601,7 @@
         btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij",
         toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", normsTitle: "Wartości progowe norm ciśnienia",
         normsDisclaimer: "Informacja ma charakter poglądowy i nie stanowi diagnozy medycznej.",
-        sysOptTitle: "Skurczowe (SYS): Optymalne", diaOptTitle: "Rozkurczowe (DIA): Optymalne",
+        sysOptTitle: "Skurczowe (SYS): Optymalne", diaOptTitle: "Rozkurczowe (DIA): Optymalne", lbLower: "Dolna granica", lbUpper: "Górna granica",
         langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
         titleBtnAdd: "Dodaj wpis", titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF", titleBtnSettings: "Ustawienia",
         btnEdit: "Edytuj", importedMsg: "Zaimportowano ", importedSuffix: " wpis(y/ów).", importError: "Nieprawidłowy plik kopii zapasowej.",
@@ -604,6 +613,7 @@
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
         storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
+        wheelClampWarn: "Wpis zawiera wartość spoza zakresu bębenka – zapis przywróci ją do najbliższej dopuszczalnej.",
         backupDone: "Kopia zapasowa pobrana",
         settingsSaved: "Ustawienia zapisane"
       },
@@ -616,7 +626,7 @@
         btnCancel: "Cancel", btnSave: "Save", btnDelete: "Delete", btnUndo: "Undo",
         toolsTitle: "Data & Export", settingsTitle: "Settings", monitoredTitle: "Monitored parameters", normsTitle: "Blood pressure thresholds",
         normsDisclaimer: "Classification is for reference only and does not constitute a medical diagnosis.",
-        sysOptTitle: "Systolic (SYS): Optimal", diaOptTitle: "Diastolic (DIA): Optimal",
+        sysOptTitle: "Systolic (SYS): Optimal", diaOptTitle: "Diastolic (DIA): Optimal", lbLower: "Lower bound", lbUpper: "Upper bound",
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
         titleBtnAdd: "Add entry", titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report", titleBtnSettings: "Settings",
         btnEdit: "Edit", importedMsg: "Imported ", importedSuffix: " entry/entries.", importError: "Invalid backup file.",
@@ -628,6 +638,7 @@
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
         storageError: "Failed to save data (private browsing mode?).",
+        wheelClampWarn: "This entry has a value outside the wheel range – saving will snap it to the nearest allowed value.",
         backupDone: "Backup downloaded",
         settingsSaved: "Settings saved"
       }
@@ -764,7 +775,7 @@
   }
 
   function getBpCategory(sys, dia) {
-    if (!sys || !dia) return null;
+    if (sys == null || dia == null) return null;
     var sysT = getSysThresholds(settings.sysOptMin || 120, settings.sysOptMax || 129);
     var diaT = getDiaThresholds(settings.diaOptMin || 70, settings.diaOptMax || 79);
 
@@ -783,8 +794,6 @@
   var entryList = document.getElementById("entryList");
 
   function render(){
-    applyLanguage();
-    applyFontSize();
     entryList.innerHTML = "";
 
     if (!entries.length){
@@ -799,6 +808,7 @@
     }
 
     var arr = entries.slice().sort(function(a,b){ return b.ts - a.ts; });
+    var frag = document.createDocumentFragment();
 
     arr.forEach(function(e){
       var card = document.createElement("div");
@@ -835,8 +845,9 @@
       card.addEventListener("keydown", function(ev){
         if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); openAdd(e); }
       });
-      entryList.appendChild(card);
+      frag.appendChild(card);
     });
+    entryList.appendChild(frag);
 
     drawChart();
   }
@@ -876,7 +887,9 @@
     }, 4000);
   }
 
-  function drawChart(){
+  function drawChart(force){
+    // Rysuj tylko gdy ekran wykresu jest aktywny, chyba że wymuszono (zmiana ustawień/motywu)
+    if (!force && screenIdx !== 1) return;
     var containerMount = document.getElementById("chartContainerMount");
     var tableMount = document.getElementById("chartTableMount");
     var empty = document.getElementById("chartEmpty");
@@ -1148,6 +1161,7 @@
   var screenIdx = 0;
   function go(i){
     screenIdx = i;
+    if (tooltip) tooltip.style.opacity = "0";
     track.style.transform = "translateX(" + (-i*50) + "%)";
     document.getElementById("navHistory").classList.toggle("active", i===0);
     document.getElementById("navHistory").setAttribute("aria-selected", i===0 ? "true" : "false");
@@ -1162,6 +1176,7 @@
     } else {
       chartSc.removeAttribute("inert"); chartSc.setAttribute("aria-hidden", "false");
       homeSc.setAttribute("inert", ""); homeSc.setAttribute("aria-hidden", "true");
+      drawChart(true);
     }
   }
 
@@ -1247,6 +1262,10 @@
     };
   }
   function clamp(v,a,b){ return Math.min(b, Math.max(a, v)); }
+  function clampWheelVal(cfg, val){
+    if (val == null) return val;
+    return clamp(val, cfg.min, cfg.max);
+  }
   function debounce(fn,ms){ var t; return function(){ clearTimeout(t); t=setTimeout(fn,ms); }; }
   function makeId(){
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -1307,6 +1326,20 @@
 
     wgtActive = entry ? (entry.wgt != null) : true;
     document.getElementById("boxWWgt").classList.toggle("disabled", !wgtActive);
+
+    // Ostrzeżenie: wpis ma wartość spoza zakresu bębenka – zapis zmieniłby ją po cichu
+    if (entry) {
+      var wClamped = clampWheelVal(wheelDefs.wWgt, entry.wgt);
+      var sClamped = clampWheelVal(wheelDefs.wSys, entry.sys);
+      var dClamped = clampWheelVal(wheelDefs.wDia, entry.dia);
+      var hClamped = clampWheelVal(wheelDefs.wHr, entry.hr);
+      if ((entry.wgt != null && wClamped !== entry.wgt) ||
+          (entry.sys != null && sClamped !== entry.sys) ||
+          (entry.dia != null && dClamped !== entry.dia) ||
+          (entry.hr != null && hClamped !== entry.hr)) {
+        toast("⚠ " + t("wheelClampWarn"));
+      }
+    }
 
     setModalState(addOverlay, true);
     setTimeout(function(){
@@ -1464,67 +1497,84 @@
 
   var settingsOverlay = document.getElementById("settingsOverlay");
   
-  function updateDoubleSlider(minEl, maxEl, rangeEl, minBound, maxBound, displayEl, descEl, isSys) {
-    var minVal = parseInt(minEl.value, 10);
-    var maxVal = parseInt(maxEl.value, 10);
+  var THUMB_BOUNDS = { sys: {min:90, max:160}, dia: {min:50, max:110} };
 
-    if (minVal > maxVal) {
-      if (document.activeElement === minEl) { minEl.value = maxVal; minVal = maxVal; }
-      else { maxEl.value = minVal; maxVal = minVal; }
-    }
-
-    var leftPercent = ((minVal - minBound) / (maxBound - minBound)) * 100;
-    var rightPercent = 100 - (((maxVal - minBound) / (maxBound - minBound)) * 100);
-
-    rangeEl.style.left = leftPercent + "%";
-    rangeEl.style.right = rightPercent + "%";
-    displayEl.textContent = minVal + " - " + maxVal + " mmHg";
-
-    if (isSys) {
-      var sysT = getSysThresholds(minVal, maxVal);
-      descEl.textContent = (settings.lang === "en" ? "Normal: " : "Prawidłowe: ") + sysT.norLow1 + "–" + sysT.norHigh1 + " & " + sysT.norLow2 + "–" + sysT.norHigh2 + " | " + (settings.lang === "en" ? "Abnormal: <" : "Nieprawidłowe: <") + sysT.norLow1 + " & >" + sysT.norHigh2;
+  function nudgeThreshold(key, bound, dir){
+    if(!settingsDraft) return;
+    var b = THUMB_BOUNDS[key];
+    var kMin = key + "OptMin", kMax = key + "OptMax";
+    if (bound === "Min") {
+      settingsDraft[kMin] = Math.max(b.min, Math.min(settingsDraft[kMin] + dir, settingsDraft[kMax] - 1));
     } else {
-      var diaT = getDiaThresholds(minVal, maxVal);
-      descEl.textContent = (settings.lang === "en" ? "Normal: " : "Prawidłowe: ") + diaT.norLow1 + "–" + diaT.norHigh1 + " & " + diaT.norLow2 + "–" + diaT.norHigh2 + " | " + (settings.lang === "en" ? "Abnormal: <" : "Nieprawidłowe: <") + diaT.norLow1 + " & >" + diaT.norHigh2;
+      settingsDraft[kMax] = Math.min(b.max, Math.max(settingsDraft[kMax] + dir, settingsDraft[kMin] + 1));
     }
+    refreshThresholdUI();
   }
 
+  function refreshThresholdUI(){
+    var d = settingsDraft || settings;
+    var sysMin = d.sysOptMin || 120, sysMax = d.sysOptMax || 129;
+    var diaMin = d.diaOptMin || 70,  diaMax = d.diaOptMax || 79;
+
+    document.getElementById("valSysOptDisplay").textContent = sysMin + " - " + sysMax + " mmHg";
+    document.getElementById("valDiaOptDisplay").textContent = diaMin + " - " + diaMax + " mmHg";
+    document.getElementById("dispSysMin").textContent = sysMin;
+    document.getElementById("dispSysMax").textContent = sysMax;
+    document.getElementById("dispDiaMin").textContent = diaMin;
+    document.getElementById("dispDiaMax").textContent = diaMax;
+
+    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Min"][data-dir="-1"]')[0].disabled = (sysMin <= THUMB_BOUNDS.sys.min);
+    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Min"][data-dir="1"]')[0].disabled = (sysMin >= THUMB_BOUNDS.sys.max - 1);
+    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Max"][data-dir="-1"]')[0].disabled = (sysMax <= THUMB_BOUNDS.sys.min + 1);
+    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Max"][data-dir="1"]')[0].disabled = (sysMax >= THUMB_BOUNDS.sys.max);
+    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Min"][data-dir="-1"]')[0].disabled = (diaMin <= THUMB_BOUNDS.dia.min);
+    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Min"][data-dir="1"]')[0].disabled = (diaMin >= THUMB_BOUNDS.dia.max - 1);
+    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Max"][data-dir="-1"]')[0].disabled = (diaMax <= THUMB_BOUNDS.dia.min + 1);
+    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Max"][data-dir="1"]')[0].disabled = (diaMax >= THUMB_BOUNDS.dia.max);
+
+    var sysT = getSysThresholds(sysMin, sysMax);
+    var diaT = getDiaThresholds(diaMin, diaMax);
+    var en = settings.lang === "en";
+    document.getElementById("descSysRanges").textContent =
+      (en?"Normal: ":"Prawidłowe: ") + sysT.norLow1 + "–" + sysT.norHigh1 + " & " + sysT.norLow2 + "–" + sysT.norHigh2
+      + " | " + (en?"Abnormal: <":"Nieprawidłowe: <") + sysT.norLow1 + " & >" + sysT.norHigh2;
+    document.getElementById("descDiaRanges").textContent =
+      (en?"Normal: ":"Prawidłowe: ") + diaT.norLow1 + "–" + diaT.norHigh1 + " & " + diaT.norLow2 + "–" + diaT.norHigh2
+      + " | " + (en?"Abnormal: <":"Nieprawidłowe: <") + diaT.norLow1 + " & >" + diaT.norHigh2;
+  }
+
+  var steppersInit = false;
   function initSlidersUI() {
-    var rSysMin = document.getElementById("rangeSysMin");
-    var rSysMax = document.getElementById("rangeSysMax");
-    var sysRange = document.getElementById("sysSliderRange");
-    var sysDisp = document.getElementById("valSysOptDisplay");
-    var sysDesc = document.getElementById("descSysRanges");
-
-    var rDiaMin = document.getElementById("rangeDiaMin");
-    var rDiaMax = document.getElementById("rangeDiaMax");
-    var diaRange = document.getElementById("diaSliderRange");
-    var diaDisp = document.getElementById("valDiaOptDisplay");
-    var diaDesc = document.getElementById("descDiaRanges");
-
-    var handleSys = function(){
-      if(settingsDraft) {
-        settingsDraft.sysOptMin = parseInt(rSysMin.value, 10);
-        settingsDraft.sysOptMax = parseInt(rSysMax.value, 10);
-      }
-      updateDoubleSlider(rSysMin, rSysMax, sysRange, 90, 160, sysDisp, sysDesc, true);
-    };
-
-    var handleDia = function(){
-      if(settingsDraft) {
-        settingsDraft.diaOptMin = parseInt(rDiaMin.value, 10);
-        settingsDraft.diaOptMax = parseInt(rDiaMax.value, 10);
-      }
-      updateDoubleSlider(rDiaMin, rDiaMax, diaRange, 50, 110, diaDisp, diaDesc, false);
-    };
-
-    rSysMin.oninput = handleSys;
-    rSysMax.oninput = handleSys;
-    rDiaMin.oninput = handleDia;
-    rDiaMax.oninput = handleDia;
-
-    handleSys();
-    handleDia();
+    if (!steppersInit) {
+      steppersInit = true;
+      document.querySelectorAll(".stepper-btn").forEach(function(btn){
+        var key = btn.dataset.key, bound = btn.dataset.bound, dir = parseInt(btn.dataset.dir, 10);
+        var repTimer = null, repInt = null, lastStep = 0;
+        function stepOnce(){
+          var now = Date.now();
+          if (now - lastStep < 80) return; // ochrona przed podwójnym krokiem przy szybkim tapaniu
+          lastStep = now;
+          nudgeThreshold(key, bound, dir);
+        }
+        btn.addEventListener("pointerdown", function(e){
+          e.preventDefault();
+          stepOnce();
+          clearTimeout(repTimer);
+          repTimer = setTimeout(function(){
+            repInt = setInterval(function(){
+              stepOnce();
+            }, 90);
+          }, 450);
+        });
+        ["pointerup","pointerleave","pointercancel"].forEach(function(ev){
+          btn.addEventListener(ev, function(){ clearTimeout(repTimer); clearInterval(repInt); repInt = null; });
+        });
+        btn.addEventListener("keydown", function(e){
+          if (e.key === "Enter" || e.key === " "){ e.preventDefault(); stepOnce(); }
+        });
+      });
+    }
+    refreshThresholdUI();
   }
 
   document.getElementById("btnSettingsDock").onclick = function(){
@@ -1532,11 +1582,6 @@
     settingsDraft = Object.assign({}, settings);
     
     renderMonitoredButtons();
-
-    document.getElementById("rangeSysMin").value = settingsDraft.sysOptMin || 120;
-    document.getElementById("rangeSysMax").value = settingsDraft.sysOptMax || 129;
-    document.getElementById("rangeDiaMin").value = settingsDraft.diaOptMin || 70;
-    document.getElementById("rangeDiaMax").value = settingsDraft.diaOptMax || 79;
 
     initSlidersUI();
     applyLanguage(); applyFontSize();
@@ -1597,7 +1642,7 @@
     settings.theme = settingsDraft.theme;
     this.classList.toggle("on", settingsDraft.theme === "dark");
     this.setAttribute("aria-checked", settingsDraft.theme === "dark" ? "true" : "false");
-    applyTheme(); drawChart();
+    applyTheme(); drawChart(true);
   }
   document.getElementById("themeToggle").onclick = toggleThemeDraft;
   document.getElementById("themeToggle").onkeydown = function(e){
@@ -1605,6 +1650,7 @@
   };
 
   function setModalState(el, isOpen) {
+    if (!isOpen && tooltip) tooltip.style.opacity = "0";
     if (isOpen) {
       el.classList.add("open");
       el.removeAttribute("inert");
@@ -1664,6 +1710,8 @@
   }
 
   applyTheme();
+  applyLanguage();
+  applyFontSize();
   go(0);
   render();
   window.addEventListener("resize", debounce(drawChart, 200));

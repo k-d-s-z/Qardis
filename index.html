@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-NzWK7/7LPTTHIIJDkPRGGadJvv0mxj8UJG364v5gDZY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-9HECUCCPZJgfstBC6MszJyd1BkK9ODTAmYERpbW1wew='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <meta name="color-scheme" content="light dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -147,11 +147,13 @@
   .chart-empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:.875rem;}
 
   /* Chart Table View styles */
-  .chart-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; margin-top: 8px; }
-  .chart-table th, .chart-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: center; }
-  .chart-table th { background: var(--input); font-weight: 700; color: var(--text); }
+  .chart-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.8125rem; margin-top: 8px; }
+  .chart-table th, .chart-table td { border: 1px solid var(--line); padding: 8px 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+  .chart-table th { background: var(--input); font-weight: 700; color: var(--text); font-size: 0.75rem; }
+  .chart-table .th-l, .chart-table .th-u, .chart-table .td-d, .chart-table .td-t { display: block; overflow: hidden; text-overflow: ellipsis; }
+  .chart-table .th-u { font-weight: 500; color: var(--muted); font-size: 0.6875rem; }
+  .chart-table .td-t { color: var(--muted); font-size: 0.75rem; }
   .chart-table td:first-child { text-align: left; }
-  .chart-table td:last-child { text-align: left; font-style: italic; color: var(--muted); }
 
   #chartTooltip {
     position: absolute; background: var(--card); border: 1px solid var(--line);
@@ -388,19 +390,19 @@
 
 <!-- Primary Single-Row Navigation Dock -->
 <nav id="dock">
-  <button id="btnTools" class="btn-secondary" title="Dane i eksport" aria-label="Dane i eksport">
+  <button id="btnTools" class="btn-secondary" title="Dane i eksport" aria-label="Dane i eksport" data-i18n-aria="ariaTools">
     <svg width="22" height="22" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
   </button>
-  <button id="btnAdd" class="btn-main" title="Dodaj pomiar" aria-label="Dodaj pomiar">
+  <button id="btnAdd" class="btn-main" title="Dodaj pomiar" aria-label="Dodaj pomiar" data-i18n-aria="ariaAdd">
     <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
   </button>
   <!-- Poprawiona ikona zębatki z niezależnymi wymiarami i symetrycznym viewBox -->
-  <button id="btnSettingsDock" class="btn-secondary" title="Ustawienia" aria-label="Ustawienia">
+  <button id="btnSettingsDock" class="btn-secondary" title="Ustawienia" aria-label="Ustawienia" data-i18n-aria="ariaSettings">
     <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <div class="dock-nav-segmented" role="tablist" aria-label="Widok">
-    <button type="button" id="navHistory" class="active" role="tab" aria-selected="true" aria-controls="homeScreen" data-i18n="navHistory">Historia</button>
-    <button type="button" id="navChart" role="tab" aria-selected="false" aria-controls="chartScreen" data-i18n="navChart">Wykres</button>
+  <div class="dock-nav-segmented" role="tablist" aria-label="Widok" data-i18n-aria="ariaView">
+    <button type="button" id="navHistory" class="active" role="tab" aria-selected="true" aria-controls="homeScreen" data-i18n="navHistory">Pomiary</button>
+    <button type="button" id="navChart" role="tab" aria-selected="false" aria-controls="chartScreen" data-i18n="navChart">Trendy</button>
   </div>
 </nav>
 <input type="file" id="importFile" accept="application/json" hidden>
@@ -441,7 +443,7 @@
 <div class="overlay" id="addOverlay" role="dialog" aria-modal="true" aria-labelledby="addTitle" aria-hidden="true" inert>
   <div class="sheet">
     <div class="sheet-header">
-      <h2 id="addTitle" data-i18n="addTitle">Nowy wpis</h2>
+      <h2 id="addTitle">Nowy wpis</h2>
       <button type="button" id="btnDeleteEntryHeader" class="btn-text-danger" style="display:none;" data-i18n="btnDelete">Usuń</button>
     </div>
     <div class="dt-row">
@@ -497,7 +499,7 @@
 
     <div class="set-row" style="flex-direction:column;align-items:flex-start;gap:8px">
       <div class="lbl" data-i18n="normsTitle">Wartości progowe norm ciśnienia</div>
-      <div class="desc" data-i18n="normsDisclaimer" style="font-style:italic;margin-bottom:4px;">Klasyfikacja ma charakter orientacyjny i nie zastępuje profesjonalnej porady medycznej.</div>
+      <div class="desc" data-i18n="normsDisclaimer" style="font-style:italic;margin-bottom:4px;">Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza. Aktualne normy znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.</div>
       
       <div class="slider-box">
         <div class="slider-row">
@@ -507,17 +509,17 @@
         <div class="stepper-row">
           <span class="stepper-lbl" data-i18n="lbLower">Dolna granica</span>
           <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę SYS">−</button>
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę SYS" data-i18n-aria="stepDecLow" data-p="SYS">−</button>
             <span class="stepper-val" id="dispSysMin">100</span>
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę SYS">+</button>
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę SYS" data-i18n-aria="stepIncLow" data-p="SYS">+</button>
           </div>
         </div>
         <div class="stepper-row">
           <span class="stepper-lbl" data-i18n="lbUpper">Górna granica</span>
           <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę SYS">−</button>
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę SYS" data-i18n-aria="stepDecHigh" data-p="SYS">−</button>
             <span class="stepper-val" id="dispSysMax">119</span>
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę SYS">+</button>
+            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę SYS" data-i18n-aria="stepIncHigh" data-p="SYS">+</button>
           </div>
         </div>
         <div class="slider-desc" id="descSysRanges">
@@ -533,17 +535,17 @@
         <div class="stepper-row">
           <span class="stepper-lbl" data-i18n="lbLower">Dolna granica</span>
           <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę DIA">−</button>
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę DIA" data-i18n-aria="stepDecLow" data-p="DIA">−</button>
             <span class="stepper-val" id="dispDiaMin">60</span>
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę DIA">+</button>
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę DIA" data-i18n-aria="stepIncLow" data-p="DIA">+</button>
           </div>
         </div>
         <div class="stepper-row">
           <span class="stepper-lbl" data-i18n="lbUpper">Górna granica</span>
           <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę DIA">−</button>
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę DIA" data-i18n-aria="stepDecHigh" data-p="DIA">−</button>
             <span class="stepper-val" id="dispDiaMax">79</span>
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę DIA">+</button>
+            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę DIA" data-i18n-aria="stepIncHigh" data-p="DIA">+</button>
           </div>
         </div>
         <div class="slider-desc" id="descDiaRanges">
@@ -718,14 +720,14 @@
   var I18nModule = (function(){
     var translations = {
       pl: {
-        navHistory: "Historia", navChart: "Wykres", chartTitle:"Qardis – Trendy pomiarów", chartDesc:"Ciśnienie i tętno na osi czasu.", chartNoData:"Brak pomiarów w wybranym okresie.",
+        navHistory: "Pomiary", navChart: "Trendy", chartTitle:"Qardis – Trendy pomiarów", chartDesc:"Ciśnienie i tętno na osi czasu.", chartNoData:"Brak pomiarów w wybranym okresie.",
         sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "Tętno", wgtLabel: "Waga",
         emptyTitle: "Brak pomiarów", emptyDesc: "Dodaj pierwszy pomiar ciśnienia, aby rozpocząć śledzenie wyników.", btnAddFirst: "+ Dodaj pierwszy pomiar",
         addTitleNew: "Nowy wpis", addTitleEdit: "Edytuj wpis", dtLabel: "Data i godzina pomiaru",
         notePlaceholder: "Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)",
         btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij",
         toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", normsTitle: "Wartości progowe norm ciśnienia",
-        normsDisclaimer: "Informacja ma charakter poglądowy i nie stanowi diagnozy medycznej.",
+        normsDisclaimer: "Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza. Aktualne normy znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.",
         sysOptTitle: "Skurczowe (SYS): Optymalne", diaOptTitle: "Rozkurczowe (DIA): Optymalne", lbLower: "Dolna granica", lbUpper: "Górna granica",
         langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
         titleBtnAdd: "Dodaj wpis", titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF", titleBtnSettings: "Ustawienia",
@@ -743,12 +745,15 @@
         settingsSaved: "Ustawienia zapisane",
         bpCrit: "Wartość krytyczna",
         critWarn: "Bardzo wysokie ciśnienie (SYS ≥180 lub DIA ≥120). Odpocznij kilka minut i powtórz pomiar. Przy bólu w klatce piersiowej, duszności, zaburzeniach mowy lub widzenia albo osłabieniu jednej strony ciała wezwij pomoc (112). Skonsultuj wynik z lekarzem.",
-        listDisclaimer: "Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza.",
+        listDisclaimer: "Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza. Aktualne normy znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.",
         deletedMsgN: "Usunięto wpisów: {n}",
         importSkipped: " Pominięto: ",
         skipHr: "Pomiń tętno", skipWgt: "Pomiń wagę",
         storageCorrupt: "Wykryto uszkodzone dane. Kopię zachowano w pamięci przeglądarki, nie zostały nadpisane.",
         thrMigrated: "Progi klasyfikacji zaktualizowano do zaleceń ESC/ESH (optymalne <120/<80). Możesz je zmienić w Ustawieniach.",
+        ariaTools: "Dane i eksport", ariaAdd: "Dodaj pomiar", ariaSettings: "Ustawienia", ariaView: "Widok",
+        stepDecLow: "Zmniejsz dolną granicę {p}", stepIncLow: "Zwiększ dolną granicę {p}",
+        stepDecHigh: "Zmniejsz górną granicę {p}", stepIncHigh: "Zwiększ górną granicę {p}",
         addHr: "Dodaj tętno", addWgt: "Dodaj wagę",
         wgtDec: "Zmniejsz wagę o 0,1 kg", wgtInc: "Zwiększ wagę o 0,1 kg", wgtLabelKg: "Waga [kg]",
         wgtErrorMsg: "Podaj wagę w zakresie 20–300 kg (np. 75,5).",
@@ -759,14 +764,14 @@
         importSettingsConfirm: "Plik zawiera też ustawienia (progi, język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?"
       },
       en: {
-        navHistory: "History", navChart: "Chart", chartTitle:"Qardis – Measurement trends", chartDesc:"Blood pressure and pulse timeline.", chartNoData:"No measurements in the selected period.",
+        navHistory: "Readings", navChart: "Trends", chartTitle:"Qardis – Measurement trends", chartDesc:"Blood pressure and pulse timeline.", chartNoData:"No measurements in the selected period.",
         sysLabel: "Systolic", diaLabel: "Diastolic", hrLabel: "Pulse", wgtLabel: "Weight",
         emptyTitle: "No measurements yet", emptyDesc: "Add your first blood pressure record to start tracking.", btnAddFirst: "+ Add first measurement",
         addTitleNew: "New entry", addTitleEdit: "Edit entry", dtLabel: "Date and time of measurement",
         notePlaceholder: "Additional info... (e.g. cold, feeling unwell)",
         btnCancel: "Cancel", btnSave: "Save", btnDelete: "Delete", btnUndo: "Undo",
         toolsTitle: "Data & Export", settingsTitle: "Settings", monitoredTitle: "Monitored parameters", normsTitle: "Blood pressure thresholds",
-        normsDisclaimer: "Classification is for reference only and does not constitute a medical diagnosis.",
+        normsDisclaimer: "Classification is for reference only and does not replace medical advice. Current guidelines are available on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, as well as of equivalent institutions in other countries.",
         sysOptTitle: "Systolic (SYS): Optimal", diaOptTitle: "Diastolic (DIA): Optimal", lbLower: "Lower bound", lbUpper: "Upper bound",
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
         titleBtnAdd: "Add entry", titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report", titleBtnSettings: "Settings",
@@ -784,12 +789,15 @@
         settingsSaved: "Settings saved",
         bpCrit: "Critical value",
         critWarn: "Very high blood pressure (SYS ≥180 or DIA ≥120). Rest a few minutes and measure again. If you have chest pain, shortness of breath, speech or vision problems, or weakness on one side, call emergency services (112). Discuss this result with a doctor.",
-        listDisclaimer: "Classification is for reference only and does not replace medical advice.",
+        listDisclaimer: "Classification is for reference only and does not replace medical advice. Current guidelines are available on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, as well as of equivalent institutions in other countries.",
         deletedMsgN: "Entries deleted: {n}",
         importSkipped: " Skipped: ",
         skipHr: "Skip pulse", skipWgt: "Skip weight",
         storageCorrupt: "Corrupted data detected. A copy was kept in browser storage and not overwritten.",
         thrMigrated: "Classification thresholds were updated to ESC/ESH guidance (optimal <120/<80). You can change them in Settings.",
+        ariaTools: "Data and export", ariaAdd: "Add measurement", ariaSettings: "Settings", ariaView: "View",
+        stepDecLow: "Decrease lower limit {p}", stepIncLow: "Increase lower limit {p}",
+        stepDecHigh: "Decrease upper limit {p}", stepIncHigh: "Increase upper limit {p}",
         addHr: "Add pulse", addWgt: "Add weight",
         wgtDec: "Decrease weight by 0.1 kg", wgtInc: "Increase weight by 0.1 kg", wgtLabelKg: "Weight [kg]",
         wgtErrorMsg: "Enter a weight between 20 and 300 kg (e.g. 75.5).",
@@ -834,27 +842,50 @@
         table.setAttribute("role", "table");
         table.setAttribute("aria-label", tCb("chartTitle"));
 
+        var cols = [];
+        if (settings.trackSys) cols.push({ label: "sysLabel", unit: "mmHg", key: "sys" });
+        if (settings.trackDia) cols.push({ label: "diaLabel", unit: "mmHg", key: "dia" });
+        if (settings.trackHr)  cols.push({ label: "hrLabel",  unit: "bpm",  key: "hr" });
+        if (settings.trackWgt) cols.push({ label: "wgtLabel", unit: "kg",   key: "wgt" });
+
+        // Sztywne szerokości kolumn: tabela nigdy nie wychodzi poza ekran
+        var colW = Math.floor(68 / Math.max(cols.length, 1));
+        var colgroup = document.createElement("colgroup");
+        var cDate = document.createElement("col");
+        cDate.style.width = (100 - colW * cols.length) + "%";
+        colgroup.appendChild(cDate);
+        cols.forEach(function(){ var c = document.createElement("col"); c.style.width = colW + "%"; colgroup.appendChild(c); });
+        table.appendChild(colgroup);
+
         var thead = document.createElement("thead");
-        thead.innerHTML = '<tr>'
-          + '<th>' + tCb("pdfHeaderDt") + '</th>'
-          + (settings.trackSys ? '<th>' + tCb("sysLabel") + ' (mmHg)</th>' : '')
-          + (settings.trackDia ? '<th>' + tCb("diaLabel") + ' (mmHg)</th>' : '')
-          + (settings.trackHr ? '<th>' + tCb("hrLabel") + ' (bpm)</th>' : '')
-          + (settings.trackWgt ? '<th>' + tCb("wgtLabel") + ' (kg)</th>' : '')
-          + '<th>' + tCb("pdfHeaderNotes") + '</th>'
-          + '</tr>';
+        var htr = document.createElement("tr");
+        function addTh(text, unit){
+          var th = document.createElement("th");
+          th.title = unit ? text + " (" + unit + ")" : text;     // pełny tekst po najechaniu / przytrzymaniu
+          var l = document.createElement("span"); l.className = "th-l"; l.textContent = text; th.appendChild(l);
+          if (unit) { var u = document.createElement("span"); u.className = "th-u"; u.textContent = unit; th.appendChild(u); }
+          htr.appendChild(th);
+        }
+        addTh(tCb("pdfHeaderDt"), "");
+        cols.forEach(function(c){ addTh(tCb(c.label), c.unit); });
+        thead.appendChild(htr);
         table.appendChild(thead);
 
         var tbody = document.createElement("tbody");
         filtered.forEach(function(e){
           var f = fmtDateCb(e.ts);
           var tr = document.createElement("tr");
-          tr.innerHTML = '<td>' + f.date + ' ' + f.time + '</td>'
-            + (settings.trackSys ? '<td>' + (e.sys != null ? e.sys : '--') + '</td>' : '')
-            + (settings.trackDia ? '<td>' + (e.dia != null ? e.dia : '--') + '</td>' : '')
-            + (settings.trackHr ? '<td>' + (e.hr != null ? e.hr : '--') + '</td>' : '')
-            + (settings.trackWgt ? '<td>' + (e.wgt != null ? e.wgt : '--') + '</td>' : '')
-            + '<td>' + escapeHtmlCb(e.note || '') + '</td>';
+          var td0 = document.createElement("td");
+          td0.title = f.date + " " + f.time;
+          var d = document.createElement("span"); d.className = "td-d"; d.textContent = f.date;
+          var tm = document.createElement("span"); tm.className = "td-t"; tm.textContent = f.time;
+          td0.appendChild(d); td0.appendChild(tm);
+          tr.appendChild(td0);
+          cols.forEach(function(c){
+            var td = document.createElement("td");
+            td.textContent = (e[c.key] != null) ? e[c.key] : "--";
+            tr.appendChild(td);
+          });
           tbody.appendChild(tr);
         });
         table.appendChild(tbody);
@@ -882,6 +913,11 @@
     document.querySelectorAll('[data-i18n]').forEach(function(el){
       var k = el.getAttribute('data-i18n');
       el.textContent = t(k);
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function(el){
+      var txt = t(el.getAttribute('data-i18n-aria')).replace('{p}', el.getAttribute('data-p') || '');
+      el.setAttribute('aria-label', txt);
+      if (el.hasAttribute('title')) el.title = txt;
     });
     document.querySelectorAll('[data-i18n-ph]').forEach(function(el){
       var k = el.getAttribute('data-i18n-ph');
@@ -944,11 +980,11 @@
     if (settings.lang === "en") {
       return "Thresholds used (mmHg): SYS optimal " + s.optMin + "–" + s.optMax + ", normal " + s.norLow1 + "–" + s.norHigh1 + " & " + s.norLow2 + "–" + s.norHigh2
         + "; DIA optimal " + d.optMin + "–" + d.optMax + ", normal " + d.norLow1 + "–" + d.norHigh1 + " & " + d.norLow2 + "–" + d.norHigh2
-        + "; critical: SYS ≥180 or DIA ≥120. Classification is for reference only and does not replace medical advice.";
+        + "; critical: SYS ≥180 or DIA ≥120. " + t("listDisclaimer");
     }
     return "Użyte progi (mmHg): SYS optymalne " + s.optMin + "–" + s.optMax + ", prawidłowe " + s.norLow1 + "–" + s.norHigh1 + " oraz " + s.norLow2 + "–" + s.norHigh2
       + "; DIA optymalne " + d.optMin + "–" + d.optMax + ", prawidłowe " + d.norLow1 + "–" + d.norHigh1 + " oraz " + d.norLow2 + "–" + d.norHigh2
-      + "; krytyczne: SYS ≥180 lub DIA ≥120. Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza.";
+      + "; krytyczne: SYS ≥180 lub DIA ≥120. " + t("listDisclaimer");
   }
 
   function getBpCategory(sys, dia) {

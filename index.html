@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-9HECUCCPZJgfstBC6MszJyd1BkK9ODTAmYERpbW1wew='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-i6Qea04Mq4DNDIKjLNyr2h+/huR5aNm5WbcK3Oj8qkM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <meta name="color-scheme" content="light dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -73,6 +73,11 @@
     cursor: pointer;
     transition: transform .1s ease, background-color .1s ease;
   }
+  .entry-card { position: relative; }
+  .card-hit { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: none; background: transparent; border-radius: inherit; cursor: pointer; z-index: 0; }
+  .card-hit:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .entry-card > :not(.card-hit) { position: relative; z-index: 1; pointer-events: none; }
+  .entry-card .bp-chip { pointer-events: auto; }
   .entry-card:active { transform: scale(0.985); background-color: color-mix(in srgb, var(--card) 92%, var(--line)); }
   .card-top { display: flex; justify-content: space-between; align-items: center; }
   .card-main { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -91,6 +96,7 @@
     font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; color: #fff;
     display: inline-block; vertical-align: middle;
   }
+  button.bp-chip { border: none; font-family: inherit; line-height: 1.2; padding: 4px 10px; cursor: pointer; }
   .bp-opt { background: var(--green); }
   html[data-theme="dark"] .bp-opt { color: #052e1b; }
   .bp-nor { background: #2563eb; }
@@ -318,6 +324,10 @@
   /* Audit fixes: critical chip, disclaimer, a11y helpers */
   .bp-crit { background:#7f1d1d; color:#fff; border:1px solid #fca5a5; }
   .list-note { font-size:.75rem; color:var(--muted); margin:2px 4px 4px; line-height:1.4; }
+  .thr-table { width: 100%; border-collapse: collapse; font-size: .8125rem; margin: 4px 0 8px; }
+  .thr-table th, .thr-table td { border-bottom: 1px solid var(--line); padding: 9px 6px; text-align: left; vertical-align: middle; }
+  .thr-table th { color: var(--muted); font-weight: 700; font-size: .75rem; }
+  .thr-note { font-size: .8125rem; color: var(--muted); line-height: 1.45; margin: 8px 0; }
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .sheet:focus { outline:none; }
   .wheel:focus-visible, .legend span:focus-visible, .entry-card:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
@@ -408,6 +418,22 @@
 <input type="file" id="importFile" accept="application/json" hidden>
 <div id="liveRegion" class="sr-only" role="status" aria-live="polite"></div>
 
+<!-- Thresholds info sheet -->
+<div class="overlay" id="thrOverlay" role="dialog" aria-modal="true" aria-labelledby="thrTitle" aria-hidden="true" inert>
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2 id="thrTitle" data-i18n="thrInfoTitle">Przyjęte progi ciśnienia</h2>
+    </div>
+    <div id="thrBody"></div>
+    <p class="thr-note" data-i18n="thrRule">O kategorii decyduje mniej korzystna z dwóch wartości – skurczowej lub rozkurczowej. Wartość krytyczna dotyczy każdej z nich osobno.</p>
+    <p class="thr-note" data-i18n="listDisclaimer">Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza.</p>
+    <div class="sheet-actions">
+      <button type="button" class="btn ghost" id="btnThrSettings" data-i18n="thrChange">Zmień w ustawieniach</button>
+      <button type="button" class="btn" id="btnThrClose" data-i18n="btnClose">Zamknij</button>
+    </div>
+  </div>
+</div>
+
 <!-- Tools Menu Sheet -->
 <div class="overlay" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" aria-hidden="true" inert>
   <div class="sheet">
@@ -434,7 +460,7 @@
     </div>
     <p class="list-note" data-i18n="privacyNote">Dane są przechowywane wyłącznie na tym urządzeniu.</p>
     <div class="sheet-actions">
-      <button class="btn ghost" id="btnToolsClose" data-i18n="btnCancel">Zamknij</button>
+      <button class="btn ghost" id="btnToolsClose" data-i18n="btnClose">Zamknij</button>
     </div>
   </div>
 </div>
@@ -751,6 +777,9 @@
         skipHr: "Pomiń tętno", skipWgt: "Pomiń wagę",
         storageCorrupt: "Wykryto uszkodzone dane. Kopię zachowano w pamięci przeglądarki, nie zostały nadpisane.",
         thrMigrated: "Progi klasyfikacji zaktualizowano do zaleceń ESC/ESH (optymalne <120/<80). Możesz je zmienić w Ustawieniach.",
+        thrInfoTitle: "Przyjęte progi ciśnienia", thrCat: "Kategoria", thrAnd: "i", thrOr: "lub",
+        thrRule: "O kategorii decyduje mniej korzystna z dwóch wartości – skurczowej lub rozkurczowej. Wartość krytyczna dotyczy każdej z nich osobno.",
+        thrChange: "Zmień w ustawieniach", btnClose: "Zamknij", chipInfo: "pokaż przyjęte progi",
         ariaTools: "Dane i eksport", ariaAdd: "Dodaj pomiar", ariaSettings: "Ustawienia", ariaView: "Widok",
         stepDecLow: "Zmniejsz dolną granicę {p}", stepIncLow: "Zwiększ dolną granicę {p}",
         stepDecHigh: "Zmniejsz górną granicę {p}", stepIncHigh: "Zwiększ górną granicę {p}",
@@ -795,6 +824,9 @@
         skipHr: "Skip pulse", skipWgt: "Skip weight",
         storageCorrupt: "Corrupted data detected. A copy was kept in browser storage and not overwritten.",
         thrMigrated: "Classification thresholds were updated to ESC/ESH guidance (optimal <120/<80). You can change them in Settings.",
+        thrInfoTitle: "Blood pressure thresholds used", thrCat: "Category", thrAnd: "and", thrOr: "or",
+        thrRule: "The category is determined by the less favourable of the two values – systolic or diastolic. The critical value applies to each of them separately.",
+        thrChange: "Change in Settings", btnClose: "Close", chipInfo: "show thresholds used",
         ariaTools: "Data and export", ariaAdd: "Add measurement", ariaSettings: "Settings", ariaView: "View",
         stepDecLow: "Decrease lower limit {p}", stepIncLow: "Increase lower limit {p}",
         stepDecHigh: "Decrease upper limit {p}", stepIncHigh: "Increase upper limit {p}",
@@ -1027,15 +1059,13 @@
     arr.forEach(function(e){
       var card = document.createElement("div");
       card.className = "entry-card";
-      card.setAttribute("tabindex", "0");
-      card.setAttribute("role", "button");
+      card.setAttribute("role", "group");
       var f = fmtDate(e.ts);
       
       var bpText = (settings.trackSys && e.sys ? e.sys : '--') + ' / ' + (settings.trackDia && e.dia ? e.dia : '--');
       var cat = (settings.trackSys && settings.trackDia) ? getBpCategory(e.sys, e.dia) : null;
-      var catHtml = cat ? '<span class="bp-chip ' + cat.cls + '">' + t(cat.key) + '</span>' : '';
-      card.setAttribute("aria-label", f.date + " " + f.time + ", " + bpText + " mmHg" + (cat ? ", " + t(cat.key) : "")
-        + (settings.trackHr && e.hr ? ", " + e.hr + " bpm" : "") + (settings.trackWgt && e.wgt ? ", " + e.wgt + " kg" : "") + (e.note ? ", " + e.note : ""));
+      var catHtml = cat ? '<button type="button" class="bp-chip ' + cat.cls + '" aria-haspopup="dialog" aria-label="'
+        + escapeHtml(t(cat.key) + " – " + t("chipInfo")) + '" title="' + escapeHtml(t("chipInfo")) + '">' + t(cat.key) + '</button>' : '';
 
       var html = '<div class="card-top">'
         + '<div class="card-main">'
@@ -1058,18 +1088,14 @@
       }
 
       card.innerHTML = html;
-      card.addEventListener("click", function(){ openAdd(e); });
-      card.addEventListener("keydown", function(ev){
-        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); openAdd(e); }
-      });
+      var hit = document.createElement("button");
+      hit.type = "button";
+      hit.className = "card-hit";
+      hit.setAttribute("aria-label", t("addTitleEdit") + ", " + f.date + " " + f.time);
+      hit.addEventListener("click", function(){ openAdd(e); });
+      card.insertBefore(hit, card.firstChild);
       frag.appendChild(card);
     });
-    if (settings.trackSys && settings.trackDia) {
-      var disc = document.createElement("div");
-      disc.className = "list-note";
-      disc.textContent = t("listDisclaimer");
-      entryList.appendChild(disc);
-    }
     entryList.appendChild(frag);
 
     drawChart();
@@ -1464,6 +1490,49 @@
   document.getElementById("btnTools").onclick = function(){ setModalState(toolsOverlay, true); };
   document.getElementById("btnToolsClose").onclick = function(){ setModalState(toolsOverlay, false); };
   toolsOverlay.addEventListener("click", function(e){ if (e.target === toolsOverlay) setModalState(toolsOverlay, false); });
+
+  // --- Okienko: przyjęte progi klasyfikacji ---
+  var thrOverlay = document.getElementById("thrOverlay");
+  function openThresholds(){
+    var s = getSysThresholds(settings.sysOptMin || 100, settings.sysOptMax || 119);
+    var d = getDiaThresholds(settings.diaOptMin || 60, settings.diaOptMax || 79);
+    var and = " " + t("thrAnd") + " ", or = " " + t("thrOr") + " ";
+    var rows = [
+      { key: "bpOpt",  cls: "bp-opt",  sys: s.optMin + "–" + s.optMax, dia: d.optMin + "–" + d.optMax },
+      { key: "bpNor",  cls: "bp-nor",  sys: s.norLow1 + "–" + s.norHigh1 + and + s.norLow2 + "–" + s.norHigh2,
+                                       dia: d.norLow1 + "–" + d.norHigh1 + and + d.norLow2 + "–" + d.norHigh2 },
+      { key: "bpBad",  cls: "bp-bad",  sys: "<" + s.norLow1 + or + ">" + s.norHigh2, dia: "<" + d.norLow1 + or + ">" + d.norHigh2 },
+      { key: "bpCrit", cls: "bp-crit", sys: "≥180", dia: "≥120" }
+    ];
+    var body = document.getElementById("thrBody");
+    body.textContent = "";
+    var table = document.createElement("table");
+    table.className = "thr-table";
+    var head = document.createElement("tr");
+    [t("thrCat"), t("sysLabel") + " (mmHg)", t("diaLabel") + " (mmHg)"].forEach(function(h){
+      var th = document.createElement("th"); th.scope = "col"; th.textContent = h; head.appendChild(th);
+    });
+    var thead = document.createElement("thead"); thead.appendChild(head); table.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    rows.forEach(function(r){
+      var tr = document.createElement("tr");
+      var c0 = document.createElement("td");
+      var chip = document.createElement("span"); chip.className = "bp-chip " + r.cls; chip.textContent = t(r.key);
+      c0.appendChild(chip); tr.appendChild(c0);
+      [r.sys, r.dia].forEach(function(v){ var td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+    setModalState(thrOverlay, true);
+  }
+  entryList.addEventListener("click", function(e){ if (e.target.closest(".bp-chip")) openThresholds(); });
+  document.getElementById("btnThrClose").onclick = function(){ setModalState(thrOverlay, false); };
+  thrOverlay.addEventListener("click", function(e){ if (e.target === thrOverlay) setModalState(thrOverlay, false); });
+  document.getElementById("btnThrSettings").onclick = function(){
+    setModalState(thrOverlay, false);
+    document.getElementById("btnSettingsDock").click();
+  };
 
   var addOverlay = document.getElementById("addOverlay");
   var editingId = null;
@@ -2045,6 +2114,7 @@
     if (e.key === "Escape"){
       if (addOverlay.classList.contains("open")) setModalState(addOverlay, false);
       else if (settingsOverlay.classList.contains("open")) cancelSettings();
+      else if (thrOverlay.classList.contains("open")) setModalState(thrOverlay, false);
       else if (toolsOverlay.classList.contains("open")) setModalState(toolsOverlay, false);
     }
   });

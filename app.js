@@ -50,6 +50,10 @@
       if (["dark","light"].indexOf(out.theme) < 0) out.theme = def.theme;
       if (["pl","en"].indexOf(out.lang) < 0) out.lang = "pl";
       if (["small","medium","large"].indexOf(out.fontSize) < 0) out.fontSize = "medium";
+      // Co najmniej jeden monitorowany parametr — inaczej formularz i lista są puste.
+      if (!out.trackSys && !out.trackDia && !out.trackHr && !out.trackWgt) {
+        out.trackSys = out.trackDia = out.trackHr = out.trackWgt = true;
+      }
       return out;
     }
     return {
@@ -193,6 +197,7 @@
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
         
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
+        minParamWarn: "Co najmniej jeden parametr musi pozostać włączony.",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
         storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
         wheelClampWarn: "Wpis zawiera wartość spoza zakresu bębenka – zapis przywróci ją do najbliższej dopuszczalnej.",
@@ -259,6 +264,7 @@
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
         
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
+        minParamWarn: "At least one parameter must stay enabled.",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
         storageError: "Failed to save data (private browsing mode?).",
         wheelClampWarn: "This entry has a value outside the wheel range – saving will snap it to the nearest allowed value.",
@@ -440,8 +446,11 @@
 
   function applyTheme(){
     document.documentElement.setAttribute("data-theme", settings.theme);
-    var meta = document.getElementById("themeColorMeta");
-    if(meta) meta.setAttribute("content", settings.theme === "dark" ? "#1b1d20" : "#f0f4f9");
+    // Są dwa metatagi theme-color (z media prefers-color-scheme, dla pierwszego renderu
+    // przed startem skryptu). Ręczny wybór motywu może różnić się od systemowego,
+    // więc ustawiamy ten sam kolor w obu — wtedy wygrywa wybór użytkownika.
+    var color = settings.theme === "dark" ? "#1b1d20" : "#f0f4f9";
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){ m.setAttribute("content", color); });
   }
 
   function renderMonitoredButtons() {
@@ -1230,6 +1239,10 @@
     var btn = e.target.closest("button"); if (!btn) return;
     if (!settingsDraft) return;
     var key = btn.dataset.param;
+    if (settingsDraft[key]) {
+      var othersOn = ["trackSys","trackDia","trackHr","trackWgt"].some(function(k){ return k !== key && settingsDraft[k]; });
+      if (!othersOn) { toast("⚠ " + t("minParamWarn")); return; }   // ostatniego nie wyłączamy
+    }
     settingsDraft[key] = !settingsDraft[key];
     renderMonitoredButtons();
   });

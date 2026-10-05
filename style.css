@@ -21,6 +21,21 @@
     --input: #202327;
     color-scheme: dark;
   }
+  /* Pierwszy render, zanim app.js ustawi data-theme: trzymaj się motywu systemowego,
+     żeby nie było błysku jasnego tła. Po starcie skryptu data-theme jest zawsze ustawione. */
+  @media (prefers-color-scheme: dark) {
+    html:not([data-theme]) {
+      --bg-base: #1b1d20;
+      --bg-grad-1: rgba(255, 255, 255, 0.035);
+      --bg-grad-2: rgba(255, 255, 255, 0.02);
+      --card: #26292d; --text: #f3f4f6; --muted: #b4bac3;
+      --line: #444950; --red-text: #f87171;
+      --accent-fg: #f3f4f6; --focus: #e5e7eb;
+      --dock: #26292dee; --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
+      --input: #202327;
+      color-scheme: dark;
+    }
+  }
   html { font-size: var(--base-font-size); }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;}

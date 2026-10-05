@@ -19,7 +19,9 @@
    4) Wyścig nawigacji skrócony do 2 s; usunięto fallback hashowania
       awaryjnego (crypto.subtle dostępne wszędzie, gdzie działa SW).
    5) Worker po wznowieniu odzyskuje CACHE_NAME z caches.keys()
-      (ensureCacheName) — uśpiony worker nie ma w pamięci nazwy cache. */
+      (ensureCacheName) — uśpiony worker nie ma w pamięci nazwy cache.
+   6) Zapis do cache jest w try/catch: błąd (limit pamięci, wyczyszczony
+      storage) nie zamienia udanej odpowiedzi sieci w błąd dla użytkownika. */
 
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;
@@ -118,8 +120,10 @@ self.addEventListener("fetch", (e) => {
           if (CACHE_NAME) {
             // Klon synchronicznie — zanim przeglądarka zacznie czytać ciało odpowiedzi.
             const copy = res.clone();
-            const c = await caches.open(CACHE_NAME);
-            await c.put("./index.html", copy);
+            try {
+              const c = await caches.open(CACHE_NAME);
+              await c.put("./index.html", copy);
+            } catch (_) { /* cache jest opcjonalny (limit pamięci, wyczyszczony storage) — odpowiedź sieci i tak zwracamy */ }
           }
           return res;
         })
@@ -146,8 +150,10 @@ self.addEventListener("fetch", (e) => {
         if (!res.ok) return null;   // audyt: błąd HTTP nie zastępuje cache
         if (CACHE_NAME) {
           const copy = res.clone();   // klon synchronicznie, zanim ciało przeczyta strona
-          const c = await caches.open(CACHE_NAME);
-          await c.put(e.request, copy);
+          try {
+            const c = await caches.open(CACHE_NAME);
+            await c.put(e.request, copy);
+          } catch (_) { /* błąd zapisu nie może zamienić udanej odpowiedzi sieci w błąd */ }
         }
         return res;
       })

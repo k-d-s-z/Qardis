@@ -4,12 +4,11 @@
     --bg-grad-1: rgba(39, 122, 59, 0.08);
     --bg-grad-2: rgba(59, 130, 246, 0.08);
     --card: #ffffff; --text: #111827; --muted: #4b5563;
-    --line: #d1d5db; --accent: #277a3b; --on-accent: #ffffff; --red-text: #dc2626; --blue: #2563eb; --red: #dc2626;
+    --line: #d1d5db; --accent: #277a3b; --on-accent: #ffffff; --red-text: #dc2626; --red: #dc2626;
     --accent-fg: #277a3b; --focus: #277a3b;
     --dock: #ffffffee; --dock-shadow: 0 10px 32px rgba(20,30,60,.15);
     --input: #f3f4f6;
     color-scheme: light;
-    --c-sys: #ef4444; --c-dia: #3b82f6;
   }
   html[data-theme="dark"]{
     --bg-base: #1b1d20;
@@ -55,9 +54,11 @@
     cursor: pointer;
     position: relative;
     transition: transform .1s ease, background-color .1s ease;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 96px;
   }
   .card-hit { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: none; background: transparent; border-radius: inherit; cursor: pointer; z-index: 0; }
-  .card-hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .card-hit:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; } /* ujemny: content-visibility przytnie dodatni */
   .entry-card > :not(.card-hit) { position: relative; z-index: 1; pointer-events: none; }
   .entry-card:active { transform: scale(0.985); background-color: color-mix(in srgb, var(--card) 92%, var(--line)); }
   .card-top { display: flex; justify-content: space-between; align-items: center; }
@@ -88,7 +89,7 @@
   }
   html[data-theme="dark"] .clear-btn { background: rgba(255,255,255,0.12); }
   .clear-btn:hover { background: var(--red); color: #fff; }
-  .wheel-box.disabled .wheel, .input-box.disabled input { opacity: 0.2; pointer-events: none; }
+  .wheel-box.disabled .wheel { opacity: 0.2; pointer-events: none; }
   .wheel-box.disabled::after { display: none; }
 
   /* Empty state */
@@ -113,7 +114,7 @@
     border: 1px solid var(--line); background: transparent; color: var(--muted);
     padding: 6px 12px; min-height: 36px; border-radius: 8px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
   }
-  .range-controls button.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .range-controls button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
   .trends-empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:.875rem;}
 
   .sum-count { font-size: .75rem; color: var(--muted); margin: 0 2px 8px; font-weight: 600; }
@@ -203,8 +204,8 @@
   .btn-text-danger:hover { background: rgba(220, 38, 38, 0.1); }
 
   .wheels{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .wheel-box, .input-box{border:1px solid var(--line);border-radius:12px;padding:8px 6px;background:var(--input);position:relative;}
-  .wheel-box label, .input-box label{display:block;text-align:center;font-size:0.875rem;color:var(--muted);font-weight:600;margin-bottom:4px;}
+  .wheel-box{border:1px solid var(--line);border-radius:12px;padding:8px 6px;background:var(--input);position:relative;}
+  .wheel-box label{display:block;text-align:center;font-size:0.875rem;color:var(--muted);font-weight:600;margin-bottom:4px;}
   .wheel-box::after{
     content:"";position:absolute;left:8px;right:8px;top:calc(8px + 22px + 40px);height:40px;
     border-top:2px solid var(--accent);border-bottom:2px solid var(--accent);border-radius:8px;
@@ -221,13 +222,6 @@
   }
   .wheel div.sel{opacity:1;font-weight:700;font-size:1.375rem;color:var(--accent-fg);}
   .wheel div.sp{opacity:0;}
-
-  .input-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; }
-  .input-box input[type="number"] {
-    width: 100%; border: none; background: transparent; color: var(--accent-fg);
-    font-size: 1.5rem; font-weight: 700; text-align: center; font-family: inherit;
-    padding: 8px 0; outline: none;
-  }
 
   textarea#noteField{
     width:100%;margin-top:12px;min-height:64px;border:1px solid var(--line);border-radius:12px;
@@ -255,7 +249,8 @@
   }
   .sheet-actions .btn { margin-top: 0; }
   .sheet-actions-col { flex-direction: column; }
-  #dialogText { font-size: .9375rem; color: var(--text); line-height: 1.5; }
+  .empty-gap { margin-bottom: 12px; }
+  #dialogText { font-size: .9375rem; color: var(--text); line-height: 1.5; white-space: pre-line; } /* \n\n z tekstów dialogów = osobne akapity */
 
   /* Settings Sliders UI */
   .set-row{ display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line); }
@@ -269,7 +264,7 @@
     border: none; background: transparent; color: var(--muted); padding: 6px 12px;
     font-size: 0.875rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; min-width: 38px; text-align: center;
   }
-  .segmented-control button.active { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+  .segmented-control button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 
   .toggle{ position:relative;width:52px;height:28px;border-radius:14px;background:#828a96;cursor:pointer;transition:background .25s;flex:none;border:none;padding:0;-webkit-appearance:none;appearance:none; }
   html[data-theme="dark"] .toggle{ background:#7a818c; }
@@ -319,7 +314,6 @@
   /* Audyt dostępności: uszanuj prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-    #track, .sheet, .overlay, .toggle, .toggle::after { transition: none !important; }
   }
 
 /* FIX: Ensure dialog appears above other overlays */

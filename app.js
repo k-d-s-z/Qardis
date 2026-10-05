@@ -1,6 +1,9 @@
 (function(){
   "use strict";
 
+  // Jedno źródło limitów wartości (sanityzacja i pole wagi).
+  // Bębny (wheelDefs) mają celowo węższe zakresy, żeby lista pozostawała krótka.
+  var LIMITS = { sys:[50,300], dia:[30,200], hr:[20,250], wgt:[20,300] };
   function sanitizeEntry(e){
     if (!e || typeof e !== "object") return null;
     function num(v, lo, hi){ return (typeof v === "number" && isFinite(v) && v >= lo && v <= hi) ? v : null; }
@@ -9,7 +12,7 @@
     return {
       id: (typeof e.id === "string" && e.id.length > 0 && e.id.length <= 100) ? e.id : null,
       ts: ts,
-      sys: num(e.sys, 50, 300), dia: num(e.dia, 30, 200), hr: num(e.hr, 20, 250), wgt: num(e.wgt, 20, 300),
+      sys: num(e.sys, LIMITS.sys[0], LIMITS.sys[1]), dia: num(e.dia, LIMITS.dia[0], LIMITS.dia[1]), hr: num(e.hr, LIMITS.hr[0], LIMITS.hr[1]), wgt: num(e.wgt, LIMITS.wgt[0], LIMITS.wgt[1]),
       note: typeof e.note === "string" ? e.note.slice(0, 2000) : ""
     };
   }
@@ -148,22 +151,15 @@
   var ValidationModule = (function(){
     return {
       validateImport: function(j){
-        // Walidacja tylko STRUKTURY pliku (obiekty, typy pól). Zakresy i sensowność
-        // poszczególnych rekordów sprawdza pętla importu, która pomija złe rekordy
-        // pojedynczo i je zlicza – jeden rekord poza zakresem nie odrzuca całego pliku.
+        // Tylko struktura pliku: obiekt z tablicą entries (lub czysta tablica)
+        // rekordów-obiektów. Typy pól, zakresy i długości sprawdza sanitizeEntry
+        // w pętli importu, która złe rekordy pomija i zlicza – jeden zły
+        // rekord nie odrzuca całego pliku.
         if (!j || typeof j !== "object") return false;
         var list = j.entries || (Array.isArray(j) ? j : null);
         if (!Array.isArray(list)) return false;
         for (var i = 0; i < list.length; i++) {
-          var item = list[i];
-          if (!item || typeof item !== "object" || Array.isArray(item)) return false;
-          var numKeys = ["sys","dia","hr","wgt","ts"];
-          for (var k = 0; k < numKeys.length; k++) {
-            var v = item[numKeys[k]];
-            if (v !== undefined && v !== null && (typeof v !== "number" || !isFinite(v))) return false;
-          }
-          if (item.id !== undefined && item.id !== null && (typeof item.id !== "string" || item.id.length > 100)) return false;
-          if (item.note !== undefined && item.note !== null && (typeof item.note !== "string" || item.note.length > 2000)) return false;
+          if (!list[i] || typeof list[i] !== "object" || Array.isArray(list[i])) return false;
         }
         return true;
       }
@@ -175,9 +171,7 @@
     var translations = {
       pl: {
         trendsTitle: "Qardis – Trendy pomiarów", trendsDesc: "Średnie i zakresy wartości w wybranym okresie.", trendsNoData: "Brak pomiarów w wybranym okresie.",
-        viewBars: "Zakresy", sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
-        barsHint: "Słupek: od rozkurczowego (DIA) do skurczowego (SYS). Jaśniejsza smuga: min–maks w grupie.",
-        barsMode_m: "Pojedyncze pomiary", barsMode_d: "Średnie dzienne", barsMode_w: "Średnie tygodniowe",
+        sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
         normsNote: "Zalecenia dotyczące interpretacji ciśnienia skurczowego i rozkurczowego mogą się zmieniać. Najświeższe wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
         wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
         navHistory: "Pomiary", navTrends: "Trendy", 
@@ -190,14 +184,13 @@
         
         
         langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
-        titleBtnAdd: "Dodaj wpis", titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF", titleBtnSettings: "Ustawienia",
+        titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF",
         titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopię danych uszkodzonych",
         backupReminder: "Minęło ponad 30 dni od ostatniej kopii zapasowej – rozważ jej utworzenie (menu „Dane i eksport”).",
-        btnEdit: "Edytuj", importedMsg: "Zaimportowano ", importedSuffix: " wpis(y/ów).", importError: "Nieprawidłowy plik kopii zapasowej.",
+        importedMsg: "Zaimportowano ", importError: "Nieprawidłowy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utwórz nową kopię zapasową w aplikacji.",
         noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Eksport raportu PDF", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj",
-        savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", deletedMsg: "Wpis został usunięty", importConfirm: "Dane z kopii zostaną połączone z istniejącymi wpisami. Kontynuować?",
+        savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", futureDateWarn: "Data pomiaru przypada w przyszłości — upewnij się, że to zamierzone.", deletedMsg: "Wpis został usunięty", importConfirm: "Dane z kopii zostaną połączone z istniejącymi wpisami. Kontynuować?",
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
-        viewTable: "Tabela",
         
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
@@ -223,12 +216,12 @@
         wgtDec: "Zmniejsz wagę o 0,1 kg", wgtInc: "Zwiększ wagę o 0,1 kg", wgtLabelKg: "Waga [kg]",
         wgtErrorMsg: "Podaj wagę w zakresie 20–300 kg (np. 75,5).",
         titleBtnWipe: "Usuń wszystkie dane",
-        wipeConfirm: "Usunąć WSZYSTKIE pomiary i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową.",
+        wipeConfirm: "Usunąć WSZYSTKIE pomiary i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową. Uwaga: operacja usuwa również archiwum pomiarów, którego kopia zapasowa nie zawiera.",
         wipeDone: "Wszystkie dane zostały usunięte",
         privacyNote: "Dane są przechowywane wyłącznie na tym urządzeniu.",
         importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?",
         archiveTitle: "Archiwum pomiarów",
-        archiveDesc: "Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z pomiarów i trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.",
+        archiveDesc: "Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z listy i Trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.",
         btnArchiveOpen: "Archiwum",
         archiveEmpty: "Brak zarchiwizowanych wpisów.",
         archiveCount: "W archiwum: {n}",
@@ -238,13 +231,13 @@
         archivedMsg: "Zarchiwizowano ",
         archiveRestoredMsg: "Przywrócono ",
         archiveExportedMsg: "Pobrano archiwum",
-        nothingToArchiveMsg: "Brak wpisów starszych niż 9 mies."
+        nothingToArchiveMsg: "Brak wpisów starszych niż 9 mies.",
+        archiveNotInBackup: "Uwaga: kopia nie zawiera archiwum pomiarów. Jeśli masz zarchiwizowane wpisy, wyeksportuj je osobno (menu „Dane i eksport” → „Archiwum”).",
+        importSavedWarning: "Nie udało się zapisać danych (może limit pamięci lub tryb prywatny?). Zaimportowane wpisy są widoczne, ale znikną po odświeżeniu strony."
       },
       en: {
         trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.", trendsNoData: "No measurements in the selected period.",
-        viewBars: "Ranges", sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
-        barsHint: "Bar: from diastolic (DIA) to systolic (SYS). Lighter streak: min–max within the group.",
-        barsMode_m: "Individual measurements", barsMode_d: "Daily averages", barsMode_w: "Weekly averages",
+        sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
         normsNote: "Guidelines for interpreting systolic and diastolic blood pressure may change over time. Check the latest recommendations on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, or of equivalent institutions in your country.",
         wipeDesc: "Deletes all measurements and settings from this device.",
         navHistory: "Readings", navTrends: "Trends", 
@@ -257,14 +250,13 @@
         
         
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
-        titleBtnAdd: "Add entry", titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report", titleBtnSettings: "Settings",
+        titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report",
         titleBtnCorrupt: "Export corrupted data (safety copy)", corruptExported: "Corrupted data copy downloaded",
         backupReminder: "More than 30 days since your last backup – consider creating one (Data & Export menu).",
-        btnEdit: "Edit", importedMsg: "Imported ", importedSuffix: " entry/entries.", importError: "Invalid backup file.",
+        importedMsg: "Imported ", importError: "Invalid backup file.", importVersionError: "Unknown backup format version (schemaVersion). Create a new backup in the app.",
         noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Export PDF report", pdfRangeTitle: "Data range", btnExport: "Export",
-        savedMsg: "Measurement saved", updatedMsg: "Measurement updated", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
+        savedMsg: "Measurement saved", updatedMsg: "Measurement updated", futureDateWarn: "The measurement date is in the future — make sure this is intentional.", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
-        viewTable: "Table",
         
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
@@ -290,7 +282,7 @@
         wgtDec: "Decrease weight by 0.1 kg", wgtInc: "Increase weight by 0.1 kg", wgtLabelKg: "Weight [kg]",
         wgtErrorMsg: "Enter a weight between 20 and 300 kg (e.g. 75.5).",
         titleBtnWipe: "Delete all data",
-        wipeConfirm: "Delete ALL measurements and settings from this device? This cannot be undone. If you want to keep your data, create a backup first.",
+        wipeConfirm: "Delete ALL measurements and settings from this device? This cannot be undone. If you want to keep your data, create a backup first. Note: this also deletes the measurement archive, which is not included in the backup.",
         wipeDone: "All data has been deleted",
         privacyNote: "Data is stored only on this device.",
         importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?",
@@ -305,7 +297,9 @@
         archivedMsg: "Archived ",
         archiveRestoredMsg: "Restored ",
         archiveExportedMsg: "Archive downloaded",
-        nothingToArchiveMsg: "No entries older than 9 months."
+        nothingToArchiveMsg: "No entries older than 9 months.",
+        archiveNotInBackup: "Note: the backup does not include the measurement archive. If you have archived entries, export them separately (Data & Export → Archive).",
+        importSavedWarning: "Failed to save data (storage limit or private mode?). Imported entries are visible, but will disappear after refreshing the page."
       }
     };
     return {
@@ -319,7 +313,7 @@
   // --- MODUŁ 4: Table Renderer ---
   var TableModule = (function(){
     return {
-      renderTable: function(tableMount, entries, settings, rangeDays, tCb, fmtDateCb, escapeHtmlCb){
+      renderTable: function(tableMount, entries, settings, rangeDays, tCb, fmtDateCb){
         tableMount.innerHTML = "";
         if (!entries.length){
           tableMount.innerHTML = '<div class="trends-empty">' + tCb("emptyTitle") + '</div>';
@@ -430,7 +424,6 @@
       el.placeholder = t(k);
     });
     document.querySelectorAll('#langSwitch button').forEach(function(btn){
-      btn.classList.toggle('active', btn.dataset.val === settings.lang);
       btn.setAttribute('aria-pressed', btn.dataset.val === settings.lang ? 'true' : 'false');
     });
     document.documentElement.lang = settings.lang || "pl";
@@ -441,7 +434,6 @@
     var sz = fontSizes[settings.fontSize] || fontSizes.medium;
     document.documentElement.style.setProperty('--base-font-size', sz);
     document.querySelectorAll('#fontSizeSwitch button').forEach(function(btn){
-      btn.classList.toggle('active', btn.dataset.val === settings.fontSize);
       btn.setAttribute('aria-pressed', btn.dataset.val === settings.fontSize ? 'true' : 'false');
     });
   }
@@ -455,9 +447,7 @@
   function renderMonitoredButtons() {
     if (!settingsDraft) return;
     document.querySelectorAll('#monitoredSwitch button').forEach(function(btn){
-      var p = btn.dataset.param;
-      var key = 'track' + p.charAt(0).toUpperCase() + p.slice(1);
-      btn.classList.toggle('active', !!settingsDraft[key]);
+      var key = btn.dataset.param;
       btn.setAttribute('aria-pressed', settingsDraft[key] ? 'true' : 'false');
     });
   }
@@ -477,6 +467,12 @@
   }
 
   var entryList = document.getElementById("entryList");
+  // Audyt kodu: delegacja zdarzeń na liście wpisów zamiast listenera per karta
+  entryList.addEventListener("click", function(ev){
+    var hit = ev.target.closest(".card-hit"); if (!hit) return;
+    var en = entries.find(function(x){ return x.id === hit.dataset.id; });
+    if (en) openAdd(en);
+  });
 
   function render(){
     entryList.innerHTML = "";
@@ -527,13 +523,24 @@
       hit.type = "button";
       hit.className = "card-hit";
       hit.setAttribute("aria-label", t("addTitleEdit") + ", " + f.date + " " + f.time);
-      hit.addEventListener("click", function(){ openAdd(e); });
+      hit.dataset.id = e.id;
       card.insertBefore(hit, card.firstChild);
       frag.appendChild(card);
     });
     entryList.appendChild(frag);
 
     drawTrends();
+  }
+
+  // Audyt kodu: wspólne helpery zamiast powtórzonych bloków w trzech eksportach
+  function ymd(d){ function p(n){ return (n<10?"0":"")+n; } return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
+  function downloadFile(name, text){
+    var blob = new Blob([text], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
   }
 
   function escapeHtml(s){
@@ -640,7 +647,7 @@
 
     if (!entries.length) {
       empty.innerHTML = '<h3>' + t("emptyTitle") + '</h3>'
-        + '<p style="margin-bottom:12px;">' + t("emptyDesc") + '</p>'
+        + '<p class="empty-gap">' + t("emptyDesc") + '</p>'
         + '<button class="btn btn--sm" id="btnTrendsAdd">' + t("btnAddFirst") + '</button>';
       empty.hidden = false;
       document.getElementById("btnTrendsAdd").onclick = function(){ openAdd(null); };
@@ -659,18 +666,23 @@
 
     renderSummary(filtered, sumMount);
     tableMount.hidden = false;
-    TableModule.renderTable(tableMount, entries, settings, trendsRangeDays, t, fmtDate, escapeHtml);
+    TableModule.renderTable(tableMount, entries, settings, trendsRangeDays, t, fmtDate);
   }
 
-  document.getElementById("trendsRange").addEventListener("click", function(e){
-    var btn = e.target.closest("button"); if (!btn) return;
-    document.querySelectorAll("#trendsRange button").forEach(function(b){ b.classList.remove("active"); b.setAttribute("aria-pressed", "false"); });
-    btn.classList.add("active"); btn.setAttribute("aria-pressed", "true");
-    var r = btn.dataset.range;
+  // Audyt kodu: jeden wspólny handler przełączników zakresu (stan tylko w aria-pressed)
+  function bindRangeControls(containerId, onChange){
+    var root = document.getElementById(containerId);
+    root.addEventListener("click", function(e){
+      var btn = e.target.closest("button[data-range]"); if (!btn) return;
+      root.querySelectorAll("button[data-range]").forEach(function(b){ b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      if (onChange) onChange(btn.dataset.range);
+    });
+  }
+  bindRangeControls("trendsRange", function(r){
     trendsRangeDays = (r === "all") ? "all" : parseInt(r, 10);
     drawTrends();
   });
-  document.querySelectorAll("#trendsRange button").forEach(function(b){ b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false"); });
 
   var track = document.getElementById("track");
   var screenIdx = 0;
@@ -685,11 +697,11 @@
     var homeSc = document.getElementById("homeScreen");
     var trendsSc = document.getElementById("trendsScreen");
     if (i === 0) {
-      homeSc.removeAttribute("inert"); homeSc.setAttribute("aria-hidden", "false");
-      trendsSc.setAttribute("inert", ""); trendsSc.setAttribute("aria-hidden", "true");
+      homeSc.removeAttribute("inert");
+      trendsSc.setAttribute("inert", "");
     } else {
-      trendsSc.removeAttribute("inert"); trendsSc.setAttribute("aria-hidden", "false");
-      homeSc.setAttribute("inert", ""); homeSc.setAttribute("aria-hidden", "true");
+      trendsSc.removeAttribute("inert");
+      homeSc.setAttribute("inert", "");
       drawTrends(true);
     }
   }
@@ -727,9 +739,13 @@
   function endSwipe(){
     if (startX === null) return;
     track.classList.remove("dragging");
-    if (axis === "x" && dx < -60 && screenIdx === 0) go(1);
-    else if (axis === "x" && dx > 60 && screenIdx === 1) go(0);
-    else go(screenIdx);
+    // Audyt(7): przebudowa ekranu (drawTrends) tylko po rzeczywistym geście
+    // poziomym; zwykłe dotknięcia i przewinięcia pionowe nie ruszają UI.
+    if (axis === "x") {
+      if (dx < -60 && screenIdx === 0) go(1);
+      else if (dx > 60 && screenIdx === 1) go(0);
+      else go(screenIdx);   // dosunięcie z powrotem
+    }
     startX = null; startY = null; axis = null;
   }
   viewport.addEventListener("touchend", endSwipe);
@@ -759,9 +775,15 @@
     }
     spacer();
     function idxOf(){ var i = Math.round(el.scrollTop / ROW); return Math.min(Math.max(i, 0), rowEls.length - 1); }
+    var lastIdx = -1;
     function paint(){
+      // Audyt wydajności: aktualizuj tylko dwa węzły zamiast wszystkich ~190
       var idx = idxOf();
-      rowEls.forEach(function(n,i){ n.className = (i === idx) ? "sel" : ""; });
+      if (idx !== lastIdx) {
+        if (rowEls[lastIdx]) rowEls[lastIdx].className = "";
+        if (rowEls[idx]) rowEls[idx].className = "sel";
+        lastIdx = idx;
+      }
       if (rowEls[idx]) el.setAttribute("aria-valuenow", rowEls[idx].dataset.val);
     }
     // Odczyt zawsze z pełnego wiersza: dosunięcie przerywa inercję (momentum scroll),
@@ -833,7 +855,7 @@
   });
 
   var WHEEL_UNITS = { wSys: " mmHg", wDia: " mmHg", wHr: " bpm" };
-  var WGT_MIN = 20, WGT_MAX = 300;
+  var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
   var wgtInput = document.getElementById("wWgt");
   var weightField = {
     set: function(v){ wgtInput.value = (v != null && isFinite(v)) ? (Math.round(v * 10) / 10).toFixed(1) : ""; },
@@ -848,8 +870,8 @@
   function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
 
   // ostatnia znana wartość (nie tylko z najnowszego wpisu, który mógł jej nie mieć)
-  function lastKnown(key, fallback){
-    var arr = sortedDesc();
+  function lastKnown(key, fallback, sorted){
+    var arr = sorted || sortedDesc();
     for (var i = 0; i < arr.length; i++) { if (arr[i][key] != null) return arr[i][key]; }
     return fallback;
   }
@@ -929,11 +951,6 @@
     return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());
   }
 
-  function getLatestEntry(){
-    var sorted = sortedDesc();
-    return sorted.length ? sorted[0] : null;
-  }
-
   function openAdd(entry){
     editingId = entry ? entry.id : null;
     document.getElementById("addTitle").textContent = entry ? t("addTitleEdit") : t("addTitleNew");
@@ -951,11 +968,12 @@
     hrActive = entry ? (entry.hr != null) : !!settings.incHr;
     document.getElementById("boxWHr").classList.toggle("disabled", !hrActive);
 
-    var latest = getLatestEntry();
+    var sorted = sortedDesc();
+    var latest = sorted.length ? sorted[0] : null;
     var defaultSys = latest && latest.sys != null ? latest.sys : settings.defSys;
     var defaultDia = latest && latest.dia != null ? latest.dia : settings.defDia;
-    var defaultHr  = lastKnown("hr", settings.defHr);
-    var defaultWgt = lastKnown("wgt", settings.defWgt);
+    var defaultHr  = lastKnown("hr", settings.defHr, sorted);
+    var defaultWgt = lastKnown("wgt", settings.defWgt, sorted);
 
     wgtActive = entry ? (entry.wgt != null) : !!settings.incWgt;
     document.getElementById("boxWWgt").classList.toggle("disabled", !wgtActive);
@@ -1012,6 +1030,9 @@
     var note = document.getElementById("noteField").value.trim();
     var dtVal = document.getElementById("dtField").value;
     var ts = dtVal ? new Date(dtVal).getTime() : Date.now();
+    // Audyt: data z przyszłości — ostrzeż (kolejka, nie pilne), ale pozwól zapisać.
+    // Pilne zastąpiłoby toast "zapisano"; tak potwierdzenie pokazuje się pierwsze.
+    if (ts > Date.now() + 60000) toast("⚠ " + t("futureDateWarn"), 4000);
     
     if (editingId){
       var e = entries.find(function(x){ return x.id===editingId; });
@@ -1035,7 +1056,7 @@
   };
 
   document.getElementById("btnBackup").onclick = function(){
-    openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert"), ok: t("btnExport") }, function(proceed){
+    openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveNotInBackup"), ok: t("btnExport") }, function(proceed){
     if (!proceed) return;
     var exp = {};
     ["theme","lang","fontSize","trackSys","trackDia","trackHr","trackWgt","incHr","incWgt"]
@@ -1047,13 +1068,7 @@
       settings: exp,
       entries: entries
     };
-    var blob = new Blob([JSON.stringify(backupObj, null, 2)], {type:"application/json"});
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    var d = new Date(), p=function(n){return (n<10?"0":"")+n;};
-    a.download = "qardis-kopia-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".json";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    downloadFile("qardis-kopia-"+ymd(new Date())+".json", JSON.stringify(backupObj, null, 2));
     settings.lastBackupAt = Date.now();     // audyt(3): odmierzaj czas do przypominacza
     StorageModule.saveSettings(settings);
     setModalState(toolsOverlay, false);
@@ -1087,6 +1102,12 @@
       try{
         var j = JSON.parse(r.result);
         if (!ValidationModule.validateImport(j)) throw new Error("invalid schema or ranges");
+        // Audyt: wersja formatu. Odrzucamy tylko NOWSZE niż znane (v > 2), bo
+        // starsze potrafimy poprawnie wczytać: kopia v2, starsze obiekty bez
+        // pola, plik archiwum (type: "qardis-archive", v1) i surowa tablica.
+        var isArchive = j && !Array.isArray(j) && j.type === "qardis-archive";
+        var v = (j && !Array.isArray(j)) ? j.schemaVersion : undefined;
+        if (v !== undefined && !(v >= 1 && v <= 2)) throw new Error("unsupported schemaVersion");
         var list = j.entries || j;
         var ids = Object.create(null); entries.forEach(function(e){ ids[e.id]=1; });
         var added = 0, skipped = 0;
@@ -1101,20 +1122,23 @@
           if (ids[item.id]) { skipped++; return; }   // duplikat id liczony jako pominięty
           entries.push(item); ids[item.id]=1; added++;
         });
-        if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
+        var saved = StorageModule.saveEntries(entries);
+        if (!saved) toast(t("importSavedWarning"), 9000, true);   // audyt(10): dane tylko w RAM do przeładowania
         render();
         if (j && !Array.isArray(j) && j.settings && typeof j.settings === "object") {
           openDialog({ title: t("settingsTitle"), text: t("importSettingsConfirm") }, function(yes){
           if (!yes) return;
           var keepAsked = settings.persistAsked;
+          var keepBackupAt = settings.lastBackupAt;
           settings = StorageModule.sanitizeSettings(j.settings);
           settings.persistAsked = keepAsked;
+          settings.lastBackupAt = keepBackupAt;   // audyt: plik nie przesuwa przypominacza o kopii
           if (!StorageModule.saveSettings(settings)) toast(t("storageError"));
             applyTheme(); applyLanguage(); applyFontSize(); render();
           });
         }
         toast("✓ " + t("importedMsg")+added+pluralEntries(added)+(skipped ? t("importSkipped")+skipped : ""));
-      }catch(err){ toast(t("importError")); }
+      }catch(err){ toast(err && err.message === "unsupported schemaVersion" ? t("importVersionError") : t("importError")); }
     };
       r.readAsText(f);
     });
@@ -1128,11 +1152,8 @@
     if (!entries.length){ toast(t("noEntriesPdf")); return; }
     setModalState(pdfOverlayEl, true);
   };
-  document.getElementById("pdfRange").addEventListener("click", function(e){
-    var b = e.target.closest("button[data-range]"); if (!b) return;
-    document.querySelectorAll("#pdfRange button").forEach(function(x){ x.classList.remove("active"); x.setAttribute("aria-pressed", "false"); });
-    b.classList.add("active"); b.setAttribute("aria-pressed", "true");
-    pdfExportRange = (b.dataset.range === "all") ? "all" : parseInt(b.dataset.range, 10);
+  bindRangeControls("pdfRange", function(r){
+    pdfExportRange = (r === "all") ? "all" : parseInt(r, 10);
   });
   document.getElementById("btnPdfCancel").onclick = function(){ setModalState(pdfOverlayEl, false); };
   pdfOverlayEl.addEventListener("click", function(e){ if (e.target === pdfOverlayEl) setModalState(pdfOverlayEl, false); });
@@ -1151,40 +1172,44 @@
       return "<tr><td>"+f.date+" "+f.time+"</td><td>"+escapeHtml(String(e.sys||""))+"</td><td>"+escapeHtml(String(e.dia||""))+"</td><td>"+escapeHtml(String(e.hr||""))+"</td><td>"+escapeHtml(String(e.wgt||""))+"</td><td>"+escapeHtml(e.note||"")+"</td></tr>";
     }).join("");
     var loc = settings.lang === "en" ? "en-US" : "pl-PL";
-    var html = '<!doctype html><html lang="'+escapeHtml(settings.lang)+'"><head><meta charset="utf-8"><title>'+escapeHtml(t("pdfTitle"))+'</title><style>'
-      +'@page{size:A4 landscape;margin:12mm;}'
+    // Style jako osobny ciąg: okno about:blank dziedziczy CSP otwierającego,
+    // więc inline <style> byłby zablokowany przez 'style-src self'. Arkusz
+    // konstruowany (CSSOM) omija restrykcje CSP — patrz adoptedStyleSheets niżej.
+    var css = '@page{size:A4 landscape;margin:12mm;}'
       +'body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;}'
       +'h1{font-size:18px;margin:0 0 4px;}p.sub{font-size:11px;color:#555;margin:0 0 16px;}'
       +'table{border-collapse:collapse;width:100%;font-size:12px;}'
       +'th,td{border:1px solid #999;padding:5px 8px;text-align:center;}'
       +'th{background:#eee;}td:first-child{text-align:left;white-space:nowrap;}td:last-child{text-align:left;font-style:italic;}'
       +'thead{display:table-header-group;}tr{page-break-inside:avoid;}'
-      +'@media print{p.hint{display:none;}}'
-      +'</style></head><body>'
+      +'@media print{p.hint{display:none;}}';
+    var html = '<!doctype html><html lang="'+escapeHtml(settings.lang)+'"><head><meta charset="utf-8"><title>'+escapeHtml(t("pdfTitle"))+'</title></head><body>'
       +'<h1>'+escapeHtml(t("pdfTitle"))+'</h1>'
       +'<p class="sub">'+escapeHtml(t("pdfGen")+new Date().toLocaleString(loc))+'</p>'
       +'<p class="hint">'+escapeHtml(t("pdfHint"))+'</p>'
       +'<table><thead><tr><th>'+escapeHtml(t("pdfHeaderDt"))+'</th><th>'+escapeHtml(t("sysLabel"))+'</th><th>'+escapeHtml(t("diaLabel"))+'</th><th>'+escapeHtml(t("hrLabel"))+'</th><th>'+escapeHtml(t("wgtLabel"))+'</th><th>'+escapeHtml(t("pdfHeaderNotes"))+'</th></tr></thead>'
       +'<tbody>'+rows+'</tbody></table></body></html>';
 
-    var iframe = document.createElement("iframe");
-    iframe.setAttribute("aria-hidden", "true");
-    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
-    document.body.appendChild(iframe);
-    var printed = false;
-    iframe.onload = function(){
-      if (printed) return;
-      printed = true;
-      setTimeout(function(){
-        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
-        catch(err){ toast(t("pdfError")); }
-        setTimeout(function(){ iframe.remove(); }, 60000);
-      }, 150);
-    };
+    // Audyt CSP: zamiast ukrytego iframe.srcdoc (dziedziczy CSP rodzica i
+    // wymuszał 'unsafe-inline' w style-src) — osobne okno wydruku window.open.
+    // Wywołanie z gestu użytkownika, więc blokady pop-upów nie przeszkadzają.
+    var w = window.open("", "_blank");
+    if (!w) { toast(t("pdfError")); return; }   // blokada pop-upów lub tryb prywatny
     try {
-      iframe.srcdoc = html;
-      setTimeout(function(){ if(!printed){ printed = true; toast(t("pdfError")); iframe.remove(); } }, 3000);
-    } catch(err){ toast(t("pdfError")); iframe.remove(); }
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      var sheet = new w.CSSStyleSheet();
+      sheet.replaceSync(css);
+      w.document.adoptedStyleSheets = [sheet];
+      w.document.title = t("pdfTitle");
+      // Po wydruku (lub anulowaniu) zamknij okno, żeby nie zostawała pusta karta.
+      w.onafterprint = function(){ try { w.close(); } catch(e){} };
+      setTimeout(function(){ try { w.focus(); w.print(); } catch(err){ toast(t("pdfError")); } }, 200);
+    } catch(err){
+      toast(t("pdfError"));
+      try { w.close(); } catch(e2){}
+    }
   }
 
   var settingsOverlay = document.getElementById("settingsOverlay");
@@ -1204,8 +1229,7 @@
   document.getElementById("monitoredSwitch").addEventListener("click", function(e){
     var btn = e.target.closest("button"); if (!btn) return;
     if (!settingsDraft) return;
-    var p = btn.dataset.param;
-    var key = 'track' + p.charAt(0).toUpperCase() + p.slice(1);
+    var key = btn.dataset.param;
     settingsDraft[key] = !settingsDraft[key];
     renderMonitoredButtons();
   });
@@ -1263,7 +1287,6 @@
       if (!document.querySelector(".overlay.open")) lastFocusEl = document.activeElement;
       el.classList.add("open");
       el.removeAttribute("inert");
-      el.setAttribute("aria-hidden", "false");
       bg.forEach(function(b){ b.setAttribute("inert", ""); });
       var sheet = el.querySelector(".sheet");
       if (sheet) {
@@ -1273,7 +1296,6 @@
     } else {
       el.classList.remove("open");
       el.setAttribute("inert", "");
-      el.setAttribute("aria-hidden", "true");
       if (!document.querySelector(".overlay.open")) {
         bg.forEach(function(b){ b.removeAttribute("inert"); });
         if (lastFocusEl && document.contains(lastFocusEl) && lastFocusEl.focus) { try { lastFocusEl.focus({preventScroll:true}); } catch(e){} }
@@ -1384,7 +1406,9 @@
     el.appendChild(undoBtn);
 
     el.style.cssText = TOAST_CSS + "padding:2px 10px 2px 16px;display:flex;align-items:center;";
-    showToast(el, msg + " " + t("btnUndo"), UNDO_MS);
+    // Audyt(1): pilny — toast z cofnięciem NIE może trafić do kolejki, bo
+    // pendingDeletes żyją krócej niż toast skrócony przez kolejkę (utrata danych).
+    showToast(el, msg + " " + t("btnUndo"), UNDO_MS, true);
   }
 
   applyTheme();
@@ -1401,13 +1425,7 @@
     if (corruptData) {
       btnCorrupt.style.display = "flex";
       btnCorrupt.onclick = function(){
-        var blob = new Blob([corruptData], {type:"application/json"});
-        var a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        var d = new Date(), p=function(n){return (n<10?"0":"")+n;};
-        a.download = "qardis-dane-uszkodzone-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".json";
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+        downloadFile("qardis-dane-uszkodzone-"+ymd(new Date())+".json", corruptData);
         setModalState(toolsOverlay, false);
         toast("✓ " + t("corruptExported"));
       };
@@ -1433,9 +1451,12 @@
     var ids = Object.create(null);
     archive.forEach(function(e){ ids[e.id] = 1; });
     toMove.forEach(function(e){ if (!ids[e.id]) { archive.push(e); ids[e.id] = 1; } });
+    // Audyt(2): najpierw trwały zapis archiwum — przy porażce (limit pamięci)
+    // przerywamy, zanim wpisy znikną z listy. Ewentualne duplikaty przy wznowieniu
+    // operacji są odfiltrowywane po id, ale nic nie przepada.
+    if (!StorageModule.saveArchive(archive)) { toast(t("storageError"), 5000, true); return; }
     entries = entries.filter(function(e){ return e.ts >= cutoff; });
-    if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
-    if (!StorageModule.saveArchive(archive)) toast(t("storageError"));
+    if (!StorageModule.saveEntries(entries)) toast(t("storageError"), 5000, true);
     updateArchiveSummary();
     render();
     toast("✓ " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
@@ -1447,8 +1468,10 @@
     entries.forEach(function(e){ ids[e.id] = 1; });
     var added = 0;
     archive.forEach(function(e){ if (!ids[e.id]) { entries.push(e); ids[e.id] = 1; added++; } });
-    if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
-    StorageModule.saveArchive([]);
+    // Audyt(3): nie czyścić archiwum, gdy zapis wpisów się nie powiódł —
+    // duplikaty przy ponownej próbie są odfiltrowywane po id.
+    if (!StorageModule.saveEntries(entries)) { toast(t("storageError"), 5000, true); return; }
+    if (!StorageModule.saveArchive([])) toast(t("storageError"), 5000, true);
     updateArchiveSummary();
     render();
     toast("✓ " + t("archiveRestoredMsg") + added + pluralEntries(added));
@@ -1457,13 +1480,7 @@
     var archive = StorageModule.loadArchive();
     if (!archive.length) { toast(t("archiveEmpty")); return; }
     var obj = { schemaVersion: 1, type: "qardis-archive", exportedAt: new Date().toISOString(), entries: archive };
-    var blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    var d = new Date(), p = function(n){ return (n<10?"0":"")+n; };
-    a.download = "qardis-archiwum-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".json";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    downloadFile("qardis-archiwum-"+ymd(new Date())+".json", JSON.stringify(obj, null, 2));
     toast("✓ " + t("archiveExportedMsg"));
   }
   if (archiveOverlayEl) {

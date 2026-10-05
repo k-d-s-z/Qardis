@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <meta name="color-scheme" content="light dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -24,7 +24,7 @@
     <section class="screen" id="homeScreen" role="tabpanel" aria-labelledby="navHistory">
       <div id="entryList"></div>
     </section>
-    <section class="screen" id="trendsScreen" role="tabpanel" aria-labelledby="navTrends" aria-hidden="true" inert>
+    <section class="screen" id="trendsScreen" role="tabpanel" aria-labelledby="navTrends" inert>
       <div id="trendsWrap">
         <div class="trends-heading">
           <div>
@@ -33,10 +33,10 @@
           </div>
         </div>
         <div class="range-controls" id="trendsRange">
-          <button type="button" data-range="7" data-i18n="r7">7 dni</button>
-          <button type="button" data-range="30" class="active" data-i18n="r30">30 dni</button>
-          <button type="button" data-range="90" data-i18n="r90">3 mies.</button>
-          <button type="button" data-range="all" data-i18n="rAll">Wszystkie</button>
+          <button type="button" data-range="7" aria-pressed="false" data-i18n="r7">7 dni</button>
+          <button type="button" data-range="30" aria-pressed="true" data-i18n="r30">30 dni</button>
+          <button type="button" data-range="90" aria-pressed="false" data-i18n="r90">3 mies.</button>
+          <button type="button" data-range="all" aria-pressed="false" data-i18n="rAll">Wszystkie</button>
         </div>
         <div id="trendsSummary"></div>
         <div id="trendsEmpty" class="trends-empty" hidden></div>
@@ -49,7 +49,7 @@
 <!-- Primary Single-Row Navigation Dock -->
 <nav id="dock">
   <button id="btnTools" class="btn-secondary" title="Dane i eksport" aria-label="Dane i eksport" data-i18n-aria="ariaTools">
-    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" style="stroke-width:3.5"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.5"/></svg>
   </button>
   <button id="btnAdd" class="btn-main" title="Dodaj pomiar" aria-label="Dodaj pomiar" data-i18n-aria="ariaAdd">
     <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -66,7 +66,7 @@
 <div id="liveRegion" class="sr-only" role="status" aria-live="polite"></div>
 
 <!-- Arkusz potwierdzeń (audyt: zamiast systemowych okien dialogowych) -->
-<div class="overlay" id="dialogOverlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" aria-hidden="true" inert>
+<div class="overlay" id="dialogOverlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" inert>
   <div class="sheet">
     <div class="sheet-header"><h2 id="dialogTitle"></h2></div>
     <p id="dialogText" class="sheet-note"></p>
@@ -78,7 +78,7 @@
 </div>
 
 <!-- Tools Menu Sheet -->
-<div class="overlay" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" aria-hidden="true" inert>
+<div class="overlay" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" inert>
   <div class="sheet">
     <div class="sheet-header">
       <h2 id="toolsTitle" data-i18n="toolsTitle">Dane i eksport</h2>
@@ -113,10 +113,10 @@
 </div>
 
 <!-- Archive Sheet -->
-<div class="overlay" id="archiveOverlay" role="dialog" aria-modal="true" aria-labelledby="archiveTitle" aria-hidden="true" inert>
+<div class="overlay" id="archiveOverlay" role="dialog" aria-modal="true" aria-labelledby="archiveTitle" inert>
   <div class="sheet">
     <div class="sheet-header"><h2 id="archiveTitle" data-i18n="archiveTitle">Archiwum pomiarów</h2></div>
-    <p class="sheet-note" data-i18n="archiveDesc">Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z pomiarów i trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.</p>
+    <p class="sheet-note" data-i18n="archiveDesc">Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z listy i Trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.</p>
     <p class="sheet-note" id="archiveSummary"></p>
     <div class="sheet-actions sheet-actions-col">
       <button type="button" class="btn" id="btnArchiveMove" data-i18n="btnArchiveMove">Archiwizuj wpisy starsze niż 9 mies.</button>
@@ -128,7 +128,7 @@
 </div>
 
 <!-- PDF export sheet -->
-<div class="overlay" id="pdfRangeOverlay" role="dialog" aria-modal="true" aria-labelledby="pdfExportTitle" aria-hidden="true" inert>
+<div class="overlay" id="pdfRangeOverlay" role="dialog" aria-modal="true" aria-labelledby="pdfExportTitle" inert>
   <div class="sheet">
     <div class="sheet-header">
       <h2 id="pdfExportTitle" data-i18n="pdfExportTitle">Eksport raportu PDF</h2>
@@ -137,7 +137,7 @@
       <div class="lbl" data-i18n="pdfRangeTitle">Zakres danych</div>
       <div class="segmented-control segmented-full" id="pdfRange">
         <button type="button" data-range="7" aria-pressed="false" data-i18n="r7">7 dni</button>
-        <button type="button" data-range="30" class="active" aria-pressed="true" data-i18n="r30">30 dni</button>
+        <button type="button" data-range="30" aria-pressed="true" data-i18n="r30">30 dni</button>
         <button type="button" data-range="90" aria-pressed="false" data-i18n="r90">3 mies.</button>
         <button type="button" data-range="all" aria-pressed="false" data-i18n="rAll">Wszystkie</button>
       </div>
@@ -151,7 +151,7 @@
 </div>
 
 <!-- Add / Edit sheet -->
-<div class="overlay" id="addOverlay" role="dialog" aria-modal="true" aria-labelledby="addTitle" aria-hidden="true" inert>
+<div class="overlay" id="addOverlay" role="dialog" aria-modal="true" aria-labelledby="addTitle" inert>
   <div class="sheet">
     <div class="sheet-header">
       <h2 id="addTitle">Nowy wpis</h2>
@@ -182,7 +182,7 @@
       </div>
     </div>
     <span id="bpInlineError" class="inline-error" role="alert" hidden></span>
-    <textarea id="noteField" data-i18n-ph="notePlaceholder" placeholder="Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)"></textarea>
+    <textarea id="noteField" maxlength="2000" data-i18n-ph="notePlaceholder" placeholder="Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)"></textarea>
     
     <div class="sheet-actions">
       <button class="btn ghost" id="btnCancelEntry" data-i18n="btnCancel">Anuluj</button>
@@ -192,7 +192,7 @@
 </div>
 
 <!-- Settings Sheet -->
-<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true" inert>
+<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" inert>
   <div class="sheet">
     <div class="sheet-header">
       <h2 id="settingsTitle" data-i18n="settingsTitle">Ustawienia</h2>
@@ -201,10 +201,10 @@
     <div class="set-row set-row-col">
       <div class="lbl" data-i18n="monitoredTitle">Monitorowane parametry</div>
       <div class="segmented-control segmented-full" id="monitoredSwitch">
-        <button type="button" data-param="sys" data-i18n="sysLabel">SYS</button>
-        <button type="button" data-param="dia" data-i18n="diaLabel">DIA</button>
-        <button type="button" data-param="hr" data-i18n="hrLabel">Tętno</button>
-        <button type="button" data-param="wgt" data-i18n="wgtLabel">Waga</button>
+        <button type="button" data-param="trackSys" data-i18n="sysLabel">SYS</button>
+        <button type="button" data-param="trackDia" data-i18n="diaLabel">DIA</button>
+        <button type="button" data-param="trackHr" data-i18n="hrLabel">Tętno</button>
+        <button type="button" data-param="trackWgt" data-i18n="wgtLabel">Waga</button>
       </div>
     </div>
 

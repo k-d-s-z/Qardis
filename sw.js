@@ -12,12 +12,13 @@
    - pozostałe GET z tego samego origin: cache-first z rewalidacją
      w tle (stale-while-revalidate) → szybkie ikony/manifest offline. */
 
-const VERSION = "qardis-2026-10-04"; // ← podnieś przy każdym deploju
+const VERSION = "qardis-2026-10-05-2"; // ← podnieś przy każdym deploju
 const PREFIX = "qardis-";
 
 const ASSETS = [
   "./",
   "./index.html",
+  "./app.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -79,5 +80,6 @@ self.addEventListener("fetch", (e) => {
   );
 });
 
-/* Nota dla przyszłego siebie: jeśli wyniesiesz JS z index.html do app.js,
-   dodaj "./app.js" do ASSETS i podnieś VERSION. */
+/* Nota dla przyszłego siebie: główny kod aplikacji żyje w app.js
+   (CSP wymaga script-src 'self'). Przy zmianach app.js wystarczy
+   podnieść VERSION – ASSETS już go zawiera. */

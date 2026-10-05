@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="light dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta id="themeColorMeta" name="theme-color" content="#1b1d20" />
 <link rel="icon" type="image/png" sizes="32x32" href="icon-192.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
@@ -272,6 +272,8 @@
     position: sticky; bottom: 0; background: var(--card); padding-top: 10px; margin-top: auto;
     display: flex; gap: 10px; border-top: 1px solid var(--line);
   }
+  .sheet-actions .btn { margin-top: 0; }
+  #dialogText { font-size: .9375rem; color: var(--text); line-height: 1.5; }
 
   /* Settings Sliders UI */
   .set-row{ display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line); }
@@ -324,6 +326,25 @@
     .dock-nav-segmented { margin-left: 0; }
     .dock-nav-segmented button { padding: 6px 10px; }
   }
+
+  /* Audyt dostępności: uszanuj prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+    #track, .sheet, .overlay, .toggle, .toggle::after { transition: none !important; }
+  }
+
+/* FIX: Ensure dialog appears above other overlays */
+#dialogOverlay {
+  z-index: 999 !important;
+}
+
+#toolsOverlay,
+#settingsOverlay,
+#addOverlay,
+#pdfRangeOverlay {
+  z-index: 200;
+}
+
 </style>
 </head>
 <body>
@@ -373,6 +394,18 @@
 </nav>
 <input type="file" id="importFile" accept="application/json" hidden>
 <div id="liveRegion" class="sr-only" role="status" aria-live="polite"></div>
+
+<!-- Arkusz potwierdzeń (audyt: zamiast systemowych okien dialogowych) -->
+<div class="overlay" id="dialogOverlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" aria-hidden="true" inert>
+  <div class="sheet">
+    <div class="sheet-header"><h2 id="dialogTitle"></h2></div>
+    <p id="dialogText" class="sheet-note"></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn ghost" id="dialogCancel" data-i18n="btnCancel">Anuluj</button>
+      <button type="button" class="btn" id="dialogOk">OK</button>
+    </div>
+  </div>
+</div>
 
 <!-- Tools Menu Sheet -->
 <div class="overlay" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" aria-hidden="true" inert>

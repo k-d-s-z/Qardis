@@ -164,7 +164,7 @@
         emptyTitle: "Brak pomiarów", emptyDesc: "Dodaj pierwszy pomiar ciśnienia, aby rozpocząć śledzenie wyników.", btnAddFirst: "+ Dodaj pierwszy pomiar",
         addTitleNew: "Nowy wpis", addTitleEdit: "Edytuj wpis", dtLabel: "Data i godzina pomiaru",
         notePlaceholder: "Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)",
-        btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij",
+        btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij", btnProceed: "Kontynuuj",
         toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", 
         
         
@@ -219,7 +219,7 @@
         emptyTitle: "No measurements yet", emptyDesc: "Add your first blood pressure record to start tracking.", btnAddFirst: "+ Add first measurement",
         addTitleNew: "New entry", addTitleEdit: "Edit entry", dtLabel: "Date and time of measurement",
         notePlaceholder: "Additional info... (e.g. cold, feeling unwell)",
-        btnCancel: "Cancel", btnSave: "Save", btnDelete: "Delete", btnUndo: "Undo",
+        btnCancel: "Cancel", btnSave: "Save", btnDelete: "Delete", btnUndo: "Undo", btnProceed: "Proceed",
         toolsTitle: "Data & Export", settingsTitle: "Settings", monitoredTitle: "Monitored parameters", 
         
         
@@ -972,7 +972,8 @@
   };
 
   document.getElementById("btnBackup").onclick = function(){
-    alert(t("privacyAlert"));
+    openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert"), ok: t("btnExport") }, function(proceed){
+    if (!proceed) return;
     var exp = {};
     ["theme","lang","fontSize","trackSys","trackDia","trackHr","trackWgt","incHr","incWgt"]
       .forEach(function(k){ exp[k] = settings[k]; });
@@ -994,10 +995,12 @@
     StorageModule.saveSettings(settings);
     setModalState(toolsOverlay, false);
     toast("✓ " + t("backupDone"));
+    });
   };
 
   document.getElementById("btnWipe").onclick = function(){
-    if (!confirm(t("wipeConfirm"))) return;
+    openDialog({ title: t("titleBtnWipe"), text: t("wipeConfirm"), ok: t("btnDelete"), danger: true }, function(proceed){
+    if (!proceed) return;
     setModalState(settingsOverlay, false);
     settingsDraft = null; settingsBefore = null;
     StorageModule.wipeAll();
@@ -1006,6 +1009,7 @@
     settings = StorageModule.loadSettings();
     applyTheme(); applyLanguage(); applyFontSize(); render();
     toast("✓ " + t("wipeDone"));
+    });
   };
 
   document.getElementById("btnImport").onclick = function(){ document.getElementById("importFile").click(); setModalState(toolsOverlay, false); };
@@ -1013,8 +1017,9 @@
   document.getElementById("importFile").addEventListener("change", function(ev){
     var f = ev.target.files[0]; if (!f) return;
     if (f.size > 5 * 1024 * 1024) { toast(t("importError")); ev.target.value = ""; return; }
-    if(!confirm(t("importConfirm"))){ ev.target.value = ""; return; }
-    var r = new FileReader();
+    openDialog({ title: t("titleBtnImport"), text: t("importConfirm") }, function(proceed){
+      if(!proceed){ ev.target.value = ""; return; }
+      var r = new FileReader();
     r.onload = function(){
       try{
         var j = JSON.parse(r.result);
@@ -1035,17 +1040,21 @@
         });
         if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
         render();
-        if (j && !Array.isArray(j) && j.settings && typeof j.settings === "object" && confirm(t("importSettingsConfirm"))) {
+        if (j && !Array.isArray(j) && j.settings && typeof j.settings === "object") {
+          openDialog({ title: t("settingsTitle"), text: t("importSettingsConfirm") }, function(yes){
+          if (!yes) return;
           var keepAsked = settings.persistAsked;
           settings = StorageModule.sanitizeSettings(j.settings);
           settings.persistAsked = keepAsked;
           if (!StorageModule.saveSettings(settings)) toast(t("storageError"));
-          applyTheme(); applyLanguage(); applyFontSize(); render();
+            applyTheme(); applyLanguage(); applyFontSize(); render();
+          });
         }
         toast("✓ " + t("importedMsg")+added+t("importedSuffix")+(skipped ? t("importSkipped")+skipped : ""));
       }catch(err){ toast(t("importError")); }
     };
-    r.readAsText(f);
+      r.readAsText(f);
+    });
     ev.target.value = "";
   });
 
@@ -1213,9 +1222,33 @@
     }
   }
 
+  // Audyt(1): arkusz potwierdzeń w stylu aplikacji zamiast systemowych okien
+  var dialogEl = document.getElementById("dialogOverlay");
+  var dialogCb = null;
+  function openDialog(opts, cb){
+    document.getElementById("dialogTitle").textContent = opts.title || "";
+    document.getElementById("dialogText").textContent = opts.text || "";
+    var okBtn = document.getElementById("dialogOk");
+    okBtn.textContent = opts.ok || t("btnProceed");
+    okBtn.classList.toggle("danger", !!opts.danger);
+    document.getElementById("dialogCancel").hidden = !!opts.info;
+    dialogCb = cb || null;
+    setModalState(dialogEl, true);
+  }
+  function closeDialog(result){
+    setModalState(dialogEl, false);
+    var cb = dialogCb; dialogCb = null;
+    if (cb) cb(!!result);
+  }
+  if (dialogEl) {
+    document.getElementById("dialogOk").onclick = function(){ closeDialog(true); };
+    document.getElementById("dialogCancel").onclick = function(){ closeDialog(false); };
+  }
+
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape"){
-      if (addOverlay.classList.contains("open")) setModalState(addOverlay, false);
+      if (dialogEl && dialogEl.classList.contains("open")) closeDialog(false);
+      else if (addOverlay.classList.contains("open")) setModalState(addOverlay, false);
       else if (settingsOverlay.classList.contains("open")) cancelSettings();
       else if (toolsOverlay.classList.contains("open")) setModalState(toolsOverlay, false);
       else if (pdfOverlayEl.classList.contains("open")) setModalState(pdfOverlayEl, false);

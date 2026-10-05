@@ -21,7 +21,9 @@
    5) Worker po wznowieniu odzyskuje CACHE_NAME z caches.keys()
       (ensureCacheName) — uśpiony worker nie ma w pamięci nazwy cache.
    6) Zapis do cache jest w try/catch: błąd (limit pamięci, wyczyszczony
-      storage) nie zamienia udanej odpowiedzi sieci w błąd dla użytkownika. */
+      storage) nie zamienia udanej odpowiedzi sieci w błąd dla użytkownika.
+   7) Wydanie porządkowe: toasty przeniesione do klas CSS, zmienne z-index,
+      CSP z img-src 'self'. Zmiana tego pliku wymusza przebudowę cache. */
 
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;

@@ -1,6 +1,8 @@
 (function(){
   "use strict";
 
+  function $(id){ return document.getElementById(id); }
+
   // Jedno źródło limitów wartości (sanityzacja i pole wagi).
   // Bębny (wheelDefs) mają celowo węższe zakresy, żeby lista pozostawała krótka.
   var LIMITS = { sys:[50,300], dia:[30,200], hr:[20,250], wgt:[20,300] };
@@ -475,7 +477,7 @@
     }
   }
 
-  var entryList = document.getElementById("entryList");
+  var entryList = $("entryList");
   // Audyt kodu: delegacja zdarzeń na liście wpisów zamiast listenera per karta
   entryList.addEventListener("click", function(ev){
     var hit = ev.target.closest(".card-hit"); if (!hit) return;
@@ -492,7 +494,7 @@
         +'<p>'+t("emptyDesc")+'</p>'
         +'<button class="btn" id="btnEmptyAdd">'+t("btnAddFirst")+'</button>'
         +'</div>';
-      document.getElementById("btnEmptyAdd").onclick = function(){ openAdd(null); };
+      $("btnEmptyAdd").onclick = function(){ openAdd(null); };
       drawTrends();
       return;
     }
@@ -567,7 +569,7 @@
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
     if (editingId === id) editingId = null;
     render();
-    if(document.getElementById("addOverlay").classList.contains("open")) setModalState(document.getElementById("addOverlay"), false);
+    if($("addOverlay").classList.contains("open")) setModalState($("addOverlay"), false);
 
     if (deleteTimeout) clearTimeout(deleteTimeout);
     var n = pendingDeletes.length;
@@ -646,9 +648,9 @@
   function drawTrends(force){
     // Rysuj tylko gdy ekran Trendy jest aktywny, chyba że wymuszono (zmiana ustawień)
     if (!force && screenIdx !== 1) return;
-    var tableMount = document.getElementById("trendsTableMount");
-    var empty = document.getElementById("trendsEmpty");
-    var sumMount = document.getElementById("trendsSummary");
+    var tableMount = $("trendsTableMount");
+    var empty = $("trendsEmpty");
+    var sumMount = $("trendsSummary");
 
     sumMount.textContent = "";
     empty.hidden = true;
@@ -659,7 +661,7 @@
         + '<p class="empty-gap">' + t("emptyDesc") + '</p>'
         + '<button class="btn btn--sm" id="btnTrendsAdd">' + t("btnAddFirst") + '</button>';
       empty.hidden = false;
-      document.getElementById("btnTrendsAdd").onclick = function(){ openAdd(null); };
+      $("btnTrendsAdd").onclick = function(){ openAdd(null); };
       return;
     }
 
@@ -680,7 +682,7 @@
 
   // Audyt kodu: jeden wspólny handler przełączników zakresu (stan tylko w aria-pressed)
   function bindRangeControls(containerId, onChange){
-    var root = document.getElementById(containerId);
+    var root = $(containerId);
     root.addEventListener("click", function(e){
       var btn = e.target.closest("button[data-range]"); if (!btn) return;
       root.querySelectorAll("button[data-range]").forEach(function(b){ b.setAttribute("aria-pressed", "false"); });
@@ -693,18 +695,18 @@
     drawTrends();
   });
 
-  var track = document.getElementById("track");
+  var track = $("track");
   var screenIdx = 0;
   function go(i){
     screenIdx = i;
     track.style.transform = "translateX(" + (-i*50) + "%)";
-    document.getElementById("navHistory").classList.toggle("active", i===0);
-    document.getElementById("navHistory").setAttribute("aria-selected", i===0 ? "true" : "false");
-    document.getElementById("navTrends").classList.toggle("active", i===1);
-    document.getElementById("navTrends").setAttribute("aria-selected", i===1 ? "true" : "false");
+    $("navHistory").classList.toggle("active", i===0);
+    $("navHistory").setAttribute("aria-selected", i===0 ? "true" : "false");
+    $("navTrends").classList.toggle("active", i===1);
+    $("navTrends").setAttribute("aria-selected", i===1 ? "true" : "false");
 
-    var homeSc = document.getElementById("homeScreen");
-    var trendsSc = document.getElementById("trendsScreen");
+    var homeSc = $("homeScreen");
+    var trendsSc = $("trendsScreen");
     if (i === 0) {
       homeSc.removeAttribute("inert");
       trendsSc.setAttribute("inert", "");
@@ -715,11 +717,11 @@
     }
   }
 
-  document.getElementById("navHistory").onclick = function(){ go(0); };
-  document.getElementById("navTrends").onclick = function(){ go(1); };
+  $("navHistory").onclick = function(){ go(0); };
+  $("navTrends").onclick = function(){ go(1); };
 
   var startX = null, startY = null, dx = 0, dy = 0, axis = null;
-  var viewport = document.getElementById("viewport");
+  var viewport = $("viewport");
   function allowed(t){
     return !t.closest("#dock") && !t.closest(".sheet") && !t.closest(".wheel") &&
            !t.closest("button") && !t.closest("textarea") && !t.closest("input");
@@ -760,16 +762,16 @@
   viewport.addEventListener("touchend", endSwipe);
   viewport.addEventListener("touchcancel", endSwipe);
 
-  var toolsOverlay = document.getElementById("toolsOverlay");
-  document.getElementById("btnTools").onclick = function(){ setModalState(toolsOverlay, true); };
-  document.getElementById("btnToolsClose").onclick = function(){ setModalState(toolsOverlay, false); };
+  var toolsOverlay = $("toolsOverlay");
+  $("btnTools").onclick = function(){ setModalState(toolsOverlay, true); };
+  $("btnToolsClose").onclick = function(){ setModalState(toolsOverlay, false); };
   toolsOverlay.addEventListener("click", function(e){ if (e.target === toolsOverlay) setModalState(toolsOverlay, false); });
 
-  var addOverlay = document.getElementById("addOverlay");
+  var addOverlay = $("addOverlay");
   var editingId = null;
   var ROW = 40;
   function makeWheel(elId, cfg){
-    var el = document.getElementById(elId);
+    var el = $(elId);
     var rowEls = []; el.innerHTML = "";
     el.setAttribute("role", "spinbutton"); el.tabIndex = 0;
     el.setAttribute("aria-valuemin", cfg.min); el.setAttribute("aria-valuemax", cfg.max);
@@ -865,7 +867,7 @@
 
   var WHEEL_UNITS = { wSys: " mmHg", wDia: " mmHg", wHr: " bpm" };
   var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
-  var wgtInput = document.getElementById("wWgt");
+  var wgtInput = $("wWgt");
   var weightField = {
     set: function(v){ wgtInput.value = (v != null && isFinite(v)) ? (Math.round(v * 10) / 10).toFixed(1) : ""; },
     get: function(){
@@ -902,8 +904,8 @@
 
   function syncOptionalWheels(){
     [["boxWHr","wHr","btnClearWHr",hrActive,"Hr"],["boxWWgt","wWgt","btnClearWWgt",wgtActive,"Wgt"]].forEach(function(a){
-      document.getElementById(a[0]).classList.toggle("disabled", !a[3]);
-      var w = document.getElementById(a[1]);
+      $(a[0]).classList.toggle("disabled", !a[3]);
+      var w = $(a[1]);
       if (w.tagName === "INPUT") {
         w.disabled = !a[3];
         document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){ b.disabled = !a[3]; });
@@ -911,7 +913,7 @@
         w.tabIndex = a[3] ? 0 : -1;
         w.setAttribute("aria-disabled", a[3] ? "false" : "true");
       }
-      var b = document.getElementById(a[2]);
+      var b = $(a[2]);
       var lbl = t((a[3] ? "skip" : "add") + a[4]);
       b.setAttribute("aria-label", lbl); b.title = lbl;
       b.textContent = a[3] ? "✕" : "+";
@@ -919,20 +921,20 @@
   }
   function labelWheels(){
     Object.keys(wheelDefs).forEach(function(id){
-      var w = document.getElementById(id);
+      var w = $(id);
       var lab = w.parentNode.querySelector("label");
       if (lab) w.setAttribute("aria-label", lab.textContent + WHEEL_UNITS[id]);
     });
     wgtInput.setAttribute("aria-label", t("wgtLabel") + " (kg)");
-    document.getElementById("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
-    document.getElementById("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
+    $("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
+    $("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
   }
-  document.getElementById("btnClearWHr").onclick = function(){
+  $("btnClearWHr").onclick = function(){
     hrActive = !hrActive;
     if (!editingId) { settings.incHr = hrActive; StorageModule.saveSettings(settings); }
     syncOptionalWheels();
   };
-  document.getElementById("btnClearWWgt").onclick = function(){
+  $("btnClearWWgt").onclick = function(){
     wgtActive = !wgtActive;
     if (wgtActive && weightField.get() === null) weightField.set(lastKnown("wgt", settings.defWgt));
     if (!editingId) { settings.incWgt = wgtActive; StorageModule.saveSettings(settings); }
@@ -962,20 +964,20 @@
 
   function openAdd(entry){
     editingId = entry ? entry.id : null;
-    document.getElementById("addTitle").textContent = entry ? t("addTitleEdit") : t("addTitleNew");
-    document.getElementById("noteField").value = entry ? (entry.note||"") : "";
-    document.getElementById("dtField").value = toLocalInput(entry ? entry.ts : Date.now());
+    $("addTitle").textContent = entry ? t("addTitleEdit") : t("addTitleNew");
+    $("noteField").value = entry ? (entry.note||"") : "";
+    $("dtField").value = toLocalInput(entry ? entry.ts : Date.now());
     
-    document.getElementById("btnDeleteEntryHeader").style.display = entry ? "block" : "none";
-    document.getElementById("bpInlineError").hidden = true;
+    $("btnDeleteEntryHeader").style.display = entry ? "block" : "none";
+    $("bpInlineError").hidden = true;
 
-    document.getElementById("boxWSys").style.display = settings.trackSys ? "block" : "none";
-    document.getElementById("boxWDia").style.display = settings.trackDia ? "block" : "none";
-    document.getElementById("boxWHr").style.display = settings.trackHr ? "block" : "none";
-    document.getElementById("boxWWgt").style.display = settings.trackWgt ? "block" : "none";
+    $("boxWSys").style.display = settings.trackSys ? "block" : "none";
+    $("boxWDia").style.display = settings.trackDia ? "block" : "none";
+    $("boxWHr").style.display = settings.trackHr ? "block" : "none";
+    $("boxWWgt").style.display = settings.trackWgt ? "block" : "none";
 
     hrActive = entry ? (entry.hr != null) : !!settings.incHr;
-    document.getElementById("boxWHr").classList.toggle("disabled", !hrActive);
+    $("boxWHr").classList.toggle("disabled", !hrActive);
 
     var sorted = sortedDesc();
     var latest = sorted.length ? sorted[0] : null;
@@ -985,7 +987,7 @@
     var defaultWgt = lastKnown("wgt", settings.defWgt, sorted);
 
     wgtActive = entry ? (entry.wgt != null) : !!settings.incWgt;
-    document.getElementById("boxWWgt").classList.toggle("disabled", !wgtActive);
+    $("boxWWgt").classList.toggle("disabled", !wgtActive);
     syncOptionalWheels();
     labelWheels();
     weightField.set(entry ? entry.wgt : (wgtActive ? defaultWgt : null));
@@ -1010,18 +1012,18 @@
     }, 60);
   }
 
-  document.getElementById("btnAdd").onclick = function(){ openAdd(null); };
+  $("btnAdd").onclick = function(){ openAdd(null); };
   addOverlay.addEventListener("click", function(e){ if (e.target === addOverlay) setModalState(addOverlay, false); });
-  document.getElementById("btnCancelEntry").onclick = function(){ setModalState(addOverlay, false); };
-  document.getElementById("btnDeleteEntryHeader").onclick = function(){ if(editingId) deleteEntryWithUndo(editingId); };
+  $("btnCancelEntry").onclick = function(){ setModalState(addOverlay, false); };
+  $("btnDeleteEntryHeader").onclick = function(){ if(editingId) deleteEntryWithUndo(editingId); };
 
-  document.getElementById("btnSave").onclick = function(){
+  $("btnSave").onclick = function(){
     var wgtVal = (settings.trackWgt && wgtActive) ? weightField.get() : null;
     var hrVal = (settings.trackHr && hrActive) ? wheels.wHr.get() : null;
     var sysVal = settings.trackSys ? wheels.wSys.get() : null;
     var diaVal = settings.trackDia ? wheels.wDia.get() : null;
 
-    var errEl = document.getElementById("bpInlineError");
+    var errEl = $("bpInlineError");
     if (settings.trackSys && settings.trackDia && sysVal <= diaVal) {
       errEl.textContent = t("bpErrorMsg");
       errEl.hidden = false;
@@ -1036,12 +1038,16 @@
     }
     errEl.hidden = true;
 
-    var note = document.getElementById("noteField").value.trim();
-    var dtVal = document.getElementById("dtField").value;
+    var note = $("noteField").value.trim();
+    var dtVal = $("dtField").value;
     var ts = dtVal ? new Date(dtVal).getTime() : Date.now();
     // Audyt: data z przyszłości — ostrzeż (kolejka, nie pilne), ale pozwól zapisać.
     // Pilne zastąpiłoby toast "zapisano"; tak potwierdzenie pokazuje się pierwsze.
-    if (ts > Date.now() + 60000) toast("⚠ " + t("futureDateWarn"), 4000);
+    // Jeden komunikat zamiast dwóch: ostrzeżenie o dacie z przyszłości stałoby w kolejce
+    // przed potwierdzeniem zapisu i opóźniało je o kilka sekund.
+    var okMsg = "✓ " + t(editingId ? "updatedMsg" : "savedMsg");
+    var okMs = 2200;
+    if (ts > Date.now() + 60000) { okMsg += ". ⚠ " + t("futureDateWarn"); okMs = 4500; }
     
     if (editingId){
       var e = entries.find(function(x){ return x.id===editingId; });
@@ -1053,10 +1059,10 @@
         if (settings.trackWgt) updated.wgt = wgtVal;
         Object.assign(e, updated);
       }
-      toast("✓ " + t("updatedMsg"));
+      toast(okMsg, okMs);
     } else {
       entries.push({id: makeId(), ts:ts, note:note, sys:sysVal, dia:diaVal, hr:hrVal, wgt:wgtVal});
-      toast("✓ " + t("savedMsg"));
+      toast(okMsg, okMs);
     }
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
     setModalState(addOverlay, false);
@@ -1064,7 +1070,7 @@
     requestPersist();
   };
 
-  document.getElementById("btnBackup").onclick = function(){
+  $("btnBackup").onclick = function(){
     openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveNotInBackup"), ok: t("btnExport") }, function(proceed){
     if (!proceed) return;
     var exp = {};
@@ -1085,7 +1091,7 @@
     });
   };
 
-  document.getElementById("btnWipe").onclick = function(){
+  $("btnWipe").onclick = function(){
     openDialog({ title: t("titleBtnWipe"), text: t("wipeConfirm"), ok: t("btnDelete"), danger: true }, function(proceed){
     if (!proceed) return;
     setModalState(settingsOverlay, false);
@@ -1099,9 +1105,9 @@
     });
   };
 
-  document.getElementById("btnImport").onclick = function(){ document.getElementById("importFile").click(); setModalState(toolsOverlay, false); };
+  $("btnImport").onclick = function(){ $("importFile").click(); setModalState(toolsOverlay, false); };
 
-  document.getElementById("importFile").addEventListener("change", function(ev){
+  $("importFile").addEventListener("change", function(ev){
     var f = ev.target.files[0]; if (!f) return;
     if (f.size > 5 * 1024 * 1024) { toast(t("importError")); ev.target.value = ""; return; }
     openDialog({ title: t("titleBtnImport"), text: t("importConfirm") }, function(proceed){
@@ -1114,7 +1120,6 @@
         // Audyt: wersja formatu. Odrzucamy tylko NOWSZE niż znane (v > 2), bo
         // starsze potrafimy poprawnie wczytać: kopia v2, starsze obiekty bez
         // pola, plik archiwum (type: "qardis-archive", v1) i surowa tablica.
-        var isArchive = j && !Array.isArray(j) && j.type === "qardis-archive";
         var v = (j && !Array.isArray(j)) ? j.schemaVersion : undefined;
         if (v !== undefined && !(v >= 1 && v <= 2)) throw new Error("unsupported schemaVersion");
         var list = j.entries || j;
@@ -1155,8 +1160,8 @@
   });
 
   var pdfExportRange = "30";
-  var pdfOverlayEl = document.getElementById("pdfRangeOverlay");
-  document.getElementById("btnPdf").onclick = function(){
+  var pdfOverlayEl = $("pdfRangeOverlay");
+  $("btnPdf").onclick = function(){
     setModalState(toolsOverlay, false);
     if (!entries.length){ toast(t("noEntriesPdf")); return; }
     setModalState(pdfOverlayEl, true);
@@ -1164,9 +1169,9 @@
   bindRangeControls("pdfRange", function(r){
     pdfExportRange = (r === "all") ? "all" : parseInt(r, 10);
   });
-  document.getElementById("btnPdfCancel").onclick = function(){ setModalState(pdfOverlayEl, false); };
+  $("btnPdfCancel").onclick = function(){ setModalState(pdfOverlayEl, false); };
   pdfOverlayEl.addEventListener("click", function(e){ if (e.target === pdfOverlayEl) setModalState(pdfOverlayEl, false); });
-  document.getElementById("btnPdfExport").onclick = function(){
+  $("btnPdfExport").onclick = function(){
     setModalState(pdfOverlayEl, false);
     exportPdf();
   };
@@ -1221,21 +1226,21 @@
     }
   }
 
-  var settingsOverlay = document.getElementById("settingsOverlay");
+  var settingsOverlay = $("settingsOverlay");
   
-  document.getElementById("btnSettingsDock").onclick = function(){
+  $("btnSettingsDock").onclick = function(){
     settingsBefore = Object.assign({}, settings);
     settingsDraft = Object.assign({}, settings);
     
     renderMonitoredButtons();
 
     applyLanguage(); applyFontSize();
-    document.getElementById("themeToggle").classList.toggle("on", settingsDraft.theme === "dark");
-    document.getElementById("themeToggle").setAttribute("aria-checked", settingsDraft.theme === "dark" ? "true" : "false");
+    $("themeToggle").classList.toggle("on", settingsDraft.theme === "dark");
+    $("themeToggle").setAttribute("aria-checked", settingsDraft.theme === "dark" ? "true" : "false");
     setModalState(settingsOverlay, true);
   };
 
-  document.getElementById("monitoredSwitch").addEventListener("click", function(e){
+  $("monitoredSwitch").addEventListener("click", function(e){
     var btn = e.target.closest("button"); if (!btn) return;
     if (!settingsDraft) return;
     var key = btn.dataset.param;
@@ -1247,7 +1252,7 @@
     renderMonitoredButtons();
   });
 
-  document.getElementById("langSwitch").addEventListener("click", function(e){
+  $("langSwitch").addEventListener("click", function(e){
     var btn = e.target.closest("button"); if (!btn) return;
     if(!settingsDraft) return;
     settingsDraft.lang = btn.dataset.val;
@@ -1255,7 +1260,7 @@
     applyLanguage();
   });
 
-  document.getElementById("fontSizeSwitch").addEventListener("click", function(e){
+  $("fontSizeSwitch").addEventListener("click", function(e){
     var btn = e.target.closest("button"); if (!btn) return;
     if(!settingsDraft) return;
     settingsDraft.fontSize = btn.dataset.val;
@@ -1280,8 +1285,8 @@
       settingsDraft=null; settingsBefore=null;
     }
   }
-  document.getElementById("btnSetSave").onclick = saveSettings;
-  document.getElementById("btnSetCancel").onclick = cancelSettings;
+  $("btnSetSave").onclick = saveSettings;
+  $("btnSetCancel").onclick = cancelSettings;
 
   function toggleThemeDraft(){
     if(!settingsDraft) return;
@@ -1291,11 +1296,11 @@
     this.setAttribute("aria-checked", settingsDraft.theme === "dark" ? "true" : "false");
     applyTheme();
   }
-  document.getElementById("themeToggle").onclick = toggleThemeDraft;
+  $("themeToggle").onclick = toggleThemeDraft;
 
   var lastFocusEl = null;
   function setModalState(el, isOpen) {
-    var bg = [document.getElementById("viewport"), document.getElementById("dock")];
+    var bg = [$("viewport"), $("dock")];
     if (isOpen) {
       if (!document.querySelector(".overlay.open")) lastFocusEl = document.activeElement;
       el.classList.add("open");
@@ -1318,15 +1323,15 @@
   }
 
   // Audyt(1): arkusz potwierdzeń w stylu aplikacji zamiast systemowych okien
-  var dialogEl = document.getElementById("dialogOverlay");
+  var dialogEl = $("dialogOverlay");
   var dialogCb = null;
   function openDialog(opts, cb){
-    document.getElementById("dialogTitle").textContent = opts.title || "";
-    document.getElementById("dialogText").textContent = opts.text || "";
-    var okBtn = document.getElementById("dialogOk");
+    $("dialogTitle").textContent = opts.title || "";
+    $("dialogText").textContent = opts.text || "";
+    var okBtn = $("dialogOk");
     okBtn.textContent = opts.ok || t("btnProceed");
     okBtn.classList.toggle("danger", !!opts.danger);
-    document.getElementById("dialogCancel").hidden = !!opts.info;
+    $("dialogCancel").hidden = !!opts.info;
     dialogCb = cb || null;
     setModalState(dialogEl, true);
   }
@@ -1336,8 +1341,8 @@
     if (cb) cb(!!result);
   }
   if (dialogEl) {
-    document.getElementById("dialogOk").onclick = function(){ closeDialog(true); };
-    document.getElementById("dialogCancel").onclick = function(){ closeDialog(false); };
+    $("dialogOk").onclick = function(){ closeDialog(true); };
+    $("dialogCancel").onclick = function(){ closeDialog(false); };
   }
 
   document.addEventListener("keydown", function(e){
@@ -1353,7 +1358,7 @@
 
   var toastEl = null, toastTimers = [];
   var UNDO_MS = 6000;
-  var TOAST_CSS = "position:fixed;bottom:calc(90px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);width:max-content;max-width:92vw;text-align:center;line-height:1.4;background:var(--card);color:var(--text);border:1px solid var(--line);padding:10px 18px;border-radius:12px;font-size:.8125rem;font-weight:600;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.2);backdrop-filter:blur(8px);transition:opacity .4s;";
+  // Wygląd toastów: klasy .toast / .toast-undo / .toast-hide w style.css
 
   var toastQueue = [];
 
@@ -1381,13 +1386,13 @@
   function displayToast(el, msg, ms, urgent){
     toastEl = el;
     document.body.appendChild(el);
-    var live = document.getElementById("liveRegion");
+    var live = $("liveRegion");
     if (live) {
       live.setAttribute("aria-live", urgent ? "assertive" : "polite");
       live.textContent = "";
       setTimeout(function(){ live.textContent = msg; }, 50);
     }
-    toastTimers.push(setTimeout(function(){ el.style.opacity = "0"; }, ms));
+    toastTimers.push(setTimeout(function(){ el.classList.add("toast-hide"); }, ms));
     toastTimers.push(setTimeout(function(){
       if (toastEl === el) { el.remove(); toastEl = null; playNextToast(); }
     }, ms + 500));
@@ -1401,7 +1406,7 @@
   function toast(msg, ms, urgent){
     var el = document.createElement("div");
     el.textContent = msg;
-    el.style.cssText = TOAST_CSS;
+    el.className = "toast";
     showToast(el, msg, ms || 2200, urgent);
   }
 
@@ -1414,11 +1419,10 @@
     var undoBtn = document.createElement("button");
     undoBtn.type = "button";
     undoBtn.textContent = t("btnUndo");
-    undoBtn.style.cssText = "background:transparent;border:none;color:var(--accent-fg);font-weight:700;font-size:.8125rem;cursor:pointer;margin-left:12px;padding:10px 8px;min-height:44px;";
     undoBtn.onclick = function(){ onUndo(); clearToast(); };
     el.appendChild(undoBtn);
 
-    el.style.cssText = TOAST_CSS + "padding:2px 10px 2px 16px;display:flex;align-items:center;";
+    el.className = "toast toast-undo";
     // Audyt(1): pilny — toast z cofnięciem NIE może trafić do kolejki, bo
     // pendingDeletes żyją krócej niż toast skrócony przez kolejkę (utrata danych).
     showToast(el, msg + " " + t("btnUndo"), UNDO_MS, true);
@@ -1432,7 +1436,7 @@
   if (StorageModule.hadIssue()) toast(t("storageCorrupt"), 9000, true);
 
   // Audyt(2): przycisk eksportu zachowanej kopii uszkodzonych danych w menu
-  var btnCorrupt = document.getElementById("btnCorrupt");
+  var btnCorrupt = $("btnCorrupt");
   if (btnCorrupt) {
     var corruptData = StorageModule.corruptRaw();
     if (corruptData) {
@@ -1446,10 +1450,10 @@
   }
   // === Archiwum pomiarów (wpisy starsze niż 9 mies.) ===
   var ARCHIVE_MS = 273 * 24 * 60 * 60 * 1000;
-  var archiveOverlayEl = document.getElementById("archiveOverlay");
+  var archiveOverlayEl = $("archiveOverlay");
 
   function updateArchiveSummary(){
-    var el = document.getElementById("archiveSummary");
+    var el = $("archiveSummary");
     var archive = StorageModule.loadArchive();
     if (!archive.length) { el.textContent = t("archiveEmpty"); return; }
     var mn = Infinity, mx = -Infinity;
@@ -1497,16 +1501,16 @@
     toast("✓ " + t("archiveExportedMsg"));
   }
   if (archiveOverlayEl) {
-    document.getElementById("btnArchiveOpen").onclick = function(){
+    $("btnArchiveOpen").onclick = function(){
       updateArchiveSummary();
       setModalState(toolsOverlay, false);
       setModalState(archiveOverlayEl, true);
     };
     archiveOverlayEl.addEventListener("click", function(e){ if (e.target === archiveOverlayEl) setModalState(archiveOverlayEl, false); });
-    document.getElementById("btnArchiveClose").onclick = function(){ setModalState(archiveOverlayEl, false); };
-    document.getElementById("btnArchiveMove").onclick = archiveOldEntries;
-    document.getElementById("btnArchiveRestore").onclick = restoreArchive;
-    document.getElementById("btnArchiveExport").onclick = exportArchive;
+    $("btnArchiveClose").onclick = function(){ setModalState(archiveOverlayEl, false); };
+    $("btnArchiveMove").onclick = archiveOldEntries;
+    $("btnArchiveRestore").onclick = restoreArchive;
+    $("btnArchiveExport").onclick = exportArchive;
   }
 
   // Audyt(3): przypominacz o kopii zapasowej (30 dni)
@@ -1527,8 +1531,8 @@
       if (editingId === null) render(); else drawTrends(true);
     } else if (ev.key === StorageModule.settingsKey()) {
       // Nie nadpisujemy ustawień, gdy użytkownik ma otwarty arkusz ustawień/edycji.
-      var busy = document.getElementById("settingsOverlay").classList.contains("open")
-        || document.getElementById("addOverlay").classList.contains("open");
+      var busy = $("settingsOverlay").classList.contains("open")
+        || $("addOverlay").classList.contains("open");
       if (!busy) {
         settings = StorageModule.loadSettings();
         applyTheme(); applyLanguage(); applyFontSize(); render();
@@ -1540,7 +1544,7 @@
   // żeby CSP mogło być czystym script-src 'self' (koniec z utrzymywaniem hasha).
   if (new URLSearchParams(window.location.search).get("action") === "add") {
     try { history.replaceState(null, "", location.pathname); } catch(e){}
-    setTimeout(function(){ var b = document.getElementById("btnAdd"); if (b) b.click(); }, 80);
+    setTimeout(function(){ var b = $("btnAdd"); if (b) b.click(); }, 80);
   }
 
   if ("serviceWorker" in navigator) {

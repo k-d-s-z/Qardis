@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-OqmBug/GT2tDUThDvJExX474zm4eTyzcR6fc4RtS/kc=' 'sha256-G1NbUvo8Ez36QSwtIBjfOv8BEdpC2ggK//8dsh8DdZk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aW+7NnV2fXJ/X/rBg35gKoR4AHd5qML9RvmP+79wUPI=' 'sha256-G1NbUvo8Ez36QSwtIBjfOv8BEdpC2ggK//8dsh8DdZk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
 <meta name="color-scheme" content="light dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta id="themeColorMeta" name="theme-color" content="#0e1115" />
+<meta id="themeColorMeta" name="theme-color" content="#1b1d20" />
 <link rel="icon" type="image/png" sizes="32x32" href="icon-192.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
@@ -22,22 +22,23 @@
     --bg-grad-1: rgba(39, 122, 59, 0.08);
     --bg-grad-2: rgba(59, 130, 246, 0.08);
     --card: #ffffff; --text: #111827; --muted: #4b5563;
-    --line: #d1d5db; --accent: #277a3b; --on-accent: #ffffff; --red-text: #dc2626; --blue: #2563eb; --red: #dc2626; --green: #15803d;
+    --line: #d1d5db; --accent: #277a3b; --on-accent: #ffffff; --red-text: #dc2626; --blue: #2563eb; --red: #dc2626;
+    --accent-fg: #277a3b; --focus: #277a3b;
     --dock: #ffffffee; --dock-shadow: 0 10px 32px rgba(20,30,60,.15);
     --input: #f3f4f6;
     color-scheme: light;
-    --c-sys: #ef4444; --c-dia: #3b82f6; --c-hr: #15803d;
+    --c-sys: #ef4444; --c-dia: #3b82f6;
   }
   html[data-theme="dark"]{
-    --bg-base: #0e1115;
-    --bg-grad-1: rgba(52, 211, 153, 0.06);
-    --bg-grad-2: rgba(59, 130, 246, 0.06);
-    --card: #171b21; --text: #f9fafb; --muted: #9ca3af;
-    --line: #272c35; --accent: #34d399; --on-accent: #052e1b; --red-text: #f87171; --green: #22c55e;
-    --dock: #171b21ee; --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
-    --input: #1f242d;
+    --bg-base: #1b1d20;
+    --bg-grad-1: rgba(255, 255, 255, 0.035);
+    --bg-grad-2: rgba(255, 255, 255, 0.02);
+    --card: #26292d; --text: #f3f4f6; --muted: #b4bac3;
+    --line: #444950; --accent: #277a3b; --on-accent: #ffffff; --red-text: #f87171;
+    --accent-fg: #f3f4f6; --focus: #e5e7eb;
+    --dock: #26292dee; --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
+    --input: #202327;
     color-scheme: dark;
-    --c-hr: #4ade80;
   }
   html { font-size: var(--base-font-size); }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -75,9 +76,8 @@
   }
   .entry-card { position: relative; }
   .card-hit { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: none; background: transparent; border-radius: inherit; cursor: pointer; z-index: 0; }
-  .card-hit:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .card-hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
   .entry-card > :not(.card-hit) { position: relative; z-index: 1; pointer-events: none; }
-  .entry-card .bp-chip { pointer-events: auto; }
   .entry-card:active { transform: scale(0.985); background-color: color-mix(in srgb, var(--card) 92%, var(--line)); }
   .card-top { display: flex; justify-content: space-between; align-items: center; }
   .card-main { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -91,19 +91,8 @@
   .card-note { font-size: 0.875rem; line-height:1.4; color: var(--muted); font-style: italic; background: rgba(0,0,0,0.03); padding: 6px 10px; border-radius: 8px; }
   html[data-theme="dark"] .card-note { background: rgba(255,255,255,0.03); }
 
-  /* Classification Chips */
-  .bp-chip {
-    font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; color: #fff;
-    display: inline-block; vertical-align: middle;
-  }
-  button.bp-chip { border: none; font-family: inherit; line-height: 1.2; padding: 4px 10px; cursor: pointer; }
-  .bp-opt { background: var(--green); }
-  html[data-theme="dark"] .bp-opt { color: #052e1b; }
-  .bp-nor { background: #2563eb; }
-  .bp-bad { background: #dc2626; }
-
   button:focus-visible, input:focus-visible, textarea:focus-visible, .toggle:focus-visible {
-    outline:3px solid var(--accent);
+    outline:3px solid var(--focus);
     outline-offset:2px;
   }
 
@@ -129,43 +118,62 @@
   .empty-box h3 { margin: 0 0 8px; font-size: 1.125rem; }
   .empty-box p { margin: 0 0 16px; color: var(--muted); font-size: 0.875rem; }
 
-  /* Chart & Table Alternative */
-  #chartWrap {
+  /* Trends: summary, range bars, table */
+  #trendsWrap {
     position: relative; background: var(--card);
     border: 1px solid var(--line); border-radius: 18px; padding: 14px; margin-top: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.04); 
+    box-shadow: 0 4px 16px rgba(0,0,0,.04);
   }
-  .chart-controls { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-  .chart-controls button {
+  .trends-heading{display:flex;align-items:flex-start;justify-content:space-between;margin:2px 2px 12px;gap:8px;flex-wrap:wrap;}
+  .trends-title{font-size:1rem;font-weight:800;color:var(--text);}
+  .trends-desc{font-size:.75rem;color:var(--muted);margin-top:3px;line-height:1.35;}
+  .range-controls { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .range-controls button {
     border: 1px solid var(--line); background: transparent; color: var(--muted);
-    padding: 6px 12px; border-radius: 8px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+    padding: 6px 12px; min-height: 36px; border-radius: 8px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
   }
-  .chart-controls button.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-  .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding: 10px 0 2px; font-size: 0.8125rem; color: var(--muted); }
-  .legend span { cursor: pointer; user-select: none; display: flex; align-items: center; opacity: 1; transition: opacity .2s; }
-  .legend span.disabled { opacity: 0.3; text-decoration: line-through; }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-  .chart-heading{display:flex;align-items:flex-start;justify-content:space-between;margin:2px 2px 12px;gap:8px;flex-wrap:wrap;}
-  .chart-title{font-size:1rem;font-weight:800;color:var(--text);}
-  .chart-desc{font-size:.75rem;color:var(--muted);margin-top:3px;line-height:1.35;}
-  .chart-section{border:1px solid var(--line);border-radius:12px;padding:8px 8px 4px;margin-top:8px;background:var(--input);}
-  .chart-section-title{font-size:.75rem;font-weight:700;color:var(--muted);padding:2px 4px 0;}
-  .chart-empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:.875rem;}
+  .range-controls button.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .trends-empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:.875rem;}
 
-  /* Chart Table View styles */
-  .chart-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.8125rem; margin-top: 8px; }
-  .chart-table th, .chart-table td { border: 1px solid var(--line); padding: 8px 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
-  .chart-table th { background: var(--input); font-weight: 700; color: var(--text); font-size: 0.75rem; }
-  .chart-table .th-l, .chart-table .th-u, .chart-table .td-d, .chart-table .td-t { display: block; overflow: hidden; text-overflow: ellipsis; }
-  .chart-table .th-u { font-weight: 500; color: var(--muted); font-size: 0.6875rem; }
-  .chart-table .td-t { color: var(--muted); font-size: 0.75rem; }
-  .chart-table td:first-child { text-align: left; }
+  .sum-count { font-size: .75rem; color: var(--muted); margin: 0 2px 8px; font-weight: 600; }
+  .sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sum-card { background: var(--input); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .sum-card.wide { grid-column: 1 / -1; }
+  .sum-label { font-size: .75rem; font-weight: 700; color: var(--muted); }
+  .sum-avg { font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px; color: var(--text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .sum-avg small { font-size: .8125rem; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-left: 5px; }
+  .sum-range { font-size: .8125rem; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; line-height: 1.4; }
 
-  #chartTooltip {
-    position: absolute; background: var(--card); border: 1px solid var(--line);
-    padding: 8px 12px; border-radius: 10px; font-size: 0.8125rem; box-shadow: 0 4px 16px rgba(0,0,0,.2);
-    pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 80; white-space: nowrap;
+  .bars-hint { font-size: .75rem; color: var(--muted); line-height: 1.4; margin: 16px 2px 6px; }
+  .bars-mode { font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .bars-axis { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; height: 22px; background: var(--card); border-bottom: 1px solid var(--line); }
+  .bars-axis span { position: absolute; top: 3px; transform: translateX(-50%); font-size: .6875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bars-month { font-size: .8125rem; font-weight: 800; color: var(--text); margin: 14px 2px 0; }
+  .bar-row { padding: 8px 2px 8px; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .bar-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .bar-date { font-size: .8125rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .bar-date small { font-size: .75rem; font-weight: 500; color: var(--muted); margin-left: 6px; }
+  .bar-vals { font-size: .9375rem; font-weight: 800; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bar-vals small { font-size: .75rem; font-weight: 600; color: var(--muted); margin-left: 8px; }
+  .bar-track {
+    position: relative; height: 12px; margin-top: 6px;
+    background-image: repeating-linear-gradient(to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--tick, 20%));
   }
+  .bar-fill, .bar-ext, .bar-dot { position: absolute; }
+  .bar-fill { top: 1px; height: 10px; min-width: 6px; border-radius: 5px; background: linear-gradient(to right, var(--c-dia), var(--c-sys)); }
+  .bar-ext { top: 3px; height: 6px; min-width: 6px; border-radius: 3px; background: linear-gradient(to right, var(--c-dia), var(--c-sys)); opacity: .3; }
+  .bar-ext.solo { background: var(--muted); opacity: .35; }
+  .bar-dot { top: 1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--text); }
+
+  /* Table view styles */
+  .data-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.8125rem; margin-top: 8px; }
+  .data-table th, .data-table td { border: 1px solid var(--line); padding: 8px 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+  .data-table th { background: var(--input); font-weight: 700; color: var(--text); font-size: 0.75rem; }
+  .data-table .th-l, .data-table .th-u, .data-table .td-d, .data-table .td-t { display: block; overflow: hidden; text-overflow: ellipsis; }
+  .data-table .th-u { font-weight: 500; color: var(--muted); font-size: 0.6875rem; }
+  .data-table .td-t { color: var(--muted); font-size: 0.75rem; }
+  .data-table td:first-child { text-align: left; }
+
 
   /* Single-Row Unified Dock */
   #dock {
@@ -251,12 +259,12 @@
     scroll-snap-align:center;height:40px;line-height:40px;font-size:1.25rem;cursor:pointer;
     color:var(--text);opacity:.6;transition:opacity .15s;font-weight:400;
   }
-  .wheel div.sel{opacity:1;font-weight:700;font-size:1.375rem;color:var(--accent);}
+  .wheel div.sel{opacity:1;font-weight:700;font-size:1.375rem;color:var(--accent-fg);}
   .wheel div.sp{opacity:0;}
 
   .input-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; }
   .input-box input[type="number"] {
-    width: 100%; border: none; background: transparent; color: var(--accent);
+    width: 100%; border: none; background: transparent; color: var(--accent-fg);
     font-size: 1.5rem; font-weight: 700; text-align: center; font-family: inherit;
     padding: 8px 0; outline: none;
   }
@@ -291,21 +299,6 @@
   .set-row .lbl{font-size:1rem;font-weight:600;}
   .set-row .desc{font-size:0.8125rem;color:var(--muted);margin-top:2px;}
   
-  .slider-box { width: 100%; margin-top: 6px; padding: 12px; background: var(--input); border-radius: 12px; border: 1px solid var(--line); }
-  .slider-row { display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-  .slider-desc { font-size: 0.75rem; color: var(--muted); margin-top: 8px; line-height: 1.35; }
-
-  /* Threshold steppers (mobile-friendly, WCAG 2.5.5 target size) */
-  .stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
-  .stepper-lbl { font-size: 0.875rem; font-weight: 600; color: var(--muted); }
-  .stepper { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; flex-shrink: 0; }
-  .stepper-btn {
-    min-width: 56px; height: 52px; border: none; background: transparent; color: var(--accent);
-    font-size: 1.75rem; font-weight: 700; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
-  }
-  .stepper-btn:active { background: var(--input); }
-  .stepper-btn[disabled] { color: var(--muted); opacity: 0.35; }
-  .stepper-val { min-width: 64px; text-align: center; font-size: 1.25rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 
   .segmented-control { display: inline-flex; background: rgba(0, 0, 0, 0.05); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 4px; flex-wrap: wrap; }
   html[data-theme="dark"] .segmented-control { background: rgba(255, 255, 255, 0.05); }
@@ -316,39 +309,36 @@
   .segmented-control button.active { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 
   .toggle{ position:relative;width:52px;height:28px;border-radius:14px;background:#828a96;cursor:pointer;transition:background .25s;flex:none; }
-  html[data-theme="dark"] .toggle{ background:#5f6878; }
+  html[data-theme="dark"] .toggle{ background:#7a818c; }
   .toggle::after{ content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .25s; }
-  .toggle.on{background:var(--accent);}
+  .toggle.on, html[data-theme="dark"] .toggle.on{background:var(--accent);}
   .toggle.on::after{transform:translateX(24px);}
 
   /* Audit fixes: critical chip, disclaimer, a11y helpers */
-  .bp-crit { background:#7f1d1d; color:#fff; border:1px solid #fca5a5; }
+  .btn-outline-danger { flex: none; min-height: 44px; padding: 0 16px; border: 1px solid var(--red-text); background: transparent; color: var(--red-text); border-radius: 12px; font: inherit; font-size: .9375rem; font-weight: 700; cursor: pointer; }
+  .btn-outline-danger:active { background: color-mix(in srgb, var(--red-text) 14%, transparent); }
   .list-note { font-size:.75rem; color:var(--muted); margin:2px 4px 4px; line-height:1.4; }
-  .thr-table { width: 100%; border-collapse: collapse; font-size: .8125rem; margin: 4px 0 8px; }
-  .thr-table th, .thr-table td { border-bottom: 1px solid var(--line); padding: 9px 6px; text-align: left; vertical-align: middle; }
-  .thr-table th { color: var(--muted); font-weight: 700; font-size: .75rem; }
-  .thr-note { font-size: .8125rem; color: var(--muted); line-height: 1.45; margin: 8px 0; }
+  .sheet-note { font-size: .8125rem; color: var(--muted); line-height: 1.45; margin: 8px 0; }
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .sheet:focus { outline:none; }
-  .wheel:focus-visible, .legend span:focus-visible, .entry-card:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  .wheel:focus-visible, .entry-card:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
   .wheel:focus-visible { outline-offset:-3px; }
   .wheel[aria-disabled="true"] { pointer-events:none; }
 
   /* Weight number field */
   .wheel-box.input-mode::after { display: none; }
   .num-field { height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-  .num-field input { width: 100%; max-width: 128px; height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--accent); font: inherit; font-size: 1.375rem; font-weight: 700; text-align: center; padding: 0 6px; }
+  .num-field input { width: 100%; max-width: 128px; height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--accent-fg); font: inherit; font-size: 1.375rem; font-weight: 700; text-align: center; padding: 0 6px; }
   .num-btns { display: flex; gap: 6px; }
   .num-btns button { width: 56px; height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--accent); font-size: 1.5rem; font-weight: 700; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
   .num-btns button:active { background: var(--input); }
+  html[data-theme="dark"] .num-btns button { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  html[data-theme="dark"] .num-btns button:active { background: color-mix(in srgb, var(--accent) 80%, #000); }
   .wheel-box.disabled .num-field { opacity: .25; pointer-events: none; }
   .clear-btn { width: 32px; height: 32px; min-width: 32px; min-height: 32px; font-size: 1rem; }
+  .clear-btn::after { content: ""; position: absolute; inset: -6px; } /* pole dotyku 44x44 px */
 
   /* Touch targets, danger item */
-  .chart-controls button { min-height: 36px; }
-  .legend > span { padding: 8px 4px; }
-  .menu-item.danger { color: var(--red-text); }
-  .menu-item.danger svg { stroke: var(--red-text); }
   @media (max-width: 380px) {
     #dock { gap: 6px; padding: 6px 8px; }
     #dock .btn-secondary { width: 36px; height: 36px; }
@@ -364,35 +354,34 @@
     <section class="screen" id="homeScreen" role="tabpanel" aria-labelledby="navHistory">
       <div id="entryList"></div>
     </section>
-    <section class="screen" id="chartScreen" role="tabpanel" aria-labelledby="navChart" aria-hidden="true" inert>
-      <div id="chartWrap">
-        <div class="chart-heading">
+    <section class="screen" id="trendsScreen" role="tabpanel" aria-labelledby="navTrends" aria-hidden="true" inert>
+      <div id="trendsWrap">
+        <div class="trends-heading">
           <div>
-            <div class="chart-title" data-i18n="chartTitle">Qardis – Trendy pomiarów</div>
-            <div class="chart-desc" data-i18n="chartDesc">Ciśnienie i tętno na osi czasu.</div>
+            <div class="trends-title" data-i18n="trendsTitle">Qardis – Trendy pomiarów</div>
+            <div class="trends-desc" data-i18n="trendsDesc">Średnie i zakresy wartości w wybranym okresie.</div>
           </div>
-          <div class="segmented-control" id="chartViewModeSwitch">
-            <button type="button" data-mode="chart" class="active" aria-pressed="true" data-i18n="viewChart" aria-controls="chartContainerMount">Wykres</button>
-            <button type="button" data-mode="table" aria-pressed="false" data-i18n="viewTable" aria-controls="chartTableMount">Tabela</button>
+          <div class="segmented-control" id="trendsViewSwitch">
+            <button type="button" data-mode="bars" class="active" aria-pressed="true" data-i18n="viewBars" aria-controls="barsMount">Zakresy</button>
+            <button type="button" data-mode="table" aria-pressed="false" data-i18n="viewTable" aria-controls="trendsTableMount">Tabela</button>
           </div>
         </div>
-        <div class="chart-controls" id="chartRange">
+        <div class="range-controls" id="trendsRange">
           <button type="button" data-range="7" data-i18n="r7">7 dni</button>
           <button type="button" data-range="30" class="active" data-i18n="r30">30 dni</button>
           <button type="button" data-range="90" data-i18n="r90">3 mies.</button>
           <button type="button" data-range="all" data-i18n="rAll">Wszystkie</button>
         </div>
-        <div id="chartContainerMount">
-          <div id="chartMount" style="position:relative;"></div>
-          <div id="chartEmpty" class="chart-empty" hidden></div>
-          <div id="chartTooltip"></div>
-          <div class="legend" id="chartLegend">
-            <span data-series="sys" role="button" tabindex="0" aria-pressed="true"><i style="background:var(--c-sys)"></i><span data-i18n="sysLabel">Skurczowe</span></span>
-            <span data-series="dia" role="button" tabindex="0" aria-pressed="true"><i style="background:var(--c-dia)"></i><span data-i18n="diaLabel">Rozkurczowe</span></span>
-            <span data-series="hr" role="button" tabindex="0" aria-pressed="true" id="legendHr"><i style="background:var(--c-hr)"></i><span data-i18n="hrLabel">Tętno</span></span>
+        <div id="trendsSummary"></div>
+        <div id="barsMount">
+          <div class="bars-hint">
+            <div class="bars-mode" id="barsModeLabel"></div>
+            <div data-i18n="barsHint">Słupek: od rozkurczowego (DIA) do skurczowego (SYS). Jaśniejsza smuga: min–maks w grupie.</div>
           </div>
+          <div id="barsList"></div>
         </div>
-        <div id="chartTableMount" hidden></div>
+        <div id="trendsEmpty" class="trends-empty" hidden></div>
+        <div id="trendsTableMount" hidden></div>
       </div>
     </section>
   </div>
@@ -401,7 +390,7 @@
 <!-- Primary Single-Row Navigation Dock -->
 <nav id="dock">
   <button id="btnTools" class="btn-secondary" title="Dane i eksport" aria-label="Dane i eksport" data-i18n-aria="ariaTools">
-    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" style="stroke-width:3.5"/></svg>
   </button>
   <button id="btnAdd" class="btn-main" title="Dodaj pomiar" aria-label="Dodaj pomiar" data-i18n-aria="ariaAdd">
     <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -412,27 +401,11 @@
   </button>
   <div class="dock-nav-segmented" role="tablist" aria-label="Widok" data-i18n-aria="ariaView">
     <button type="button" id="navHistory" class="active" role="tab" aria-selected="true" aria-controls="homeScreen" data-i18n="navHistory">Pomiary</button>
-    <button type="button" id="navChart" role="tab" aria-selected="false" aria-controls="chartScreen" data-i18n="navChart">Trendy</button>
+    <button type="button" id="navTrends" role="tab" aria-selected="false" aria-controls="trendsScreen" data-i18n="navTrends">Trendy</button>
   </div>
 </nav>
 <input type="file" id="importFile" accept="application/json" hidden>
 <div id="liveRegion" class="sr-only" role="status" aria-live="polite"></div>
-
-<!-- Thresholds info sheet -->
-<div class="overlay" id="thrOverlay" role="dialog" aria-modal="true" aria-labelledby="thrTitle" aria-hidden="true" inert>
-  <div class="sheet">
-    <div class="sheet-header">
-      <h2 id="thrTitle" data-i18n="thrInfoTitle">Przyjęte progi ciśnienia</h2>
-    </div>
-    <div id="thrBody"></div>
-    <p class="thr-note" data-i18n="thrRule">O kategorii decyduje mniej korzystna z dwóch wartości – skurczowej lub rozkurczowej. Wartość krytyczna dotyczy każdej z nich osobno.</p>
-    <p class="thr-note" data-i18n="listDisclaimer">Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza.</p>
-    <div class="sheet-actions">
-      <button type="button" class="btn ghost" id="btnThrSettings" data-i18n="thrChange">Zmień w ustawieniach</button>
-      <button type="button" class="btn" id="btnThrClose" data-i18n="btnClose">Zamknij</button>
-    </div>
-  </div>
-</div>
 
 <!-- Tools Menu Sheet -->
 <div class="overlay" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" aria-hidden="true" inert>
@@ -452,10 +425,6 @@
       <button class="menu-item" id="btnPdf">
         <svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h6M9 16.5h6"/></svg>
         <span data-i18n="titleBtnPdf">Eksportuj raport do PDF</span>
-      </button>
-      <button class="menu-item danger" id="btnWipe">
-        <svg width="22" height="22" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        <span data-i18n="titleBtnWipe">Usuń wszystkie dane</span>
       </button>
     </div>
     <p class="list-note" data-i18n="privacyNote">Dane są przechowywane wyłącznie na tym urządzeniu.</p>
@@ -480,7 +449,7 @@
         <button type="button" data-range="all" aria-pressed="false" data-i18n="rAll">Wszystkie</button>
       </div>
     </div>
-    <p class="thr-note" data-i18n="privacyAlert">Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.</p>
+    <p class="sheet-note" data-i18n="privacyAlert">Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.</p>
     <div class="sheet-actions">
       <button class="btn ghost" id="btnPdfCancel" data-i18n="btnCancel">Anuluj</button>
       <button class="btn" id="btnPdfExport" data-i18n="btnExport">Eksportuj</button>
@@ -546,63 +515,6 @@
       </div>
     </div>
 
-    <div class="set-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-      <div class="lbl" data-i18n="normsTitle">Wartości progowe norm ciśnienia</div>
-      <div class="desc" data-i18n="normsDisclaimer" style="font-style:italic;margin-bottom:4px;">Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza. Aktualne normy znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.</div>
-      
-      <div class="slider-box">
-        <div class="slider-row">
-          <span data-i18n="sysOptTitle">Skurczowe (SYS): Optymalne</span>
-          <span id="valSysOptDisplay">100 - 119 mmHg</span>
-        </div>
-        <div class="stepper-row">
-          <span class="stepper-lbl" data-i18n="lbLower">Dolna granica</span>
-          <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę SYS" data-i18n-aria="stepDecLow" data-p="SYS">−</button>
-            <span class="stepper-val" id="dispSysMin">100</span>
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę SYS" data-i18n-aria="stepIncLow" data-p="SYS">+</button>
-          </div>
-        </div>
-        <div class="stepper-row">
-          <span class="stepper-lbl" data-i18n="lbUpper">Górna granica</span>
-          <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę SYS" data-i18n-aria="stepDecHigh" data-p="SYS">−</button>
-            <span class="stepper-val" id="dispSysMax">119</span>
-            <button type="button" class="stepper-btn" data-key="sys" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę SYS" data-i18n-aria="stepIncHigh" data-p="SYS">+</button>
-          </div>
-        </div>
-        <div class="slider-desc" id="descSysRanges">
-          Prawidłowe: 90–99 oraz 120–139 | Nieprawidłowe: &lt;90 oraz &gt;139
-        </div>
-      </div>
-
-      <div class="slider-box">
-        <div class="slider-row">
-          <span data-i18n="diaOptTitle">Rozkurczowe (DIA): Optymalne</span>
-          <span id="valDiaOptDisplay">60 - 79 mmHg</span>
-        </div>
-        <div class="stepper-row">
-          <span class="stepper-lbl" data-i18n="lbLower">Dolna granica</span>
-          <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="-1" aria-label="Zmniejsz dolną granicę DIA" data-i18n-aria="stepDecLow" data-p="DIA">−</button>
-            <span class="stepper-val" id="dispDiaMin">60</span>
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Min" data-dir="1" aria-label="Zwiększ dolną granicę DIA" data-i18n-aria="stepIncLow" data-p="DIA">+</button>
-          </div>
-        </div>
-        <div class="stepper-row">
-          <span class="stepper-lbl" data-i18n="lbUpper">Górna granica</span>
-          <div class="stepper" role="group">
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="-1" aria-label="Zmniejsz górną granicę DIA" data-i18n-aria="stepDecHigh" data-p="DIA">−</button>
-            <span class="stepper-val" id="dispDiaMax">79</span>
-            <button type="button" class="stepper-btn" data-key="dia" data-bound="Max" data-dir="1" aria-label="Zwiększ górną granicę DIA" data-i18n-aria="stepIncHigh" data-p="DIA">+</button>
-          </div>
-        </div>
-        <div class="slider-desc" id="descDiaRanges">
-          Prawidłowe: 50–59 oraz 80–89 | Nieprawidłowe: &lt;50 oraz &gt;89
-        </div>
-      </div>
-    </div>
-
     <div class="set-row">
       <div><div class="lbl" data-i18n="langLabel">Język</div></div>
       <div class="segmented-control" id="langSwitch">
@@ -622,6 +534,11 @@
       <div><div class="lbl" data-i18n="darkMode">Tryb ciemny</div><div class="desc" data-i18n="darkModeDesc">Jasny / ciemny motyw</div></div>
       <div class="toggle" id="themeToggle" role="switch" tabindex="0" aria-checked="false"></div>
     </div>
+    <div class="set-row">
+      <div><div class="lbl" data-i18n="titleBtnWipe">Usuń wszystkie dane</div><div class="desc" data-i18n="wipeDesc">Usuwa wszystkie pomiary i ustawienia z tego urządzenia.</div></div>
+      <button type="button" class="btn-outline-danger" id="btnWipe" data-i18n="btnDelete">Usuń</button>
+    </div>
+    <p class="sheet-note" data-i18n="normsNote">Aktualne normy dla ciśnienia skurczowego i rozkurczowego znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.</p>
 
     <div class="sheet-actions">
       <button class="btn ghost" id="btnSetCancel" data-i18n="btnCancel">Anuluj</button>
@@ -633,10 +550,6 @@
 <script>
 (function(){
   "use strict";
-
-  // Progi klasyfikacji: wersja schematu + twarde granice (górna granica "prawidłowych" nigdy nie przekroczy 139/89)
-  var THR_VER = 2;
-  var THR = { sys: {min:90, max:129}, dia: {min:50, max:84} };
 
   function sanitizeEntry(e){
     if (!e || typeof e !== "object") return null;
@@ -657,7 +570,7 @@
   // --- MODUŁ 1: Storage & State ---
   var StorageModule = (function(){
     var LS = "qardis.entries.v1", LS_SET = "qardis.settings.v1";
-    var issue = false, migrated = false;
+    var issue = false;
     function stash(raw){
       issue = true;
       try { localStorage.setItem(LS + ".corrupt", raw); } catch(e){}
@@ -667,9 +580,6 @@
       return {
         defSys:120, defDia:80, defHr:70, defWgt:75, theme:autoTheme, lang:"pl", fontSize:"medium",
         trackSys:true, trackDia:true, trackHr:true, trackWgt:true,
-        sysOptMin: 100, sysOptMax: 119,
-        diaOptMin: 60,  diaOptMax: 79,
-        thrV: THR_VER,
         incHr: false, incWgt: false,      // czy nowy wpis domyślnie zawiera tętno / wagę (pamiętane)
         persistAsked: false
       };
@@ -685,21 +595,10 @@
       if (["dark","light"].indexOf(out.theme) < 0) out.theme = def.theme;
       if (["pl","en"].indexOf(out.lang) < 0) out.lang = "pl";
       if (["small","medium","large"].indexOf(out.fontSize) < 0) out.fontSize = "medium";
-      if (s.thrV !== THR_VER) {
-        out.sysOptMin = def.sysOptMin; out.sysOptMax = def.sysOptMax;
-        out.diaOptMin = def.diaOptMin; out.diaOptMax = def.diaOptMax;
-        out.thrV = THR_VER;
-        if (fromLoad) migrated = true;
-      }
-      out.sysOptMin = clamp(out.sysOptMin, THR.sys.min, THR.sys.max - 1);
-      out.sysOptMax = clamp(out.sysOptMax, out.sysOptMin + 1, THR.sys.max);
-      out.diaOptMin = clamp(out.diaOptMin, THR.dia.min, THR.dia.max - 1);
-      out.diaOptMax = clamp(out.diaOptMax, out.diaOptMin + 1, THR.dia.max);
       return out;
     }
     return {
       hadIssue: function(){ return issue; },
-      wasMigrated: function(){ return migrated; },
       loadEntries: function(){
         var raw = null;
         try { raw = localStorage.getItem(LS); } catch(e){ return []; }
@@ -728,7 +627,6 @@
         try { var raw = localStorage.getItem(LS_SET); s = raw ? JSON.parse(raw) : null; } catch(e){ s = null; }
         if (!s) return buildDefaults();
         var out = sanitizeSettings(s, true);
-        if (migrated) { try { localStorage.setItem(LS_SET, JSON.stringify(out)); } catch(e){} }
         return out;
       },
       sanitizeSettings: function(s){ return sanitizeSettings(s, false); },
@@ -769,43 +667,49 @@
   var I18nModule = (function(){
     var translations = {
       pl: {
-        navHistory: "Pomiary", navChart: "Trendy", chartTitle:"Qardis – Trendy pomiarów", chartDesc:"Ciśnienie i tętno na osi czasu.", chartNoData:"Brak pomiarów w wybranym okresie.",
+        trendsTitle: "Qardis – Trendy pomiarów", trendsDesc: "Średnie i zakresy wartości w wybranym okresie.", trendsNoData: "Brak pomiarów w wybranym okresie.",
+        viewBars: "Zakresy", sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
+        barsHint: "Słupek: od rozkurczowego (DIA) do skurczowego (SYS). Jaśniejsza smuga: min–maks w grupie.",
+        barsMode_m: "Pojedyncze pomiary", barsMode_d: "Średnie dzienne", barsMode_w: "Średnie tygodniowe",
+        normsNote: "Aktualne normy dla ciśnienia skurczowego i rozkurczowego znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.",
+        wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
+        navHistory: "Pomiary", navTrends: "Trendy", 
         sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "Tętno", wgtLabel: "Waga",
         emptyTitle: "Brak pomiarów", emptyDesc: "Dodaj pierwszy pomiar ciśnienia, aby rozpocząć śledzenie wyników.", btnAddFirst: "+ Dodaj pierwszy pomiar",
         addTitleNew: "Nowy wpis", addTitleEdit: "Edytuj wpis", dtLabel: "Data i godzina pomiaru",
         notePlaceholder: "Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)",
         btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij",
-        toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", normsTitle: "Wartości progowe norm ciśnienia",
-        normsDisclaimer: "Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza. Aktualne normy znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.",
-        sysOptTitle: "Skurczowe (SYS): Optymalne", diaOptTitle: "Rozkurczowe (DIA): Optymalne", lbLower: "Dolna granica", lbUpper: "Górna granica",
+        toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", 
+        
+        
         langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
         titleBtnAdd: "Dodaj wpis", titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF", titleBtnSettings: "Ustawienia",
         btnEdit: "Edytuj", importedMsg: "Zaimportowano ", importedSuffix: " wpis(y/ów).", importError: "Nieprawidłowy plik kopii zapasowej.",
-        noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfHeaderClass: "Klasyfikacja", pdfExportTitle: "Eksport raportu PDF", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj",
+        noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Eksport raportu PDF", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj",
         savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", deletedMsg: "Wpis został usunięty", importConfirm: "Dane z kopii zostaną połączone z istniejącymi wpisami. Kontynuować?",
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
-        viewChart: "Wykres", viewTable: "Tabela",
-        bpOpt: "Optymalne", bpNor: "Prawidłowe", bpBad: "Nieprawidłowe",
+        viewTable: "Tabela",
+        
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
         storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
         wheelClampWarn: "Wpis zawiera wartość spoza zakresu bębenka – zapis przywróci ją do najbliższej dopuszczalnej.",
         backupDone: "Kopia zapasowa pobrana",
         settingsSaved: "Ustawienia zapisane",
-        bpCrit: "Wartość krytyczna",
-        critWarn: "Bardzo wysokie ciśnienie (SYS ≥180 lub DIA ≥120). Odpocznij kilka minut i powtórz pomiar. Przy bólu w klatce piersiowej, duszności, zaburzeniach mowy lub widzenia albo osłabieniu jednej strony ciała wezwij pomoc (112). Skonsultuj wynik z lekarzem.",
-        listDisclaimer: "Klasyfikacja ma charakter orientacyjny i nie zastępuje porady lekarza. Aktualne normy znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.",
+        
+        
+        
         deletedMsgN: "Usunięto wpisów: {n}",
         importSkipped: " Pominięto: ",
         skipHr: "Pomiń tętno", skipWgt: "Pomiń wagę",
         storageCorrupt: "Wykryto uszkodzone dane. Kopię zachowano w pamięci przeglądarki, nie zostały nadpisane.",
-        thrMigrated: "Progi klasyfikacji zaktualizowano do zaleceń ESC/ESH (optymalne <120/<80). Możesz je zmienić w Ustawieniach.",
-        thrInfoTitle: "Przyjęte progi ciśnienia", thrCat: "Kategoria", thrAnd: "i", thrOr: "lub",
-        thrRule: "O kategorii decyduje mniej korzystna z dwóch wartości – skurczowej lub rozkurczowej. Wartość krytyczna dotyczy każdej z nich osobno.",
-        thrChange: "Zmień w ustawieniach", btnClose: "Zamknij", chipInfo: "pokaż przyjęte progi",
+        
+        
+        
+        btnClose: "Zamknij", 
         ariaTools: "Dane i eksport", ariaAdd: "Dodaj pomiar", ariaSettings: "Ustawienia", ariaView: "Widok",
-        stepDecLow: "Zmniejsz dolną granicę {p}", stepIncLow: "Zwiększ dolną granicę {p}",
-        stepDecHigh: "Zmniejsz górną granicę {p}", stepIncHigh: "Zwiększ górną granicę {p}",
+        
+        
         addHr: "Dodaj tętno", addWgt: "Dodaj wagę",
         wgtDec: "Zmniejsz wagę o 0,1 kg", wgtInc: "Zwiększ wagę o 0,1 kg", wgtLabelKg: "Waga [kg]",
         wgtErrorMsg: "Podaj wagę w zakresie 20–300 kg (np. 75,5).",
@@ -813,46 +717,52 @@
         wipeConfirm: "Usunąć WSZYSTKIE pomiary i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową.",
         wipeDone: "Wszystkie dane zostały usunięte",
         privacyNote: "Dane są przechowywane wyłącznie na tym urządzeniu.",
-        importSettingsConfirm: "Plik zawiera też ustawienia (progi, język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?"
+        importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?"
       },
       en: {
-        navHistory: "Readings", navChart: "Trends", chartTitle:"Qardis – Measurement trends", chartDesc:"Blood pressure and pulse timeline.", chartNoData:"No measurements in the selected period.",
+        trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.", trendsNoData: "No measurements in the selected period.",
+        viewBars: "Ranges", sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
+        barsHint: "Bar: from diastolic (DIA) to systolic (SYS). Lighter streak: min–max within the group.",
+        barsMode_m: "Individual measurements", barsMode_d: "Daily averages", barsMode_w: "Weekly averages",
+        normsNote: "Current guidelines for systolic and diastolic blood pressure are available on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, as well as of equivalent institutions in other countries.",
+        wipeDesc: "Deletes all measurements and settings from this device.",
+        navHistory: "Readings", navTrends: "Trends", 
         sysLabel: "Systolic", diaLabel: "Diastolic", hrLabel: "Pulse", wgtLabel: "Weight",
         emptyTitle: "No measurements yet", emptyDesc: "Add your first blood pressure record to start tracking.", btnAddFirst: "+ Add first measurement",
         addTitleNew: "New entry", addTitleEdit: "Edit entry", dtLabel: "Date and time of measurement",
         notePlaceholder: "Additional info... (e.g. cold, feeling unwell)",
         btnCancel: "Cancel", btnSave: "Save", btnDelete: "Delete", btnUndo: "Undo",
-        toolsTitle: "Data & Export", settingsTitle: "Settings", monitoredTitle: "Monitored parameters", normsTitle: "Blood pressure thresholds",
-        normsDisclaimer: "Classification is for reference only and does not replace medical advice. Current guidelines are available on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, as well as of equivalent institutions in other countries.",
-        sysOptTitle: "Systolic (SYS): Optimal", diaOptTitle: "Diastolic (DIA): Optimal", lbLower: "Lower bound", lbUpper: "Upper bound",
+        toolsTitle: "Data & Export", settingsTitle: "Settings", monitoredTitle: "Monitored parameters", 
+        
+        
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
         titleBtnAdd: "Add entry", titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report", titleBtnSettings: "Settings",
         btnEdit: "Edit", importedMsg: "Imported ", importedSuffix: " entry/entries.", importError: "Invalid backup file.",
-        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfHeaderClass: "Classification", pdfExportTitle: "Export PDF report", pdfRangeTitle: "Data range", btnExport: "Export",
+        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Export PDF report", pdfRangeTitle: "Data range", btnExport: "Export",
         savedMsg: "Measurement saved", updatedMsg: "Measurement updated", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
-        viewChart: "Chart", viewTable: "Table",
-        bpOpt: "Optimal", bpNor: "Normal", bpBad: "Abnormal",
+        viewTable: "Table",
+        
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
         storageError: "Failed to save data (private browsing mode?).",
         wheelClampWarn: "This entry has a value outside the wheel range – saving will snap it to the nearest allowed value.",
         backupDone: "Backup downloaded",
         settingsSaved: "Settings saved",
-        bpCrit: "Critical value",
-        critWarn: "Very high blood pressure (SYS ≥180 or DIA ≥120). Rest a few minutes and measure again. If you have chest pain, shortness of breath, speech or vision problems, or weakness on one side, call emergency services (112). Discuss this result with a doctor.",
-        listDisclaimer: "Classification is for reference only and does not replace medical advice. Current guidelines are available on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, as well as of equivalent institutions in other countries.",
+        
+        
+        
         deletedMsgN: "Entries deleted: {n}",
         importSkipped: " Skipped: ",
         skipHr: "Skip pulse", skipWgt: "Skip weight",
         storageCorrupt: "Corrupted data detected. A copy was kept in browser storage and not overwritten.",
-        thrMigrated: "Classification thresholds were updated to ESC/ESH guidance (optimal <120/<80). You can change them in Settings.",
-        thrInfoTitle: "Blood pressure thresholds used", thrCat: "Category", thrAnd: "and", thrOr: "or",
-        thrRule: "The category is determined by the less favourable of the two values – systolic or diastolic. The critical value applies to each of them separately.",
-        thrChange: "Change in Settings", btnClose: "Close", chipInfo: "show thresholds used",
+        
+        
+        
+        btnClose: "Close", 
         ariaTools: "Data and export", ariaAdd: "Add measurement", ariaSettings: "Settings", ariaView: "View",
-        stepDecLow: "Decrease lower limit {p}", stepIncLow: "Increase lower limit {p}",
-        stepDecHigh: "Decrease upper limit {p}", stepIncHigh: "Increase upper limit {p}",
+        
+        
         addHr: "Add pulse", addWgt: "Add weight",
         wgtDec: "Decrease weight by 0.1 kg", wgtInc: "Increase weight by 0.1 kg", wgtLabelKg: "Weight [kg]",
         wgtErrorMsg: "Enter a weight between 20 and 300 kg (e.g. 75.5).",
@@ -860,7 +770,7 @@
         wipeConfirm: "Delete ALL measurements and settings from this device? This cannot be undone. If you want to keep your data, create a backup first.",
         wipeDone: "All data has been deleted",
         privacyNote: "Data is stored only on this device.",
-        importSettingsConfirm: "The file also contains settings (thresholds, language, monitored parameters). Replace your current settings with them?"
+        importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?"
       }
     };
     return {
@@ -871,13 +781,13 @@
     };
   })();
 
-  // --- MODUŁ 4: Chart & Table Renderer ---
-  var ChartModule = (function(){
+  // --- MODUŁ 4: Table Renderer ---
+  var TableModule = (function(){
     return {
       renderTable: function(tableMount, entries, settings, rangeDays, tCb, fmtDateCb, escapeHtmlCb){
         tableMount.innerHTML = "";
         if (!entries.length){
-          tableMount.innerHTML = '<div class="chart-empty">' + tCb("emptyTitle") + '</div>';
+          tableMount.innerHTML = '<div class="trends-empty">' + tCb("emptyTitle") + '</div>';
           return;
         }
         var now = Date.now();
@@ -888,14 +798,14 @@
         }).sort(function(a,b){ return b.ts - a.ts; });
 
         if (!filtered.length){
-          tableMount.innerHTML = '<div class="chart-empty">' + tCb("chartNoData") + '</div>';
+          tableMount.innerHTML = '<div class="trends-empty">' + tCb("trendsNoData") + '</div>';
           return;
         }
 
         var table = document.createElement("table");
-        table.className = "chart-table";
+        table.className = "data-table";
         table.setAttribute("role", "table");
-        table.setAttribute("aria-label", tCb("chartTitle"));
+        table.setAttribute("aria-label", tCb("trendsTitle"));
 
         var cols = [];
         if (settings.trackSys) cols.push({ label: "sysLabel", unit: "mmHg", key: "sys" });
@@ -952,9 +862,8 @@
   // --- MODUŁ 5: Main App Logic & UI Coordinator ---
   var entries = StorageModule.loadEntries();
   var settings = StorageModule.loadSettings();
-  var chartRangeDays = 30;
-  var chartViewMode = "chart";
-  var visibleSeries = { sys: true, dia: true, hr: true };
+  var trendsRangeDays = 30;
+  var trendsViewMode = "bars";
   var settingsDraft = null;
   var settingsBefore = null;
   var hrActive = true;
@@ -998,7 +907,7 @@
   function applyTheme(){
     document.documentElement.setAttribute("data-theme", settings.theme);
     var meta = document.getElementById("themeColorMeta");
-    if(meta) meta.setAttribute("content", settings.theme === "dark" ? "#0e1115" : "#f0f4f9");
+    if(meta) meta.setAttribute("content", settings.theme === "dark" ? "#1b1d20" : "#f0f4f9");
   }
 
   function renderMonitoredButtons() {
@@ -1017,49 +926,6 @@
     return { date: p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear(), time: p(d.getHours())+":"+p(d.getMinutes()) };
   }
 
-  function getSysThresholds(optMin, optMax) {
-    return { optMin: optMin, optMax: optMax, norLow1: optMin - 10, norHigh1: optMin - 1, norLow2: optMax + 1, norHigh2: Math.min(optMax + 20, 139) };
-  }
-
-  function getDiaThresholds(optMin, optMax) {
-    return { optMin: optMin, optMax: optMax, norLow1: optMin - 10, norHigh1: optMin - 1, norLow2: optMax + 1, norHigh2: Math.min(optMax + 10, 89) };
-  }
-
-  function isCritical(sys, dia) {
-    return (sys != null && sys >= 180) || (dia != null && dia >= 120);
-  }
-
-  function thresholdsSummary() {
-    var s = getSysThresholds(settings.sysOptMin || 100, settings.sysOptMax || 119);
-    var d = getDiaThresholds(settings.diaOptMin || 60, settings.diaOptMax || 79);
-    if (settings.lang === "en") {
-      return "Thresholds used (mmHg): SYS optimal " + s.optMin + "–" + s.optMax + ", normal " + s.norLow1 + "–" + s.norHigh1 + " & " + s.norLow2 + "–" + s.norHigh2
-        + "; DIA optimal " + d.optMin + "–" + d.optMax + ", normal " + d.norLow1 + "–" + d.norHigh1 + " & " + d.norLow2 + "–" + d.norHigh2
-        + "; critical: SYS ≥180 or DIA ≥120. " + t("listDisclaimer");
-    }
-    return "Użyte progi (mmHg): SYS optymalne " + s.optMin + "–" + s.optMax + ", prawidłowe " + s.norLow1 + "–" + s.norHigh1 + " oraz " + s.norLow2 + "–" + s.norHigh2
-      + "; DIA optymalne " + d.optMin + "–" + d.optMax + ", prawidłowe " + d.norLow1 + "–" + d.norHigh1 + " oraz " + d.norLow2 + "–" + d.norHigh2
-      + "; krytyczne: SYS ≥180 lub DIA ≥120. " + t("listDisclaimer");
-  }
-
-  function getBpCategory(sys, dia) {
-    if (sys == null || dia == null) return null;
-    if (isCritical(sys, dia)) return { key: "bpCrit", cls: "bp-crit" };
-    var sysT = getSysThresholds(settings.sysOptMin || 100, settings.sysOptMax || 119);
-    var diaT = getDiaThresholds(settings.diaOptMin || 60, settings.diaOptMax || 79);
-
-    var isSysOpt = (sys >= sysT.optMin && sys <= sysT.optMax);
-    var isDiaOpt = (dia >= diaT.optMin && dia <= diaT.optMax);
-    var isSysNor = (sys >= sysT.norLow1 && sys <= sysT.norHigh1) || (sys >= sysT.norLow2 && sys <= sysT.norHigh2);
-    var isDiaNor = (dia >= diaT.norLow1 && dia <= diaT.norHigh1) || (dia >= diaT.norLow2 && dia <= diaT.norHigh2);
-
-    if ((isSysOpt || isSysNor) && (isDiaOpt || isDiaNor)) {
-      if (isSysOpt && isDiaOpt) return { key: "bpOpt", cls: "bp-opt" };
-      return { key: "bpNor", cls: "bp-nor" };
-    }
-    return { key: "bpBad", cls: "bp-bad" };
-  }
-
   var entryList = document.getElementById("entryList");
 
   function render(){
@@ -1072,7 +938,7 @@
         +'<button class="btn" id="btnEmptyAdd" style="max-width:220px;margin:0 auto">'+t("btnAddFirst")+'</button>'
         +'</div>';
       document.getElementById("btnEmptyAdd").onclick = function(){ openAdd(null); };
-      drawChart();
+      drawTrends();
       return;
     }
 
@@ -1086,15 +952,11 @@
       var f = fmtDate(e.ts);
       
       var bpText = (settings.trackSys && e.sys ? e.sys : '--') + ' / ' + (settings.trackDia && e.dia ? e.dia : '--');
-      var cat = (settings.trackSys && settings.trackDia) ? getBpCategory(e.sys, e.dia) : null;
-      var catHtml = cat ? '<button type="button" class="bp-chip ' + cat.cls + '" aria-haspopup="dialog" aria-label="'
-        + escapeHtml(t(cat.key) + " – " + t("chipInfo")) + '" title="' + escapeHtml(t("chipInfo")) + '">' + t(cat.key) + '</button>' : '';
 
       var html = '<div class="card-top">'
         + '<div class="card-main">'
         +   '<span class="card-sysdia">' + bpText + '</span>'
         +   '<span class="card-unit">mmHg</span>'
-        +   catHtml
         + '</div>'
         + '<div class="card-date">' + f.date + '<small>' + f.time + '</small></div>'
         + '</div>';
@@ -1121,7 +983,7 @@
     });
     entryList.appendChild(frag);
 
-    drawChart();
+    drawTrends();
   }
 
   function escapeHtml(s){
@@ -1161,315 +1023,273 @@
     }, UNDO_MS + 600);
   }
 
-  function drawChart(force){
-    // Rysuj tylko gdy ekran wykresu jest aktywny, chyba że wymuszono (zmiana ustawień/motywu)
-    if (!force && screenIdx !== 1) return;
-    var containerMount = document.getElementById("chartContainerMount");
-    var tableMount = document.getElementById("chartTableMount");
-    var empty = document.getElementById("chartEmpty");
-    var mount = document.getElementById("chartMount");
+  // --- Ekran Trendy: podsumowanie liczbowe + pionowe słupki zakresowe + tabela ---
+  var DAY_MS = 86400000;
+  function trendsLocale(){ return settings.lang === "en" ? "en-US" : "pl-PL"; }
+  function mkEl(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function statOf(list, key){
+    var n = 0, sum = 0, mn = Infinity, mx = -Infinity;
+    list.forEach(function(e){
+      var v = e[key];
+      if (v == null || !isFinite(v)) return;
+      n++; sum += v;
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    });
+    return n ? { n: n, avg: sum / n, min: mn, max: mx } : null;
+  }
+  function fmt1(v){ return (Math.round(v * 10) / 10).toFixed(1); }
+  function rangeTxt(st, f){ var a = f(st.min), b = f(st.max); return a === b ? a : a + "–" + b; }
+  function rnd(v){ return String(Math.round(v)); }
 
-    document.querySelectorAll('#chartViewModeSwitch button').forEach(function(b){
-      var isActive = (b.dataset.mode === chartViewMode);
+  function renderSummary(list, mount){
+    mount.textContent = "";
+    var s = settings.trackSys ? statOf(list, "sys") : null;
+    var d = settings.trackDia ? statOf(list, "dia") : null;
+    var h = settings.trackHr  ? statOf(list, "hr")  : null;
+    var w = settings.trackWgt ? statOf(list, "wgt") : null;
+
+    mount.appendChild(mkEl("div", "sum-count", t("sumCount").replace("{n}", list.length)));
+    if (!s && !d && !h && !w) return;
+
+    var grid = mkEl("div", "sum-grid");
+    function card(cls, label, avgText, unit, rangeText){
+      var c = mkEl("div", "sum-card " + cls);
+      c.appendChild(mkEl("div", "sum-label", label));
+      var a = mkEl("div", "sum-avg", avgText);
+      a.appendChild(mkEl("small", null, unit));
+      c.appendChild(a);
+      c.appendChild(mkEl("div", "sum-range", t("minMax") + ": " + rangeText));
+      grid.appendChild(c);
+    }
+    if (s || d) {
+      var avgParts = [], rngParts = [];
+      if (s) { avgParts.push(rnd(s.avg)); rngParts.push("SYS " + rangeTxt(s, rnd)); }
+      if (d) { avgParts.push(rnd(d.avg)); rngParts.push("DIA " + rangeTxt(d, rnd)); }
+      card("wide", t("sumBp"), avgParts.join(" / "), "mmHg", rngParts.join(" · "));
+    }
+    if (h) card("", t("sumHr"), rnd(h.avg), "bpm", rangeTxt(h, rnd));
+    if (w) card("", t("sumWgt"), fmt1(w.avg), "kg", rangeTxt(w, fmt1));
+    mount.appendChild(grid);
+  }
+
+  // Słupki: dla krótkiego okresu pojedyncze pomiary, dla średniego – dni, dla długiego – tygodnie
+  function renderBars(list, mount){
+    mount.textContent = "";
+    var span = list[list.length - 1].ts - list[0].ts;          // list jest posortowana rosnąco
+    var mode = span <= 14 * DAY_MS ? "m" : (span <= 100 * DAY_MS ? "d" : "w");
+    document.getElementById("barsModeLabel").textContent = t("barsMode_" + mode);
+
+    var groups = [], byKey = Object.create(null);
+    list.forEach(function(e){
+      var dt = new Date(e.ts), key, weekStart = null;
+      if (mode === "m") key = e.id;
+      else if (mode === "d") key = dt.getFullYear() + "-" + dt.getMonth() + "-" + dt.getDate();
+      else {
+        weekStart = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() - ((dt.getDay() + 6) % 7));
+        key = weekStart.getTime();
+      }
+      var g = byKey[key];
+      if (!g) { g = byKey[key] = { items: [], weekStart: weekStart }; groups.push(g); }
+      g.items.push(e);
+    });
+    groups.forEach(function(g){
+      g.last = g.items[g.items.length - 1].ts;
+      g.s = settings.trackSys ? statOf(g.items, "sys") : null;
+      g.d = settings.trackDia ? statOf(g.items, "dia") : null;
+      g.h = settings.trackHr  ? statOf(g.items, "hr")  : null;
+    });
+
+    // wspólna skala dla wszystkich wierszy
+    var lo = Infinity, hi = -Infinity;
+    groups.forEach(function(g){ [g.s, g.d].forEach(function(x){
+      if (!x) return;
+      if (x.min < lo) lo = x.min;
+      if (x.max > hi) hi = x.max;
+    }); });
+    var hasScale = isFinite(lo), TICK = 20, sLo = 0, sHi = 1;
+    if (hasScale) {
+      sLo = Math.floor((lo - 5) / TICK) * TICK;
+      sHi = Math.ceil((hi + 5) / TICK) * TICK;
+      if (sHi - sLo < 3 * TICK) sHi = sLo + 3 * TICK;
+    }
+    function pos(v){ return ((v - sLo) / (sHi - sLo)) * 100; }
+
+    var wrap = mkEl("div", "bars");
+    if (hasScale) {
+      wrap.style.setProperty("--tick", (TICK / (sHi - sLo) * 100) + "%");
+      var axis = mkEl("div", "bars-axis");
+      axis.setAttribute("aria-hidden", "true");
+      for (var v = sLo; v <= sHi; v += TICK) {
+        var lab = mkEl("span", null, String(v));
+        lab.style.left = pos(v) + "%";
+        axis.appendChild(lab);
+      }
+      wrap.appendChild(axis);
+    }
+
+    var loc = trendsLocale(), lastMonth = null;
+    groups.slice().reverse().forEach(function(g){
+      var ref = new Date(g.last), f = fmtDate(g.last), n = g.items.length;
+      var mKey = ref.getFullYear() * 12 + ref.getMonth();
+      if (mKey !== lastMonth) {
+        lastMonth = mKey;
+        var mt = ref.toLocaleDateString(loc, { month: "long", year: "numeric" });
+        wrap.appendChild(mkEl("div", "bars-month", mt.charAt(0).toUpperCase() + mt.slice(1)));
+      }
+
+      var main, sub, wd = ref.toLocaleDateString(loc, { weekday: "short" });
+      if (mode === "w") {
+        var ws = g.weekStart, we = new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + 6);
+        main = fmtDate(ws.getTime()).date.slice(0, 5) + "–" + fmtDate(we.getTime()).date.slice(0, 5);
+        sub = "×" + n;
+      } else if (mode === "d") {
+        main = f.date.slice(0, 5);
+        sub = wd + (n > 1 ? " · ×" + n : "");
+      } else {
+        main = f.date.slice(0, 5);
+        sub = wd + " " + f.time;
+      }
+
+      var row = mkEl("div", "bar-row");
+      var top = mkEl("div", "bar-top");
+      var dateEl = mkEl("span", "bar-date", main);
+      dateEl.appendChild(mkEl("small", null, sub));
+      dateEl.title = t("sumCount").replace("{n}", n);
+      top.appendChild(dateEl);
+
+      var vals = mkEl("span", "bar-vals");
+      var parts = [];
+      if (settings.trackSys) parts.push(g.s ? rnd(g.s.avg) : "--");
+      if (settings.trackDia) parts.push(g.d ? rnd(g.d.avg) : "--");
+      if (parts.length) {
+        vals.appendChild(document.createTextNode(parts.join(" / ")));
+        vals.appendChild(mkEl("span", "sr-only", " mmHg"));
+      }
+      if (g.h) vals.appendChild(mkEl("small", null, rnd(g.h.avg) + " bpm"));
+      top.appendChild(vals);
+      row.appendChild(top);
+
+      if (hasScale && (g.s || g.d)) {
+        var tr = mkEl("div", "bar-track");
+        tr.setAttribute("aria-hidden", "true");
+        var seg = function(cls, from, to){
+          var el = mkEl("div", cls);
+          el.style.left = pos(from) + "%";
+          el.style.width = Math.max(pos(to) - pos(from), 0) + "%";
+          tr.appendChild(el);
+        };
+        if (g.s && g.d) {
+          if (n > 1) seg("bar-ext", g.d.min, g.s.max);
+          seg("bar-fill", g.d.avg, g.s.avg);
+        } else {
+          var x = g.s || g.d;
+          if (n > 1 && x.max > x.min) seg("bar-ext solo", x.min, x.max);
+          var dot = mkEl("div", "bar-dot");
+          dot.style.left = pos(x.avg) + "%";
+          tr.appendChild(dot);
+        }
+        row.appendChild(tr);
+      }
+      wrap.appendChild(row);
+    });
+    mount.appendChild(wrap);
+  }
+
+  function drawTrends(force){
+    // Rysuj tylko gdy ekran Trendy jest aktywny, chyba że wymuszono (zmiana ustawień)
+    if (!force && screenIdx !== 1) return;
+    var barsMount = document.getElementById("barsMount");
+    var tableMount = document.getElementById("trendsTableMount");
+    var empty = document.getElementById("trendsEmpty");
+    var sumMount = document.getElementById("trendsSummary");
+    var isTable = (trendsViewMode === "table");
+
+    document.querySelectorAll('#trendsViewSwitch button').forEach(function(b){
+      var isActive = (b.dataset.mode === trendsViewMode);
       b.classList.toggle('active', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
 
-    if (chartViewMode === "table") {
-      containerMount.hidden = true;
-      tableMount.hidden = false;
-      ChartModule.renderTable(tableMount, entries, settings, chartRangeDays, t, fmtDate, escapeHtml);
-      return;
-    } else {
-      containerMount.hidden = false;
-      tableMount.hidden = true;
-    }
-
-    mount.innerHTML = "";
+    sumMount.textContent = "";
     empty.hidden = true;
+    barsMount.hidden = true;
+    tableMount.hidden = true;
 
-    document.getElementById("legendHr").style.display = settings.trackHr ? "inline-flex" : "none";
-
-    if (!entries.length){
+    if (!entries.length) {
       empty.innerHTML = '<h3>' + t("emptyTitle") + '</h3>'
         + '<p style="margin-bottom:12px;">' + t("emptyDesc") + '</p>'
-        + '<button class="btn" id="btnChartAdd" style="max-width:200px;margin:0 auto;padding:10px 14px;font-size:0.9rem;">' + t("btnAddFirst") + '</button>';
+        + '<button class="btn" id="btnTrendsAdd" style="max-width:200px;margin:0 auto;padding:10px 14px;font-size:0.9rem;">' + t("btnAddFirst") + '</button>';
       empty.hidden = false;
-      document.getElementById("btnChartAdd").onclick = function(){ openAdd(null); };
+      document.getElementById("btnTrendsAdd").onclick = function(){ openAdd(null); };
       return;
     }
 
-    var now = Date.now();
-    var filtered = entries.filter(function(e){
-      if (chartRangeDays === "all") return true;
-      var cutoff = now - (chartRangeDays * 24 * 60 * 60 * 1000);
-      return e.ts >= cutoff;
-    }).sort(function(a,b){ return a.ts - b.ts; });
+    var cutoff = (trendsRangeDays === "all") ? -Infinity : Date.now() - trendsRangeDays * DAY_MS;
+    var filtered = entries.filter(function(e){ return e.ts >= cutoff; })
+      .sort(function(a, b){ return a.ts - b.ts; });
 
-    if (!filtered.length){
-      empty.textContent = t("chartNoData");
+    if (!filtered.length) {
+      empty.textContent = t("trendsNoData");
       empty.hidden = false;
       return;
     }
 
-    var W = Math.max(mount.clientWidth || 320, 280);
-    var svgNS = "http://www.w3.org/2000/svg";
-    var lineColor = getComputedStyle(document.documentElement).getPropertyValue("--line").trim();
-    var textColor = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
-    var cssv = getComputedStyle(document.documentElement);
-    var cSys = cssv.getPropertyValue("--c-sys").trim() || "#ef4444";
-    var cDia = cssv.getPropertyValue("--c-dia").trim() || "#3b82f6";
-    var cHr  = cssv.getPropertyValue("--c-hr").trim()  || "#15803d";
-    // Tekst SVG skaluje się z ustawieniem czcionki i kompensuje zmniejszenie viewBox (padding sekcji = 18 px)
-    var remScale = (parseFloat(cssv.fontSize) || 16) / 16;
-    var FS = Math.round((11 * remScale) / ((W - 18) / W) * 10) / 10;
-
-    var minTs = filtered[0].ts;
-    var maxTs = filtered[filtered.length - 1].ts;
-    if (minTs === maxTs) { minTs -= 3600000; maxTs += 3600000; }
-
-    function niceScale(lo, hi){
-      var steps = [0.5,1,2,2.5,5,10,20,25,50,100];
-      for (var i=0;i<steps.length;i++){
-        var st = steps[i];
-        var base = Math.floor(lo/st)*st;
-        if (base + 4*st >= hi) return { min: base, max: base + 4*st, step: st };
-      }
-      return { min: Math.floor(lo), max: Math.ceil(hi), step: (hi-lo)/4 };
-    }
-    function fmtTick(v){ return String(Math.round(v*10)/10); }
-
-    function makeSection(title, keys, colors, fixedMin, fixedMax, refLines, useAutoScaling, dataKeysForAuto){
-      var H = 220, padL=Math.round(38*Math.max(1,remScale)), padR=Math.round(64*Math.max(1,remScale)), padT=16, padB=36;
-      var iw=W-padL-padR, ih=H-padT-padB;
-
-      var minY = fixedMin, maxY = fixedMax;
-      if (useAutoScaling && dataKeysForAuto) {
-        var vals = [];
-        filtered.forEach(function(d){
-          dataKeysForAuto.forEach(function(k){ if(d[k] != null) vals.push(+d[k]); });
-        });
-        if (vals.length) {
-          var vMin = Math.min.apply(null, vals);
-          var vMax = Math.max.apply(null, vals);
-          var pad = 5;
-          var nice = niceScale(Math.max(0, vMin - pad), vMax + pad);
-          minY = nice.min; maxY = nice.max;
-        }
-      }
-
-      var section=document.createElement("div");
-      section.className="chart-section";
-      var heading=document.createElement("div");
-      heading.className="chart-section-title";
-      heading.textContent=title;
-      section.appendChild(heading);
-
-      var svg=document.createElementNS(svgNS,"svg");
-      svg.setAttribute("width",W); svg.setAttribute("height",H);
-      svg.setAttribute("viewBox","0 0 "+W+" "+H);
-      svg.style.width="100%"; svg.style.height="auto";
-
-      function y(v){ return padT+ih-ih*((v - minY)/(maxY - minY)); }
-      function xAtTs(ts){ return padL + iw * ((ts - minTs) / (maxTs - minTs)); }
-
-      for(var g=0;g<=4;g++){
-        var val = minY + (maxY - minY)*(1 - g/4);
-        var gy=padT+ih*g/4;
-        var ln=document.createElementNS(svgNS,"line");
-        ln.setAttribute("x1",padL); ln.setAttribute("x2",W-padR);
-        ln.setAttribute("y1",gy); ln.setAttribute("y2",gy);
-        ln.setAttribute("stroke",lineColor); ln.setAttribute("stroke-width","1");
-        ln.setAttribute("stroke-dasharray","3 4"); svg.appendChild(ln);
-        var tx=document.createElementNS(svgNS,"text");
-        tx.setAttribute("x",padL-6); tx.setAttribute("y",gy+4);
-        tx.setAttribute("text-anchor","end"); tx.setAttribute("font-size",FS);
-        tx.setAttribute("fill",textColor); tx.textContent=fmtTick(val);
-        svg.appendChild(tx);
-      }
-
-      if (refLines) {
-        refLines.forEach(function(rl){
-          if (rl.val >= minY && rl.val <= maxY) {
-            var ry = y(rl.val);
-            var rln = document.createElementNS(svgNS,"line");
-            rln.setAttribute("x1", padL); rln.setAttribute("x2", W-padR);
-            rln.setAttribute("y1", ry); rln.setAttribute("y2", ry);
-            rln.setAttribute("stroke", rl.color); rln.setAttribute("stroke-width", "1.5");
-            rln.setAttribute("stroke-dasharray", "4 2"); svg.appendChild(rln);
-
-            if (rl.label) {
-              var rlbl = document.createElementNS(svgNS, "text");
-              rlbl.setAttribute("x", W - padR + 4); rlbl.setAttribute("y", ry + 3);
-              rlbl.setAttribute("font-size", FS); rlbl.setAttribute("fill", rl.color);
-              rlbl.setAttribute("font-weight", "700"); rlbl.textContent = rl.label;
-              svg.appendChild(rlbl);
-            }
-          }
-        });
-      }
-
-      var ticksCount = 3;
-      for(var tIdx=0; tIdx<ticksCount; tIdx++){
-        var curTs = minTs + (maxTs - minTs) * (tIdx / (ticksCount - 1));
-        var cx = xAtTs(curTs);
-        var f = fmtDate(curTs);
-        var lbl = (maxTs - minTs < 86400000 * 2) ? f.time : f.date.slice(0,5);
-        
-        var txX=document.createElementNS(svgNS,"text");
-        txX.setAttribute("x", cx); txX.setAttribute("y", H - 10);
-        txX.setAttribute("text-anchor", tIdx===0 ? "start" : (tIdx===ticksCount-1 ? "end" : "middle"));
-        txX.setAttribute("font-size",FS); txX.setAttribute("fill",textColor);
-        txX.textContent = lbl;
-        svg.appendChild(txX);
-      }
-
-      keys.forEach(function(key,ki){
-        if(!visibleSeries[key]) return;
-        var pts=filtered.filter(function(d){ return d[key] != null; }).map(function(d){return{x:xAtTs(d.ts),y:y(+d[key]),data:d};});
-        if (!pts.length) return;
-        var path=document.createElementNS(svgNS,"path");
-        path.setAttribute("d",pts.map(function(p,i){return(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1);}).join(" "));
-        path.setAttribute("fill","none"); path.setAttribute("stroke",colors[ki]);
-        path.setAttribute("stroke-width","2.4"); path.setAttribute("stroke-linecap","round");
-        path.setAttribute("stroke-linejoin","round"); svg.appendChild(path);
-
-        pts.forEach(function(p){
-          var hitGroup = document.createElementNS(svgNS, "g");
-          var cHit = document.createElementNS(svgNS,"circle");
-          cHit.setAttribute("cx",p.x); cHit.setAttribute("cy",p.y); cHit.setAttribute("r","20");
-          cHit.setAttribute("fill","transparent"); cHit.style.cursor="pointer";
-          
-          var c=document.createElementNS(svgNS,"circle");
-          c.setAttribute("cx",p.x); c.setAttribute("cy",p.y); c.setAttribute("r","4.5");
-          c.setAttribute("fill",colors[ki]);
-          
-          hitGroup.appendChild(cHit); hitGroup.appendChild(c);
-          hitGroup.setAttribute("tabindex","0");
-          hitGroup.addEventListener("click",function(ev){ev.stopPropagation();showTooltip(ev, p.x, p.y, p.data, key, section);});
-          hitGroup.addEventListener("keydown",function(ev){
-            if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();showTooltip(ev, p.x, p.y, p.data, key, section);}
-          });
-          svg.appendChild(hitGroup);
-        });
-      });
-
-      svg.addEventListener("click",function(){tooltip.style.opacity="0";});
-      section.appendChild(svg);
-      mount.appendChild(section);
-    }
-
-    var sysT = getSysThresholds(settings.sysOptMin || 100, settings.sysOptMax || 119);
-    var diaT = getDiaThresholds(settings.diaOptMin || 60, settings.diaOptMax || 79);
-    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    var refHi = isDark ? "#d1d5db" : "#4b5563";
-    var refOk = isDark ? "#4ade80" : "#15803d";
-
-    if (settings.trackSys || settings.trackDia) {
-      var bpMax = 200;
-      filtered.forEach(function(d){
-        if (d.sys != null && d.sys + 10 > bpMax) bpMax = Math.ceil((d.sys + 10) / 20) * 20;
-      });
-      makeSection(t("sysLabel")+" / "+t("diaLabel"),["sys","dia"],[cSys,cDia], 40, bpMax, [
-        {val: sysT.norHigh2, color: refHi, label: "SYS >" + sysT.norHigh2}, 
-        {val: sysT.optMax, color: refOk, label: "SYS ≤" + sysT.optMax},
-        {val: diaT.norHigh2, color: refHi, label: "DIA >" + diaT.norHigh2}, 
-        {val: diaT.optMax, color: refOk, label: "DIA ≤" + diaT.optMax}
-      ], false, null);
-    }
-    if (settings.trackHr) {
-      makeSection(t("hrLabel"),["hr"],[cHr], 40, 160, null, true, ["hr"]);
+    renderSummary(filtered, sumMount);
+    if (isTable) {
+      tableMount.hidden = false;
+      TableModule.renderTable(tableMount, entries, settings, trendsRangeDays, t, fmtDate, escapeHtml);
+    } else {
+      barsMount.hidden = false;
+      renderBars(filtered, document.getElementById("barsList"));
     }
   }
 
-  var tooltip = document.getElementById("chartTooltip");
-  function showTooltip(ev, x, y, data, seriesKey, sectionEl){
-    var f = fmtDate(data.ts);
-    var label = "";
-    if (seriesKey === "hr") label = t("hrLabel")+": "+escapeHtml(String(data.hr))+" bpm";
-    else label = t("sysLabel")+": "+escapeHtml(String(data.sys||'--'))+" mmHg<br/>"+t("diaLabel")+": "+escapeHtml(String(data.dia||'--'))+" mmHg";
-
-    tooltip.innerHTML = '<strong>' + f.date + ' ' + f.time + '</strong><br/>' + label;
-    var wrapRect = document.getElementById("chartWrap").getBoundingClientRect();
-    var svgEl = sectionEl.querySelector("svg");
-    var svgRect = svgEl.getBoundingClientRect();
-    var vbW = svgEl.viewBox.baseVal.width || svgRect.width;
-    var k = svgRect.width / vbW;
-
-    var relX = svgRect.left - wrapRect.left + x * k;
-    var relY = svgRect.top - wrapRect.top + y * k;
-    var tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
-
-    var left = Math.max(8, Math.min(relX - tw/2, wrapRect.width - tw - 8));
-    var top = relY - th - 14;
-    if (top < 4) top = relY + 14;
-    tooltip.style.left = left + "px";
-    tooltip.style.top = top + "px";
-    tooltip.style.opacity = "1";
-  }
-  document.addEventListener("click", function(){ if (tooltip) tooltip.style.opacity = "0"; });
-
-  document.getElementById("chartRange").addEventListener("click", function(e){
+  document.getElementById("trendsRange").addEventListener("click", function(e){
     var btn = e.target.closest("button"); if (!btn) return;
-    document.querySelectorAll("#chartRange button").forEach(function(b){ b.classList.remove("active"); b.setAttribute("aria-pressed", "false"); });
+    document.querySelectorAll("#trendsRange button").forEach(function(b){ b.classList.remove("active"); b.setAttribute("aria-pressed", "false"); });
     btn.classList.add("active"); btn.setAttribute("aria-pressed", "true");
     var r = btn.dataset.range;
-    chartRangeDays = (r === "all") ? "all" : parseInt(r, 10);
-    drawChart();
+    trendsRangeDays = (r === "all") ? "all" : parseInt(r, 10);
+    drawTrends();
   });
-  document.querySelectorAll("#chartRange button").forEach(function(b){ b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false"); });
+  document.querySelectorAll("#trendsRange button").forEach(function(b){ b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false"); });
 
-  document.getElementById("chartViewModeSwitch").addEventListener("click", function(e){
+  document.getElementById("trendsViewSwitch").addEventListener("click", function(e){
     var btn = e.target.closest("button"); if (!btn) return;
-    chartViewMode = btn.dataset.mode;
-    drawChart();
-  });
-
-  function toggleLegend(sp){
-    if(!sp || !sp.dataset.series) return;
-    var sKey=sp.dataset.series;
-    visibleSeries[sKey]=!visibleSeries[sKey];
-    var isPressed = visibleSeries[sKey];
-    sp.classList.toggle("disabled", !isPressed);
-    sp.setAttribute("aria-pressed", isPressed ? "true" : "false");
-    drawChart();
-  }
-  document.getElementById("chartLegend").addEventListener("click", function(e){
-    toggleLegend(e.target.closest("span[data-series]"));
-  });
-  document.getElementById("chartLegend").addEventListener("keydown", function(e){
-    if (e.key !== "Enter" && e.key !== " ") return;
-    var sp = e.target.closest("span[data-series]");
-    if (!sp) return;
-    e.preventDefault();
-    toggleLegend(sp);
+    trendsViewMode = btn.dataset.mode;
+    drawTrends();
   });
 
   var track = document.getElementById("track");
   var screenIdx = 0;
   function go(i){
     screenIdx = i;
-    if (tooltip) tooltip.style.opacity = "0";
     track.style.transform = "translateX(" + (-i*50) + "%)";
     document.getElementById("navHistory").classList.toggle("active", i===0);
     document.getElementById("navHistory").setAttribute("aria-selected", i===0 ? "true" : "false");
-    document.getElementById("navChart").classList.toggle("active", i===1);
-    document.getElementById("navChart").setAttribute("aria-selected", i===1 ? "true" : "false");
+    document.getElementById("navTrends").classList.toggle("active", i===1);
+    document.getElementById("navTrends").setAttribute("aria-selected", i===1 ? "true" : "false");
 
     var homeSc = document.getElementById("homeScreen");
-    var chartSc = document.getElementById("chartScreen");
+    var trendsSc = document.getElementById("trendsScreen");
     if (i === 0) {
       homeSc.removeAttribute("inert"); homeSc.setAttribute("aria-hidden", "false");
-      chartSc.setAttribute("inert", ""); chartSc.setAttribute("aria-hidden", "true");
+      trendsSc.setAttribute("inert", ""); trendsSc.setAttribute("aria-hidden", "true");
     } else {
-      chartSc.removeAttribute("inert"); chartSc.setAttribute("aria-hidden", "false");
+      trendsSc.removeAttribute("inert"); trendsSc.setAttribute("aria-hidden", "false");
       homeSc.setAttribute("inert", ""); homeSc.setAttribute("aria-hidden", "true");
-      drawChart(true);
+      drawTrends(true);
     }
   }
 
   document.getElementById("navHistory").onclick = function(){ go(0); };
-  document.getElementById("navChart").onclick = function(){ go(1); };
+  document.getElementById("navTrends").onclick = function(){ go(1); };
 
   var startX = null, startY = null, dx = 0, dy = 0, axis = null;
   var viewport = document.getElementById("viewport");
@@ -1513,49 +1333,6 @@
   document.getElementById("btnTools").onclick = function(){ setModalState(toolsOverlay, true); };
   document.getElementById("btnToolsClose").onclick = function(){ setModalState(toolsOverlay, false); };
   toolsOverlay.addEventListener("click", function(e){ if (e.target === toolsOverlay) setModalState(toolsOverlay, false); });
-
-  // --- Okienko: przyjęte progi klasyfikacji ---
-  var thrOverlay = document.getElementById("thrOverlay");
-  function openThresholds(){
-    var s = getSysThresholds(settings.sysOptMin || 100, settings.sysOptMax || 119);
-    var d = getDiaThresholds(settings.diaOptMin || 60, settings.diaOptMax || 79);
-    var and = " " + t("thrAnd") + " ", or = " " + t("thrOr") + " ";
-    var rows = [
-      { key: "bpOpt",  cls: "bp-opt",  sys: s.optMin + "–" + s.optMax, dia: d.optMin + "–" + d.optMax },
-      { key: "bpNor",  cls: "bp-nor",  sys: s.norLow1 + "–" + s.norHigh1 + and + s.norLow2 + "–" + s.norHigh2,
-                                       dia: d.norLow1 + "–" + d.norHigh1 + and + d.norLow2 + "–" + d.norHigh2 },
-      { key: "bpBad",  cls: "bp-bad",  sys: "<" + s.norLow1 + or + ">" + s.norHigh2, dia: "<" + d.norLow1 + or + ">" + d.norHigh2 },
-      { key: "bpCrit", cls: "bp-crit", sys: "≥180", dia: "≥120" }
-    ];
-    var body = document.getElementById("thrBody");
-    body.textContent = "";
-    var table = document.createElement("table");
-    table.className = "thr-table";
-    var head = document.createElement("tr");
-    [t("thrCat"), t("sysLabel") + " (mmHg)", t("diaLabel") + " (mmHg)"].forEach(function(h){
-      var th = document.createElement("th"); th.scope = "col"; th.textContent = h; head.appendChild(th);
-    });
-    var thead = document.createElement("thead"); thead.appendChild(head); table.appendChild(thead);
-    var tbody = document.createElement("tbody");
-    rows.forEach(function(r){
-      var tr = document.createElement("tr");
-      var c0 = document.createElement("td");
-      var chip = document.createElement("span"); chip.className = "bp-chip " + r.cls; chip.textContent = t(r.key);
-      c0.appendChild(chip); tr.appendChild(c0);
-      [r.sys, r.dia].forEach(function(v){ var td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    body.appendChild(table);
-    setModalState(thrOverlay, true);
-  }
-  entryList.addEventListener("click", function(e){ if (e.target.closest(".bp-chip")) openThresholds(); });
-  document.getElementById("btnThrClose").onclick = function(){ setModalState(thrOverlay, false); };
-  thrOverlay.addEventListener("click", function(e){ if (e.target === thrOverlay) setModalState(thrOverlay, false); });
-  document.getElementById("btnThrSettings").onclick = function(){
-    setModalState(thrOverlay, false);
-    document.getElementById("btnSettingsDock").click();
-  };
 
   var addOverlay = document.getElementById("addOverlay");
   var editingId = null;
@@ -1830,13 +1607,12 @@
     setModalState(addOverlay, false);
     render();
     requestPersist();
-    if (isCritical(sysVal, diaVal)) toast(t("critWarn"), 14000, true);
   };
 
   document.getElementById("btnBackup").onclick = function(){
     alert(t("privacyAlert"));
     var exp = {};
-    ["theme","lang","fontSize","trackSys","trackDia","trackHr","trackWgt","sysOptMin","sysOptMax","diaOptMin","diaOptMax","thrV","incHr","incWgt"]
+    ["theme","lang","fontSize","trackSys","trackDia","trackHr","trackWgt","incHr","incWgt"]
       .forEach(function(k){ exp[k] = settings[k]; });
     var backupObj = {
       schemaVersion: 2,
@@ -1857,8 +1633,9 @@
   };
 
   document.getElementById("btnWipe").onclick = function(){
-    setModalState(toolsOverlay, false);
     if (!confirm(t("wipeConfirm"))) return;
+    setModalState(settingsOverlay, false);
+    settingsDraft = null; settingsBefore = null;
     StorageModule.wipeAll();
     entries = []; pendingDeletes = [];
     if (deleteTimeout) { clearTimeout(deleteTimeout); deleteTimeout = null; }
@@ -1927,12 +1704,10 @@
       if (pdfExportRange === "all") return true;
       return e.ts >= Date.now() - pdfExportRange * 24 * 60 * 60 * 1000;
     }).sort(function(a,b){ return b.ts-a.ts; });
-    if (!arr.length){ toast(t("chartNoData")); return; }
+    if (!arr.length){ toast(t("trendsNoData")); return; }
     var rows = arr.map(function(e){
       var f = fmtDate(e.ts);
-      var cat = (settings.trackSys && settings.trackDia) ? getBpCategory(e.sys, e.dia) : null;
-      var catTxt = cat ? t(cat.key) : "--";
-      return "<tr><td>"+f.date+" "+f.time+"</td><td>"+escapeHtml(String(e.sys||""))+"</td><td>"+escapeHtml(String(e.dia||""))+"</td><td>"+escapeHtml(catTxt)+"</td><td>"+escapeHtml(String(e.hr||""))+"</td><td>"+escapeHtml(String(e.wgt||""))+"</td><td>"+escapeHtml(e.note||"")+"</td></tr>";
+      return "<tr><td>"+f.date+" "+f.time+"</td><td>"+escapeHtml(String(e.sys||""))+"</td><td>"+escapeHtml(String(e.dia||""))+"</td><td>"+escapeHtml(String(e.hr||""))+"</td><td>"+escapeHtml(String(e.wgt||""))+"</td><td>"+escapeHtml(e.note||"")+"</td></tr>";
     }).join("");
     var loc = settings.lang === "en" ? "en-US" : "pl-PL";
     var html = '<!doctype html><html lang="'+escapeHtml(settings.lang)+'"><head><meta charset="utf-8"><title>'+escapeHtml(t("pdfTitle"))+'</title><style>'
@@ -1947,9 +1722,8 @@
       +'</style></head><body>'
       +'<h1>'+escapeHtml(t("pdfTitle"))+'</h1>'
       +'<p class="sub">'+escapeHtml(t("pdfGen")+new Date().toLocaleString(loc))+'</p>'
-      +'<p class="sub">'+escapeHtml(thresholdsSummary())+'</p>'
       +'<p class="hint">'+escapeHtml(t("pdfHint"))+'</p>'
-      +'<table><thead><tr><th>'+escapeHtml(t("pdfHeaderDt"))+'</th><th>'+escapeHtml(t("sysLabel"))+'</th><th>'+escapeHtml(t("diaLabel"))+'</th><th>'+escapeHtml(t("pdfHeaderClass"))+'</th><th>'+escapeHtml(t("hrLabel"))+'</th><th>'+escapeHtml(t("wgtLabel"))+'</th><th>'+escapeHtml(t("pdfHeaderNotes"))+'</th></tr></thead>'
+      +'<table><thead><tr><th>'+escapeHtml(t("pdfHeaderDt"))+'</th><th>'+escapeHtml(t("sysLabel"))+'</th><th>'+escapeHtml(t("diaLabel"))+'</th><th>'+escapeHtml(t("hrLabel"))+'</th><th>'+escapeHtml(t("wgtLabel"))+'</th><th>'+escapeHtml(t("pdfHeaderNotes"))+'</th></tr></thead>'
       +'<tbody>'+rows+'</tbody></table></body></html>';
 
     var iframe = document.createElement("iframe");
@@ -1974,93 +1748,12 @@
 
   var settingsOverlay = document.getElementById("settingsOverlay");
   
-  var THUMB_BOUNDS = THR;
-
-  function nudgeThreshold(key, bound, dir){
-    if(!settingsDraft) return;
-    var b = THUMB_BOUNDS[key];
-    var kMin = key + "OptMin", kMax = key + "OptMax";
-    if (bound === "Min") {
-      settingsDraft[kMin] = Math.max(b.min, Math.min(settingsDraft[kMin] + dir, settingsDraft[kMax] - 1));
-    } else {
-      settingsDraft[kMax] = Math.min(b.max, Math.max(settingsDraft[kMax] + dir, settingsDraft[kMin] + 1));
-    }
-    refreshThresholdUI();
-  }
-
-  function refreshThresholdUI(){
-    var d = settingsDraft || settings;
-    var sysMin = d.sysOptMin || 100, sysMax = d.sysOptMax || 119;
-    var diaMin = d.diaOptMin || 60,  diaMax = d.diaOptMax || 79;
-
-    document.getElementById("valSysOptDisplay").textContent = sysMin + " - " + sysMax + " mmHg";
-    document.getElementById("valDiaOptDisplay").textContent = diaMin + " - " + diaMax + " mmHg";
-    document.getElementById("dispSysMin").textContent = sysMin;
-    document.getElementById("dispSysMax").textContent = sysMax;
-    document.getElementById("dispDiaMin").textContent = diaMin;
-    document.getElementById("dispDiaMax").textContent = diaMax;
-
-    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Min"][data-dir="-1"]')[0].disabled = (sysMin <= THUMB_BOUNDS.sys.min);
-    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Min"][data-dir="1"]')[0].disabled = (sysMin >= THUMB_BOUNDS.sys.max - 1);
-    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Max"][data-dir="-1"]')[0].disabled = (sysMax <= THUMB_BOUNDS.sys.min + 1);
-    document.querySelectorAll('.stepper-btn[data-key="sys"][data-bound="Max"][data-dir="1"]')[0].disabled = (sysMax >= THUMB_BOUNDS.sys.max);
-    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Min"][data-dir="-1"]')[0].disabled = (diaMin <= THUMB_BOUNDS.dia.min);
-    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Min"][data-dir="1"]')[0].disabled = (diaMin >= THUMB_BOUNDS.dia.max - 1);
-    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Max"][data-dir="-1"]')[0].disabled = (diaMax <= THUMB_BOUNDS.dia.min + 1);
-    document.querySelectorAll('.stepper-btn[data-key="dia"][data-bound="Max"][data-dir="1"]')[0].disabled = (diaMax >= THUMB_BOUNDS.dia.max);
-
-    var sysT = getSysThresholds(sysMin, sysMax);
-    var diaT = getDiaThresholds(diaMin, diaMax);
-    var en = settings.lang === "en";
-    document.getElementById("descSysRanges").textContent =
-      (en?"Normal: ":"Prawidłowe: ") + sysT.norLow1 + "–" + sysT.norHigh1 + " & " + sysT.norLow2 + "–" + sysT.norHigh2
-      + " | " + (en?"Abnormal: <":"Nieprawidłowe: <") + sysT.norLow1 + " & >" + sysT.norHigh2;
-    document.getElementById("descDiaRanges").textContent =
-      (en?"Normal: ":"Prawidłowe: ") + diaT.norLow1 + "–" + diaT.norHigh1 + " & " + diaT.norLow2 + "–" + diaT.norHigh2
-      + " | " + (en?"Abnormal: <":"Nieprawidłowe: <") + diaT.norLow1 + " & >" + diaT.norHigh2;
-  }
-
-  var steppersInit = false;
-  function initSlidersUI() {
-    if (!steppersInit) {
-      steppersInit = true;
-      document.querySelectorAll(".stepper-btn").forEach(function(btn){
-        var key = btn.dataset.key, bound = btn.dataset.bound, dir = parseInt(btn.dataset.dir, 10);
-        var repTimer = null, repInt = null, lastStep = 0;
-        function stepOnce(){
-          var now = Date.now();
-          if (now - lastStep < 80) return; // ochrona przed podwójnym krokiem przy szybkim tapaniu
-          lastStep = now;
-          nudgeThreshold(key, bound, dir);
-        }
-        btn.addEventListener("pointerdown", function(e){
-          e.preventDefault();
-          stepOnce();
-          clearTimeout(repTimer);
-          repTimer = setTimeout(function(){
-            repInt = setInterval(function(){
-              stepOnce();
-            }, 90);
-          }, 450);
-        });
-        ["pointerup","pointerleave","pointercancel"].forEach(function(ev){
-          btn.addEventListener(ev, function(){ clearTimeout(repTimer); clearInterval(repInt); repInt = null; });
-        });
-        btn.addEventListener("keydown", function(e){
-          if (e.key === "Enter" || e.key === " "){ e.preventDefault(); stepOnce(); }
-        });
-      });
-    }
-    refreshThresholdUI();
-  }
-
   document.getElementById("btnSettingsDock").onclick = function(){
     settingsBefore = Object.assign({}, settings);
     settingsDraft = Object.assign({}, settings);
     
     renderMonitoredButtons();
 
-    initSlidersUI();
     applyLanguage(); applyFontSize();
     document.getElementById("themeToggle").classList.toggle("on", settingsDraft.theme === "dark");
     document.getElementById("themeToggle").setAttribute("aria-checked", settingsDraft.theme === "dark" ? "true" : "false");
@@ -2082,7 +1775,6 @@
     settingsDraft.lang = btn.dataset.val;
     settings.lang = settingsDraft.lang; 
     applyLanguage();
-    initSlidersUI();
   });
 
   document.getElementById("fontSizeSwitch").addEventListener("click", function(e){
@@ -2119,7 +1811,7 @@
     settings.theme = settingsDraft.theme;
     this.classList.toggle("on", settingsDraft.theme === "dark");
     this.setAttribute("aria-checked", settingsDraft.theme === "dark" ? "true" : "false");
-    applyTheme(); drawChart(true);
+    applyTheme();
   }
   document.getElementById("themeToggle").onclick = toggleThemeDraft;
   document.getElementById("themeToggle").onkeydown = function(e){
@@ -2128,7 +1820,6 @@
 
   var lastFocusEl = null;
   function setModalState(el, isOpen) {
-    if (!isOpen && tooltip) tooltip.style.opacity = "0";
     var bg = [document.getElementById("viewport"), document.getElementById("dock")];
     if (isOpen) {
       if (!document.querySelector(".overlay.open")) lastFocusEl = document.activeElement;
@@ -2157,7 +1848,6 @@
     if (e.key === "Escape"){
       if (addOverlay.classList.contains("open")) setModalState(addOverlay, false);
       else if (settingsOverlay.classList.contains("open")) cancelSettings();
-      else if (thrOverlay.classList.contains("open")) setModalState(thrOverlay, false);
       else if (toolsOverlay.classList.contains("open")) setModalState(toolsOverlay, false);
       else if (pdfOverlayEl.classList.contains("open")) setModalState(pdfOverlayEl, false);
     }
@@ -2204,7 +1894,7 @@
     var undoBtn = document.createElement("button");
     undoBtn.type = "button";
     undoBtn.textContent = t("btnUndo");
-    undoBtn.style.cssText = "background:transparent;border:none;color:var(--accent);font-weight:700;font-size:.8125rem;cursor:pointer;margin-left:12px;padding:10px 8px;min-height:44px;";
+    undoBtn.style.cssText = "background:transparent;border:none;color:var(--accent-fg);font-weight:700;font-size:.8125rem;cursor:pointer;margin-left:12px;padding:10px 8px;min-height:44px;";
     undoBtn.onclick = function(){ onUndo(); clearToast(); };
     el.appendChild(undoBtn);
 
@@ -2218,8 +1908,6 @@
   go(0);
   render();
   if (StorageModule.hadIssue()) toast(t("storageCorrupt"), 9000, true);
-  else if (StorageModule.wasMigrated()) toast(t("thrMigrated"), 9000);
-  window.addEventListener("resize", debounce(drawChart, 200));
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){

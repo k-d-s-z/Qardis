@@ -1,4 +1,4 @@
-/* Qardis Service Worker – wersja poprawiona
+/* Qardis Service Worker
    Zasada działania: wersja cache to STAŁA poniżej. Przy każdym deploju
    podnieś ją ręcznie (np. na datę buildu) – to jedyny wymagany edit.
    Dlaczego nie Last-Modified: przeglądarka aktualizuje SW tylko przy

@@ -19,7 +19,7 @@
 
   // --- MODUŁ 1: Storage & State ---
   var StorageModule = (function(){
-    var LS = "qardis.entries.v1", LS_SET = "qardis.settings.v1";
+    var LS = "qardis.entries.v1", LS_SET = "qardis.settings.v1", LS_ARC = "qardis.archive.v1";
     var issue = false;
     var lastRaw = null;   // ostatni stan localStorage znany tej karcie (wykrywanie zapisów z innych kart)
     function stash(raw){
@@ -54,6 +54,27 @@
       corruptRaw: function(){
         // Audyt(2): zachowana kopia uszkodzonych danych – eksportowana z menu.
         try { return localStorage.getItem(LS + ".corrupt"); } catch(e){ return null; }
+      },
+      loadArchive: function(){
+        // Archiwum: wpisy starsze niż 9 mies., przeniesione ręcznie z menu — osobny magazyn.
+        var raw = null;
+        try { raw = localStorage.getItem(LS_ARC); } catch(e){ return []; }
+        if (!raw) return [];
+        var parsed = null;
+        try { parsed = JSON.parse(raw); } catch(e){ parsed = null; }
+        if (!Array.isArray(parsed)) return [];
+        var out = [], seen = Object.create(null);
+        parsed.forEach(function(e){
+          var c2 = sanitizeEntry(e);
+          if (!c2 || c2.ts === null) return;
+          if (!c2.id || seen[c2.id]) c2.id = makeId();
+          seen[c2.id] = 1;
+          out.push(c2);
+        });
+        return out;
+      },
+      saveArchive: function(list){
+        try { localStorage.setItem(LS_ARC, JSON.stringify(list)); return true; } catch(e){ return false; }
       },
       loadEntries: function(){
         var raw = null;
@@ -115,7 +136,7 @@
         catch(e){ return false; }
       },
       wipeAll: function(){
-        [LS, LS_SET, LS + ".corrupt"].forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
+        [LS, LS_SET, LS_ARC, LS + ".corrupt"].forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
         lastRaw = null;
       },
       entriesKey: function(){ return LS; },
@@ -157,7 +178,7 @@
         viewBars: "Zakresy", sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
         barsHint: "Słupek: od rozkurczowego (DIA) do skurczowego (SYS). Jaśniejsza smuga: min–maks w grupie.",
         barsMode_m: "Pojedyncze pomiary", barsMode_d: "Średnie dzienne", barsMode_w: "Średnie tygodniowe",
-        normsNote: "Aktualne normy dla ciśnienia skurczowego i rozkurczowego znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.",
+        normsNote: "Zalecenia dotyczące interpretacji ciśnienia skurczowego i rozkurczowego mogą się zmieniać. Najświeższe wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
         wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
         navHistory: "Pomiary", navTrends: "Trendy", 
         sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "Tętno", wgtLabel: "Waga",
@@ -205,14 +226,26 @@
         wipeConfirm: "Usunąć WSZYSTKIE pomiary i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową.",
         wipeDone: "Wszystkie dane zostały usunięte",
         privacyNote: "Dane są przechowywane wyłącznie na tym urządzeniu.",
-        importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?"
+        importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?",
+        archiveTitle: "Archiwum pomiarów",
+        archiveDesc: "Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z pomiarów i trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.",
+        btnArchiveOpen: "Archiwum",
+        archiveEmpty: "Brak zarchiwizowanych wpisów.",
+        archiveCount: "W archiwum: {n}",
+        btnArchiveMove: "Archiwizuj wpisy starsze niż 9 mies.",
+        btnArchiveRestore: "Przywróć wszystkie",
+        btnArchiveExport: "Eksportuj archiwum",
+        archivedMsg: "Zarchiwizowano ",
+        archiveRestoredMsg: "Przywrócono ",
+        archiveExportedMsg: "Pobrano archiwum",
+        nothingToArchiveMsg: "Brak wpisów starszych niż 9 mies."
       },
       en: {
         trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.", trendsNoData: "No measurements in the selected period.",
         viewBars: "Ranges", sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
         barsHint: "Bar: from diastolic (DIA) to systolic (SYS). Lighter streak: min–max within the group.",
         barsMode_m: "Individual measurements", barsMode_d: "Daily averages", barsMode_w: "Weekly averages",
-        normsNote: "Current guidelines for systolic and diastolic blood pressure are available on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, as well as of equivalent institutions in other countries.",
+        normsNote: "Guidelines for interpreting systolic and diastolic blood pressure may change over time. Check the latest recommendations on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, or of equivalent institutions in your country.",
         wipeDesc: "Deletes all measurements and settings from this device.",
         navHistory: "Readings", navTrends: "Trends", 
         sysLabel: "Systolic", diaLabel: "Diastolic", hrLabel: "Pulse", wgtLabel: "Weight",
@@ -260,7 +293,19 @@
         wipeConfirm: "Delete ALL measurements and settings from this device? This cannot be undone. If you want to keep your data, create a backup first.",
         wipeDone: "All data has been deleted",
         privacyNote: "Data is stored only on this device.",
-        importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?"
+        importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?",
+        archiveTitle: "Measurement archive",
+        archiveDesc: "Entries older than 9 months can be moved to the archive — they disappear from the list and Trends, but stay on this device and can be restored or exported at any time.",
+        btnArchiveOpen: "Archive",
+        archiveEmpty: "No archived entries.",
+        archiveCount: "In archive: {n}",
+        btnArchiveMove: "Archive entries older than 9 months",
+        btnArchiveRestore: "Restore all",
+        btnArchiveExport: "Export archive",
+        archivedMsg: "Archived ",
+        archiveRestoredMsg: "Restored ",
+        archiveExportedMsg: "Archive downloaded",
+        nothingToArchiveMsg: "No entries older than 9 months."
       }
     };
     return {
@@ -362,6 +407,14 @@
 
   function t(key) { return I18nModule.t(key, settings.lang); }
 
+  // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries)
+  function pluralEntries(n){
+    if (settings.lang === "en") return n === 1 ? " entry." : " entries.";
+    if (n === 1) return " wpis.";
+    var m10 = n % 10, m100 = n % 100;
+    return (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) ? " wpisy." : " wpisów.";
+  }
+
   function applyLanguage() {
     document.querySelectorAll('[data-i18n]').forEach(function(el){
       var k = el.getAttribute('data-i18n');
@@ -409,10 +462,18 @@
     });
   }
 
+  // Audyt i18n: format daty zależny od języka (pl: dd.mm.rrrr, en: mm/dd/yyyy)
   function fmtDate(ts){
     var d = new Date(ts);
     function p(n){ return (n<10?"0":"")+n; }
-    return { date: p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear(), time: p(d.getHours())+":"+p(d.getMinutes()) };
+    var locale = settings.lang === "en" ? "en-US" : "pl-PL";
+    try {
+      var date = d.toLocaleDateString(locale, { year:"numeric", month:"2-digit", day:"2-digit" });
+      var time = d.toLocaleTimeString(locale, { hour:"2-digit", minute:"2-digit", hour12:false });
+      return { date: date, time: time };
+    } catch(e) {
+      return { date: p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear(), time: p(d.getHours())+":"+p(d.getMinutes()) };
+    }
   }
 
   var entryList = document.getElementById("entryList");
@@ -424,14 +485,14 @@
       entryList.innerHTML = '<div class="empty-box">'
         +'<h3>'+t("emptyTitle")+'</h3>'
         +'<p>'+t("emptyDesc")+'</p>'
-        +'<button class="btn" id="btnEmptyAdd" style="max-width:220px;margin:0 auto">'+t("btnAddFirst")+'</button>'
+        +'<button class="btn" id="btnEmptyAdd">'+t("btnAddFirst")+'</button>'
         +'</div>';
       document.getElementById("btnEmptyAdd").onclick = function(){ openAdd(null); };
       drawTrends();
       return;
     }
 
-    var arr = entries.slice().sort(function(a,b){ return b.ts - a.ts; });
+    var arr = sortedDesc();
     var frag = document.createDocumentFragment();
 
     arr.forEach(function(e){
@@ -580,7 +641,7 @@
     if (!entries.length) {
       empty.innerHTML = '<h3>' + t("emptyTitle") + '</h3>'
         + '<p style="margin-bottom:12px;">' + t("emptyDesc") + '</p>'
-        + '<button class="btn" id="btnTrendsAdd" style="max-width:200px;margin:0 auto;padding:10px 14px;font-size:0.9rem;">' + t("btnAddFirst") + '</button>';
+        + '<button class="btn btn--sm" id="btnTrendsAdd">' + t("btnAddFirst") + '</button>';
       empty.hidden = false;
       document.getElementById("btnTrendsAdd").onclick = function(){ openAdd(null); };
       return;
@@ -783,9 +844,12 @@
       return isFinite(v) ? Math.round(v * 10) / 10 : NaN;
     }
   };
+  // Audyt kodu: jedno miejsce sortowania malejąco po dacie
+  function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
+
   // ostatnia znana wartość (nie tylko z najnowszego wpisu, który mógł jej nie mieć)
   function lastKnown(key, fallback){
-    var arr = entries.slice().sort(function(a,b){ return b.ts - a.ts; });
+    var arr = sortedDesc();
     for (var i = 0; i < arr.length; i++) { if (arr[i][key] != null) return arr[i][key]; }
     return fallback;
   }
@@ -866,9 +930,8 @@
   }
 
   function getLatestEntry(){
-    if (!entries.length) return null;
-    var sorted = entries.slice().sort(function(a,b){ return b.ts - a.ts; });
-    return sorted[0];
+    var sorted = sortedDesc();
+    return sorted.length ? sorted[0] : null;
   }
 
   function openAdd(entry){
@@ -1050,7 +1113,7 @@
             applyTheme(); applyLanguage(); applyFontSize(); render();
           });
         }
-        toast("✓ " + t("importedMsg")+added+t("importedSuffix")+(skipped ? t("importSkipped")+skipped : ""));
+        toast("✓ " + t("importedMsg")+added+pluralEntries(added)+(skipped ? t("importSkipped")+skipped : ""));
       }catch(err){ toast(t("importError")); }
     };
       r.readAsText(f);
@@ -1078,10 +1141,10 @@
     exportPdf();
   };
   function exportPdf(){
-    var arr = entries.slice().filter(function(e){
+    var arr = sortedDesc().filter(function(e){
       if (pdfExportRange === "all") return true;
       return e.ts >= Date.now() - pdfExportRange * 24 * 60 * 60 * 1000;
-    }).sort(function(a,b){ return b.ts-a.ts; });
+    });
     if (!arr.length){ toast(t("trendsNoData")); return; }
     var rows = arr.map(function(e){
       var f = fmtDate(e.ts);
@@ -1192,9 +1255,6 @@
     applyTheme();
   }
   document.getElementById("themeToggle").onclick = toggleThemeDraft;
-  document.getElementById("themeToggle").onkeydown = function(e){
-    if(e.key==="Enter" || e.key===" "){e.preventDefault();toggleThemeDraft.call(this);}
-  };
 
   var lastFocusEl = null;
   function setModalState(el, isOpen) {
@@ -1252,6 +1312,7 @@
       else if (settingsOverlay.classList.contains("open")) cancelSettings();
       else if (toolsOverlay.classList.contains("open")) setModalState(toolsOverlay, false);
       else if (pdfOverlayEl.classList.contains("open")) setModalState(pdfOverlayEl, false);
+      else if (archiveOverlayEl && archiveOverlayEl.classList.contains("open")) setModalState(archiveOverlayEl, false);
     }
   });
 
@@ -1259,15 +1320,30 @@
   var UNDO_MS = 6000;
   var TOAST_CSS = "position:fixed;bottom:calc(90px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);width:max-content;max-width:92vw;text-align:center;line-height:1.4;background:var(--card);color:var(--text);border:1px solid var(--line);padding:10px 18px;border-radius:12px;font-size:.8125rem;font-weight:600;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.2);backdrop-filter:blur(8px);transition:opacity .4s;";
 
+  var toastQueue = [];
+
   function clearToast(){
     toastTimers.forEach(clearTimeout);
     toastTimers = [];
+    toastQueue = [];   // jawnie zamknięte toasty kasują również kolejkę
     if (toastEl) { toastEl.remove(); toastEl = null; }
   }
 
-  // Każdy toast ma własne timery (poprzednie są czyszczone), więc nowy toast nie jest skracany przez stary
+  // Audyt: toasty już się nie nadpisują. Pilne (np. uszkodzone dane) zastępują
+  // bieżący toast natychmiast; zwykłe czekają w kolejce (max 3) i są puszczane
+  // w skróconej wersji po zakończeniu bieżącego.
   function showToast(el, msg, ms, urgent){
-    clearToast();
+    if (urgent) {
+      toastTimers.forEach(clearTimeout); toastTimers = [];
+      toastQueue = [];
+      if (toastEl) { toastEl.remove(); toastEl = null; }
+    } else if (toastEl) {
+      if (toastQueue.length < 3) toastQueue.push([el, msg, ms]);
+      return;
+    }
+    displayToast(el, msg, ms || 2200, urgent);
+  }
+  function displayToast(el, msg, ms, urgent){
     toastEl = el;
     document.body.appendChild(el);
     var live = document.getElementById("liveRegion");
@@ -1277,7 +1353,14 @@
       setTimeout(function(){ live.textContent = msg; }, 50);
     }
     toastTimers.push(setTimeout(function(){ el.style.opacity = "0"; }, ms));
-    toastTimers.push(setTimeout(function(){ if (toastEl === el) { el.remove(); toastEl = null; } }, ms + 500));
+    toastTimers.push(setTimeout(function(){
+      if (toastEl === el) { el.remove(); toastEl = null; playNextToast(); }
+    }, ms + 500));
+  }
+  function playNextToast(){
+    if (toastEl || !toastQueue.length) return;
+    var q = toastQueue.shift();
+    displayToast(q[0], q[1], Math.min(q[2] || 2200, 3500), false);
   }
 
   function toast(msg, ms, urgent){
@@ -1330,6 +1413,72 @@
       };
     }
   }
+  // === Archiwum pomiarów (wpisy starsze niż 9 mies.) ===
+  var ARCHIVE_MS = 273 * 24 * 60 * 60 * 1000;
+  var archiveOverlayEl = document.getElementById("archiveOverlay");
+
+  function updateArchiveSummary(){
+    var el = document.getElementById("archiveSummary");
+    var archive = StorageModule.loadArchive();
+    if (!archive.length) { el.textContent = t("archiveEmpty"); return; }
+    var mn = Infinity, mx = -Infinity;
+    archive.forEach(function(e){ if (e.ts < mn) mn = e.ts; if (e.ts > mx) mx = e.ts; });
+    el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " – " + fmtDate(mx).date + ")";
+  }
+  function archiveOldEntries(){
+    var cutoff = Date.now() - ARCHIVE_MS;
+    var toMove = entries.filter(function(e){ return e.ts < cutoff; });
+    if (!toMove.length) { toast(t("nothingToArchiveMsg")); return; }
+    var archive = StorageModule.loadArchive();
+    var ids = Object.create(null);
+    archive.forEach(function(e){ ids[e.id] = 1; });
+    toMove.forEach(function(e){ if (!ids[e.id]) { archive.push(e); ids[e.id] = 1; } });
+    entries = entries.filter(function(e){ return e.ts >= cutoff; });
+    if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
+    if (!StorageModule.saveArchive(archive)) toast(t("storageError"));
+    updateArchiveSummary();
+    render();
+    toast("✓ " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
+  }
+  function restoreArchive(){
+    var archive = StorageModule.loadArchive();
+    if (!archive.length) { toast(t("archiveEmpty")); return; }
+    var ids = Object.create(null);
+    entries.forEach(function(e){ ids[e.id] = 1; });
+    var added = 0;
+    archive.forEach(function(e){ if (!ids[e.id]) { entries.push(e); ids[e.id] = 1; added++; } });
+    if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
+    StorageModule.saveArchive([]);
+    updateArchiveSummary();
+    render();
+    toast("✓ " + t("archiveRestoredMsg") + added + pluralEntries(added));
+  }
+  function exportArchive(){
+    var archive = StorageModule.loadArchive();
+    if (!archive.length) { toast(t("archiveEmpty")); return; }
+    var obj = { schemaVersion: 1, type: "qardis-archive", exportedAt: new Date().toISOString(), entries: archive };
+    var blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    var d = new Date(), p = function(n){ return (n<10?"0":"")+n; };
+    a.download = "qardis-archiwum-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    toast("✓ " + t("archiveExportedMsg"));
+  }
+  if (archiveOverlayEl) {
+    document.getElementById("btnArchiveOpen").onclick = function(){
+      updateArchiveSummary();
+      setModalState(toolsOverlay, false);
+      setModalState(archiveOverlayEl, true);
+    };
+    archiveOverlayEl.addEventListener("click", function(e){ if (e.target === archiveOverlayEl) setModalState(archiveOverlayEl, false); });
+    document.getElementById("btnArchiveClose").onclick = function(){ setModalState(archiveOverlayEl, false); };
+    document.getElementById("btnArchiveMove").onclick = archiveOldEntries;
+    document.getElementById("btnArchiveRestore").onclick = restoreArchive;
+    document.getElementById("btnArchiveExport").onclick = exportArchive;
+  }
+
   // Audyt(3): przypominacz o kopii zapasowej (30 dni)
   (function backupReminder(){
     if (!entries.length) return;
@@ -1356,6 +1505,13 @@
       }
     }
   });
+
+  // Audyt P1: obsługa ?action=add przeniesiona z inline <script> do app.js,
+  // żeby CSP mogło być czystym script-src 'self' (koniec z utrzymywaniem hasha).
+  if (new URLSearchParams(window.location.search).get("action") === "add") {
+    try { history.replaceState(null, "", location.pathname); } catch(e){}
+    setTimeout(function(){ var b = document.getElementById("btnAdd"); if (b) b.click(); }, 80);
+  }
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){

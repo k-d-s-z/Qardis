@@ -1,0 +1,3 @@
+body { font-family: system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+.pass { color: #1a6b2f; }
+.fail { color: #b42318; font-weight: 700; }

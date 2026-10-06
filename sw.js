@@ -38,13 +38,24 @@
       touch target 44px dla przełącznika osi, wyrównanie pól numerycznych,
       myślniki w datach nazw plików (backup/CSV/archiwum).
   13) Bugfix: listener przełącznika osi z flagą jednorazowej rejestracji
-      (kumulacja listenerów na kontenerze czyniła przycisk "martwym"). */
+      (kumulacja listenerów na kontenerze czyniła przycisk "martwym").
+  14) Audyt 7-10: podgląd archiwum, kopia v3 "wszystko w jednym"
+      (wpisy+archiwum+ustawienia), core.js z czystą logiką + tests.html,
+      bump-sw.sh do automatyzacji wersjonowania przy deploju.
+  15) Audyt 2026-10: instalacja sprawdza wynik cache.put dla zasobów
+      krytycznych (niepełny cache = błąd instalacji, nie ciche "działa");
+      skrypty i style (js/css) używają tej samej strategii co nawigacja
+      (network-first z wyścigiem 2 s) — koniec rozjazdu nowy HTML + stary JS;
+      odczyt z cache najpierw z aktualnego CACHE_NAME, dopiero potem globalnie.
 
+   Build: 2026-10-06T07:11:12Z
+*/
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;
 const ASSETS = [
   "./",
   "./index.html",
+  "./core.js",
   "./app.js",
   "./style.css",
   "./manifest.webmanifest",
@@ -53,7 +64,7 @@ const ASSETS = [
   "./icon-maskable-512.png",
   "./apple-touch-icon.png"
 ];
-const REQUIRED = ["./index.html", "./app.js", "./style.css", "./manifest.webmanifest"];
+const REQUIRED = ["./index.html", "./core.js", "./app.js", "./style.css", "./manifest.webmanifest"];
 
 let CACHE_NAME = null;
 
@@ -101,8 +112,14 @@ async function installAndVersion() {
   }
   const version = await hashBuffer(new TextEncoder().encode(hashInput));
   const name = PREFIX + version.slice(0, 16);
+  const existed = await caches.has(name);
   const cache = await caches.open(name);
-  await Promise.allSettled(good.map((pair) => cache.put(pair[0], pair[1])));
+  const puts = await Promise.allSettled(good.map((pair) => cache.put(pair[0], pair[1])));
+  const failed = good.filter((pair, i) => puts[i].status === "rejected" && REQUIRED.indexOf(pair[0]) >= 0);
+  if (failed.length) {
+    if (!existed) { try { await caches.delete(name); } catch (_) {} }
+    throw new Error("cache write failed: " + failed.map((p) => p[0]).join(", "));
+  }
   CACHE_NAME = name;   // jedyna prawda o aktualnym cache — ustalana tutaj
   return name;
 }
@@ -122,51 +139,67 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// Odczyt: najpierw aktualny cache (CACHE_NAME), dopiero potem wszystkie —
+// caches.match bez wskazania zwraca trafienie z NAJSTARSZEGO cache.
+async function matchCurrent(key) {
+  if (CACHE_NAME) {
+    try {
+      const c = await caches.open(CACHE_NAME);
+      const m = await c.match(key);
+      if (m) return m;
+    } catch (_) { /* przejdź do globalnego match */ }
+  }
+  return caches.match(key);
+}
+
+// Network-first z wyścigiem NAV_TIMEOUT_MS i fallbackiem do cache.
+// Używane dla nawigacji ORAZ js/css — HTML i skrypty zawsze z tej samej "świeżości".
+async function networkFirst(e, key) {
+  await ensureCacheName();
+  const net = fetch(e.request, { cache: "no-store" })
+    .then(async (res) => {
+      if (!res.ok) return null;   // błąd HTTP = brak sieci -> fallback do cache
+      if (CACHE_NAME) {
+        const copy = res.clone();   // klon synchronicznie, zanim ciało przeczyta strona
+        try {
+          const c = await caches.open(CACHE_NAME);
+          await c.put(key, copy);
+        } catch (_) { /* cache opcjonalny (limit pamięci) — odpowiedź sieci i tak zwracamy */ }
+      }
+      return res;
+    })
+    .catch(() => null);
+  e.waitUntil(net);   // respondWith przedłuża życie zdarzenia, więc waitUntil po await jest dozwolone
+  const timer = new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT_MS));
+  const res = await Promise.race([net, timer]);
+  if (res) return res;
+  const m = (await matchCurrent(key)) || (key === "./index.html" ? await matchCurrent("./") : null);
+  return m || (await net) || Response.error();
+}
+
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Nawigacja: wyścig sieć vs 2 s, fallback do cache (offline / słaby zasięg)
   if (e.request.mode === "navigate") {
-    e.respondWith((async () => {
-      await ensureCacheName();
-      const net = fetch(e.request, { cache: "no-store" })
-        .then(async (res) => {
-          if (!res.ok) return null;   // audyt: błąd HTTP = brak sieci -> fallback do cache
-          if (CACHE_NAME) {
-            // Klon synchronicznie — zanim przeglądarka zacznie czytać ciało odpowiedzi.
-            const copy = res.clone();
-            try {
-              const c = await caches.open(CACHE_NAME);
-              await c.put("./index.html", copy);
-            } catch (_) { /* cache jest opcjonalny (limit pamięci, wyczyszczony storage) — odpowiedź sieci i tak zwracamy */ }
-          }
-          return res;
-        })
-        .catch(() => null);
-      // waitUntil rejestrowane SYNCHRONICZNIE: gdy wygra timer 2 s, respondWith
-      // rozstrzyga się wcześniej i późniejsze waitUntil rzuciłoby InvalidStateError.
-      e.waitUntil(net);
-      const timer = new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT_MS));
-      const res = await Promise.race([net, timer]);
-      if (res) return res;
-      // Brak cache: poczekaj, może sieć jeszcze odpowie.
-      const m = (await caches.match("./index.html")) || (await caches.match("./"));
-      return m || (await net) || Response.error();
-    })());
+    e.respondWith(networkFirst(e, "./index.html"));
+    return;
+  }
+  if (e.request.destination === "script" || e.request.destination === "style") {
+    e.respondWith(networkFirst(e, e.request));
     return;
   }
 
-  // Pozostałe zasoby: stale-while-revalidate
+  // Pozostałe zasoby (ikony, manifest): stale-while-revalidate
   e.respondWith((async () => {
     await ensureCacheName();
-    const cached = await caches.match(e.request);
+    const cached = await matchCurrent(e.request);
     const update = fetch(e.request, { cache: "no-cache" })
       .then(async (res) => {
-        if (!res.ok) return null;   // audyt: błąd HTTP nie zastępuje cache
+        if (!res.ok) return null;   // błąd HTTP nie zastępuje cache
         if (CACHE_NAME) {
-          const copy = res.clone();   // klon synchronicznie, zanim ciało przeczyta strona
+          const copy = res.clone();
           try {
             const c = await caches.open(CACHE_NAME);
             await c.put(e.request, copy);
@@ -175,8 +208,6 @@ self.addEventListener("fetch", (e) => {
         return res;
       })
       .catch(() => null);
-    // Rejestrujemy BEFORE zwróceniem cached — po rozstrzygnięciu respondWith
-    // zdarzenie fetch jest już zamknięte i waitUntil rzuciłby InvalidStateError.
     e.waitUntil(update);
     return cached || (await update) || Response.error();
   })());

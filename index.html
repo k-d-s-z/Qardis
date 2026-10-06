@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+<h1 class="sr-only">Qardis</h1>
 <div id="viewport">
   <div id="track">
     <section class="screen" id="homeScreen" role="tabpanel" aria-labelledby="navHistory">
@@ -68,8 +68,8 @@
 <div id="liveRegion" class="sr-only" role="status" aria-live="polite"></div>
 
 <!-- Arkusz potwierdzeń (audyt: zamiast systemowych okien dialogowych) -->
-<div class="overlay" id="dialogOverlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" inert>
-  <div class="sheet">
+<div class="overlay" id="dialogOverlay" inert>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
     <div class="sheet-header"><h2 id="dialogTitle"></h2></div>
     <p id="dialogText" class="sheet-note"></p>
     <div class="sheet-actions">
@@ -80,8 +80,8 @@
 </div>
 
 <!-- Tools Menu Sheet -->
-<div class="overlay" id="toolsOverlay" role="dialog" aria-modal="true" aria-labelledby="toolsTitle" inert>
-  <div class="sheet">
+<div class="overlay" id="toolsOverlay" inert>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="toolsTitle">
     <div class="sheet-header">
       <h2 id="toolsTitle" data-i18n="toolsTitle">Dane i eksport</h2>
     </div>
@@ -96,7 +96,7 @@
       </button>
       <button class="menu-item" id="btnPdf">
         <svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h6M9 16.5h6"/></svg>
-        <span data-i18n="titleBtnPdf">Eksportuj raport do PDF</span>
+        <span data-i18n="titleBtnPdf">Raport: zapisz PDF lub drukuj</span>
       </button>
       <button class="menu-item" id="btnCsv">
         <svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16M4 15h16M10 4v16M15 4v16"/></svg>
@@ -119,11 +119,13 @@
 </div>
 
 <!-- Archive Sheet -->
-<div class="overlay" id="archiveOverlay" role="dialog" aria-modal="true" aria-labelledby="archiveTitle" inert>
-  <div class="sheet">
+<div class="overlay" id="archiveOverlay" inert>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="archiveTitle">
     <div class="sheet-header"><h2 id="archiveTitle" data-i18n="archiveTitle">Archiwum pomiarów</h2></div>
     <p class="sheet-note" data-i18n="archiveDesc">Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z listy i Trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.</p>
     <p class="sheet-note" id="archiveSummary"></p>
+    <button type="button" class="btn ghost btn--sm" id="btnArchivePeek" data-i18n="archiveShow" hidden>Pokaż wpisy</button>
+    <div id="archiveList" class="archive-list" hidden></div>
     <div class="sheet-actions sheet-actions-col">
       <button type="button" class="btn" id="btnArchiveMove" data-i18n="btnArchiveMove">Archiwizuj wpisy starsze niż 9 mies.</button>
       <button type="button" class="btn ghost" id="btnArchiveRestore" data-i18n="btnArchiveRestore">Przywróć wszystkie</button>
@@ -134,10 +136,10 @@
 </div>
 
 <!-- PDF export sheet -->
-<div class="overlay" id="pdfRangeOverlay" role="dialog" aria-modal="true" aria-labelledby="pdfExportTitle" inert>
-  <div class="sheet">
+<div class="overlay" id="pdfRangeOverlay" inert>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pdfExportTitle">
     <div class="sheet-header">
-      <h2 id="pdfExportTitle" data-i18n="pdfExportTitle">Eksport raportu PDF</h2>
+      <h2 id="pdfExportTitle" data-i18n="pdfExportTitle">Raport pomiarów</h2>
     </div>
     <div class="set-row set-row-col">
       <div class="lbl" data-i18n="pdfRangeTitle">Zakres danych</div>
@@ -149,16 +151,17 @@
       </div>
     </div>
     <p class="sheet-note" data-i18n="privacyAlert">Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.</p>
-    <div class="sheet-actions">
+    <div class="sheet-actions sheet-actions-col">
+      <button class="btn" id="btnPdfExport" data-i18n="btnSavePdf">Zapisz jako PDF</button>
+      <button class="btn ghost" id="btnPdfPrint" data-i18n="btnPrint">Drukuj</button>
       <button class="btn ghost" id="btnPdfCancel" data-i18n="btnCancel">Anuluj</button>
-      <button class="btn" id="btnPdfExport" data-i18n="btnExport">Eksportuj</button>
     </div>
   </div>
 </div>
 
 <!-- Add / Edit sheet -->
-<div class="overlay" id="addOverlay" role="dialog" aria-modal="true" aria-labelledby="addTitle" inert>
-  <div class="sheet">
+<div class="overlay" id="addOverlay" inert>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addTitle">
     <div class="sheet-header">
       <h2 id="addTitle">Nowy wpis</h2>
       <button type="button" id="btnDeleteEntryHeader" class="btn-text-danger" data-i18n="btnDelete">Usuń</button>
@@ -210,15 +213,15 @@
 </div>
 
 <!-- Settings Sheet -->
-<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" inert>
-  <div class="sheet">
+<div class="overlay" id="settingsOverlay" inert>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="sheet-header">
       <h2 id="settingsTitle" data-i18n="settingsTitle">Ustawienia</h2>
     </div>
 
     <div class="set-row set-row-col">
-      <div class="lbl" data-i18n="monitoredTitle">Monitorowane parametry</div>
-      <div class="segmented-control segmented-full" id="monitoredSwitch">
+      <div class="lbl" id="monitoredLbl" data-i18n="monitoredTitle">Monitorowane parametry</div>
+      <div class="segmented-control segmented-full" id="monitoredSwitch" role="group" aria-labelledby="monitoredLbl">
         <button type="button" data-param="trackSys" data-i18n="sysLabel">SYS</button>
         <button type="button" data-param="trackDia" data-i18n="diaLabel">DIA</button>
         <button type="button" data-param="trackHr" data-i18n="hrLabel">Tętno</button>
@@ -258,6 +261,7 @@
   </div>
 </div>
 
+<script src="core.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

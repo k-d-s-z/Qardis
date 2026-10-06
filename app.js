@@ -3,23 +3,12 @@
 
   function $(id){ return document.getElementById(id); }
 
-  // Jedno źródło limitów wartości (sanityzacja, import i pola numeryczne).
-  var LIMITS = { sys:[50,300], dia:[30,200], hr:[20,250], wgt:[20,300] };
-  function sanitizeEntry(e){
-    if (!e || typeof e !== "object") return null;
-    function num(v, lo, hi){ return (typeof v === "number" && isFinite(v) && v >= lo && v <= hi) ? v : null; }
-    var ts = (typeof e.ts === "number" && isFinite(e.ts) && e.ts >= 0 && e.ts <= 4102444800000) ? e.ts : null;
-    if (ts === null) return null;
-    return {
-      id: (typeof e.id === "string" && e.id.length > 0 && e.id.length <= 100) ? e.id : null,
-      ts: ts,
-      sys: num(e.sys, LIMITS.sys[0], LIMITS.sys[1]), dia: num(e.dia, LIMITS.dia[0], LIMITS.dia[1]), hr: num(e.hr, LIMITS.hr[0], LIMITS.hr[1]), wgt: num(e.wgt, LIMITS.wgt[0], LIMITS.wgt[1]),
-      note: typeof e.note === "string" ? e.note.slice(0, 2000) : ""
-    };
-  }
-  function lossy(orig, clean){
-    return ["sys","dia","hr","wgt"].some(function(k){ return orig[k] != null && clean[k] === null; });
-  }
+  // Audyt(9): czysta logika (limity, sanityzacja, CSV, pluralizacja, interpolacja
+  // osi czasu, walidacja importu) wydzielona do core.js — jedna implementacja
+  // dla aplikacji i testów jednostkowych (tests.html).
+  var LIMITS = QardisCore.LIMITS;
+  var sanitizeEntry = QardisCore.sanitizeEntry;
+  var lossy = QardisCore.lossy;
 
   // --- MODUŁ 1: Storage & State ---
   var StorageModule = (function(){
@@ -28,7 +17,9 @@
     var lastRaw = null;   // ostatni stan localStorage znany tej karcie (wykrywanie zapisów z innych kart)
     function stash(raw){
       issue = true;
-      try { localStorage.setItem(LS + ".corrupt", raw); } catch(e){}
+      // Zachowujemy PIERWSZĄ kopię — kolejne wykrycia nie nadpisują oryginału
+      // i nie dublują całego zbioru w limicie localStorage.
+      try { if (!localStorage.getItem(LS + ".corrupt")) localStorage.setItem(LS + ".corrupt", raw); } catch(e){}
     }
     function buildDefaults(){
       var autoTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
@@ -147,27 +138,18 @@
         [LS, LS_SET, LS_ARC, LS + ".corrupt"].forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
         lastRaw = null;
       },
+      isStale: function(){
+        try { return localStorage.getItem(LS) !== lastRaw; } catch(e){ return false; }
+      },
       entriesKey: function(){ return LS; },
       settingsKey: function(){ return LS_SET; }
     };
   })();
 
-  // --- MODUŁ 2: Validation ---
+  // --- MODUŁ 2: Validation --- (implementacja w core.js — audyt(9))
   var ValidationModule = (function(){
     return {
-      validateImport: function(j){
-        // Tylko struktura pliku: obiekt z tablicą entries (lub czysta tablica)
-        // rekordów-obiektów. Typy pól, zakresy i długości sprawdza sanitizeEntry
-        // w pętli importu, która złe rekordy pomija i zlicza – jeden zły
-        // rekord nie odrzuca całego pliku.
-        if (!j || typeof j !== "object") return false;
-        var list = j.entries || (Array.isArray(j) ? j : null);
-        if (!Array.isArray(list)) return false;
-        for (var i = 0; i < list.length; i++) {
-          if (!list[i] || typeof list[i] !== "object" || Array.isArray(list[i])) return false;
-        }
-        return true;
-      }
+      validateImport: function(j){ return QardisCore.validateImport(j); }
     };
   })();
 
@@ -189,20 +171,22 @@
         
         
         langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
-        titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF",
+        titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Raport: zapisz PDF lub drukuj",
         titleBtnCsv: "Eksportuj dane (CSV)", csvDone: "Pobrano plik CSV",
         discardTitle: "Niezapisane zmiany", discardConfirm: "Arkusz edycji zawiera niezapisane zmiany. Porzucić je?", btnDiscard: "Porzuć",
         titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopię danych uszkodzonych",
         backupReminder: "Minęło ponad 30 dni od ostatniej kopii zapasowej – rozważ jej utworzenie (menu „Dane i eksport”).",
         importedMsg: "Zaimportowano ", importError: "Nieprawidłowy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utwórz nową kopię zapasową w aplikacji.",
-        noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Eksport raportu PDF", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj",
+        noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Raport pomiarów", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj", btnSavePdf: "Zapisz jako PDF", btnPrint: "Drukuj", pdfSaved: "Raport PDF zapisany", pdfSaveError: "Nie udało się utworzyć pliku PDF.",
         savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", futureDateWarn: "Data pomiaru przypada w przyszłości — upewnij się, że to zamierzone.", deletedMsg: "Wpis został usunięty", importConfirm: "Dane z kopii zostaną połączone z istniejącymi wpisami. Kontynuować?",
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
         
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
         numRequiredMsg: "Podaj wartości liczbowe w polach pomiaru.",
+        rangeMsg: "Wartość poza zakresem: SYS 50–300, DIA 30–200, tętno 20–250.",
+        dateRangeMsg: "Podaj poprawną datę (lata 2000–2099).",
         chartPanHint: "Przeciągnij wykres w bok, aby przeglądać kolejne pomiary (do 4 na ekran). Przełącznik zmienia oś na rzeczywisty upływ czasu.",
-        axisCatSwitch: "Oś: równomierna", axisTimeSwitch: "Oś: rzeczywisty czas",
+        axisCatSwitch: "Oś: równa", axisTimeSwitch: "Oś: czasowa",
         minParamWarn: "Co najmniej jeden parametr musi pozostać włączony.",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
         storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
@@ -226,7 +210,7 @@
         wgtDec: "Zmniejsz wagę o 0,1 kg", wgtInc: "Zwiększ wagę o 0,1 kg", wgtLabelKg: "Waga [kg]",
         wgtErrorMsg: "Podaj wagę w zakresie 20–300 kg (np. 75,5).",
         titleBtnWipe: "Usuń wszystkie dane",
-        wipeConfirm: "Usunąć WSZYSTKIE pomiary i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową. Uwaga: operacja usuwa również archiwum pomiarów, którego kopia zapasowa nie zawiera.",
+        wipeConfirm: "Usunąć WSZYSTKIE pomiary, archiwum i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową (zawiera również archiwum).",
         wipeDone: "Wszystkie dane zostały usunięte",
         privacyNote: "Dane są przechowywane wyłącznie na tym urządzeniu.",
         importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?",
@@ -236,13 +220,14 @@
         archiveEmpty: "Brak zarchiwizowanych wpisów.",
         archiveCount: "W archiwum: {n}",
         btnArchiveMove: "Archiwizuj wpisy starsze niż 9 mies.",
+        archiveShow: "Pokaż wpisy", archiveHide: "Ukryj wpisy",
         btnArchiveRestore: "Przywróć wszystkie",
         btnArchiveExport: "Eksportuj archiwum",
         archivedMsg: "Zarchiwizowano ",
         archiveRestoredMsg: "Przywrócono ",
         archiveExportedMsg: "Pobrano archiwum",
         nothingToArchiveMsg: "Brak wpisów starszych niż 9 mies.",
-        archiveNotInBackup: "Uwaga: kopia nie zawiera archiwum pomiarów. Jeśli masz zarchiwizowane wpisy, wyeksportuj je osobno (menu „Dane i eksport” → „Archiwum”).",
+        archiveInBackup: "Kopia zawiera pomiary, archiwum i ustawienia — pełna migracja urządzenia w jednym pliku.",
         importSavedWarning: "Nie udało się zapisać danych (może limit pamięci lub tryb prywatny?). Zaimportowane wpisy są widoczne, ale znikną po odświeżeniu strony."
       },
       en: {
@@ -260,18 +245,20 @@
         
         
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
-        titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report",
+        titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Report: save PDF or print",
         titleBtnCsv: "Export data (CSV)", csvDone: "CSV file downloaded",
         discardTitle: "Unsaved changes", discardConfirm: "The edit form contains unsaved changes. Discard them?", btnDiscard: "Discard",
         titleBtnCorrupt: "Export corrupted data (safety copy)", corruptExported: "Corrupted data copy downloaded",
         backupReminder: "More than 30 days since your last backup – consider creating one (Data & Export menu).",
         importedMsg: "Imported ", importError: "Invalid backup file.", importVersionError: "Unknown backup format version (schemaVersion). Create a new backup in the app.",
-        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Export PDF report", pdfRangeTitle: "Data range", btnExport: "Export",
+        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Measurement report", pdfRangeTitle: "Data range", btnExport: "Export", btnSavePdf: "Save as PDF", btnPrint: "Print", pdfSaved: "PDF report saved", pdfSaveError: "Failed to create the PDF file.",
         savedMsg: "Measurement saved", updatedMsg: "Measurement updated", futureDateWarn: "The measurement date is in the future — make sure this is intentional.", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
         
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
         numRequiredMsg: "Enter numeric values in the measurement fields.",
+        rangeMsg: "Value out of range: SYS 50–300, DIA 30–200, pulse 20–250.",
+        dateRangeMsg: "Enter a valid date (years 2000–2099).",
         chartPanHint: "Drag the chart sideways to browse measurements (up to 4 on screen). The toggle switches the axis to real time spacing.",
         axisCatSwitch: "Axis: even", axisTimeSwitch: "Axis: time",
         minParamWarn: "At least one parameter must stay enabled.",
@@ -297,7 +284,7 @@
         wgtDec: "Decrease weight by 0.1 kg", wgtInc: "Increase weight by 0.1 kg", wgtLabelKg: "Weight [kg]",
         wgtErrorMsg: "Enter a weight between 20 and 300 kg (e.g. 75.5).",
         titleBtnWipe: "Delete all data",
-        wipeConfirm: "Delete ALL measurements and settings from this device? This cannot be undone. If you want to keep your data, create a backup first. Note: this also deletes the measurement archive, which is not included in the backup.",
+        wipeConfirm: "Delete ALL measurements, the archive and settings from this device? This cannot be undone. If you want to keep your data, create a backup first (it also includes the archive).",
         wipeDone: "All data has been deleted",
         privacyNote: "Data is stored only on this device.",
         importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?",
@@ -307,13 +294,14 @@
         archiveEmpty: "No archived entries.",
         archiveCount: "In archive: {n}",
         btnArchiveMove: "Archive entries older than 9 months",
+        archiveShow: "Show entries", archiveHide: "Hide entries",
         btnArchiveRestore: "Restore all",
         btnArchiveExport: "Export archive",
         archivedMsg: "Archived ",
         archiveRestoredMsg: "Restored ",
         archiveExportedMsg: "Archive downloaded",
         nothingToArchiveMsg: "No entries older than 9 months.",
-        archiveNotInBackup: "Note: the backup does not include the measurement archive. If you have archived entries, export them separately (Data & Export → Archive).",
+        archiveInBackup: "The backup contains measurements, archive and settings — a full device migration in one file.",
         importSavedWarning: "Failed to save data (storage limit or private mode?). Imported entries are visible, but will disappear after refreshing the page."
       }
     };
@@ -428,13 +416,9 @@
   }
   function ymd(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }   // audyt(6): czytelna nazwa pliku backupu (2026-10-06)
 
-  // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries)
-  function pluralEntries(n){
-    if (settings.lang === "en") return n === 1 ? " entry." : " entries.";
-    if (n === 1) return " wpis.";
-    var m10 = n % 10, m100 = n % 100;
-    return (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) ? " wpisy." : " wpisów.";
-  }
+  // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries) —
+  // implementacja w core.js, tutaj tylko podpięcie języka.
+  function pluralEntries(n){ return QardisCore.pluralEntries(n, settings.lang); }
 
   function applyLanguage() {
     document.querySelectorAll('[data-i18n]').forEach(function(el){
@@ -491,6 +475,7 @@
   });
 
   function render(){
+    resetChart();   // po zmianie danych wykres pokazuje najnowsze pomiary
     entryList.innerHTML = "";
 
     if (!entries.length){
@@ -550,7 +535,7 @@
 
   // Audyt kodu: wspólne helpery zamiast powtórzonych bloków w trzech eksportach
   function downloadFile(name, text, mime){
-    var blob = new Blob([text], {type: mime || "application/json"});
+    var blob = (typeof Blob !== "undefined" && text instanceof Blob) ? text : new Blob([text], {type: mime || "application/json"});
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -663,10 +648,10 @@
   // • Między punktami etykieta z liczbą dni (np. "3 dni"), pod punktami data.
   var VISIBLE_MAX = 4;
   var chartMode = "cat";     // "cat" = oś równa, "time" = oś rzeczywistego czasu
-  var chartStart = 0;        // indeks pierwszego widocznego pomiaru (float, do płynnego pan)
-  function resetChart(){ chartStart = 0; }
+  var chartStart = Infinity; // indeks pierwszego widocznego pomiaru (float); Infinity = koniec osi (najnowsze), clamp w drawChart
+  function resetChart(){ chartStart = Infinity; }
   function gapLabel(days){
-    if (days < 1) return settings.lang === "en" ? "0 d" : "0 d";
+    if (days < 1) return "0 d";
     if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzień";
     return days + (settings.lang === "en" ? " days" : " dni");
   }
@@ -703,11 +688,9 @@
     // Mapowanie ułamkowego indeksu -> X:
     //  • tryb "cat":  pozycja liniowa względem chartStart (równe odstępy)
     //  • tryb "time": interpolacja znacznika czasu między indeksami
-    function tsAt(f){
-      var i0 = Math.max(0, Math.min(n - 1, Math.floor(f)));
-      var i1 = Math.min(n - 1, i0 + 1);
-      return pts[i0].ts + (pts[i1].ts - pts[i0].ts) * (f - i0);
-    }
+    // Audyt(9): interpolacja (lerpTs) w core.js — testowana jednostkowo.
+    var tsArr = pts.map(function(p){ return p.ts; });
+    function tsAt(f){ return QardisCore.lerpTs(tsArr, f); }
     var tA = tsAt(chartStart), tB = tsAt(chartStart + visN - 1);
     var timeOk = (chartMode === "time") && (tB - tA) > 0;
     function X(f){
@@ -843,6 +826,7 @@
 
     sumMount.textContent = "";
     $("trendsChart").textContent = "";
+    chartCtx = null;   // brak kontekstu = resize/pan nie rysują starych danych
     empty.hidden = true;
     tableMount.hidden = true;
 
@@ -916,7 +900,7 @@
   var startX = null, startY = null, dx = 0, dy = 0, axis = null;
   var viewport = $("viewport");
   function allowed(t){
-    return !t.closest("#dock") && !t.closest(".sheet") &&
+    return !t.closest("#dock") && !t.closest(".sheet") && !t.closest("#trendsChart") &&
            !t.closest("button") && !t.closest("textarea") && !t.closest("input");
   }
   viewport.addEventListener("touchstart", function(e){
@@ -956,7 +940,7 @@
   viewport.addEventListener("touchcancel", endSwipe);
 
   var toolsOverlay = $("toolsOverlay");
-  $("btnTools").onclick = function(){ setModalState(toolsOverlay, true); };
+  $("btnTools").onclick = function(){ refreshCorruptBtn(); setModalState(toolsOverlay, true); };
   $("btnToolsClose").onclick = function(){ setModalState(toolsOverlay, false); };
   toolsOverlay.addEventListener("click", function(e){ if (e.target === toolsOverlay) setModalState(toolsOverlay, false); });
 
@@ -975,7 +959,7 @@
         var raw = String(inp.value).replace(",", ".").trim();
         if (raw === "") return null;
         var v = parseFloat(raw);
-        return isFinite(v) ? clamp(v, lo, hi) : NaN;
+        return isFinite(v) ? v : NaN;   // bez przycinania: zakres sprawdza btnSave i pokazuje błąd
       }
     };
   }
@@ -1040,11 +1024,12 @@
   };
   $("btnClearWWgt").onclick = function(){
     wgtActive = !wgtActive;
-    if (wgtActive && weightField.get() === null) weightField.set(lastKnown("wgt", settings.defWgt));
     if (!editingId) { settings.incWgt = wgtActive; StorageModule.saveSettings(settings); }
     syncOptionalWheels();
     if (wgtActive) { try { wgtInput.focus(); } catch(e){} }
   };
+  // Włączenie tętna ustawia fokus na pustym polu (bez podstawiania starej wartości).
+  $("btnClearWHr").addEventListener("click", function(){ if (hrActive) { try { $("wHr").focus(); } catch(e){} } });
 
   var persistTried = false;
   function requestPersist(){
@@ -1064,6 +1049,7 @@
     editingId = entry ? entry.id : null;
     $("addTitle").textContent = entry ? t("addTitleEdit") : t("addTitleNew");
     $("noteField").value = entry ? (entry.note||"") : "";
+    $("dtField").min = "2000-01-01T00:00"; $("dtField").max = "2099-12-31T23:59";
     $("dtField").value = toLocalInput(entry ? entry.ts : Date.now());
     
     $("btnDeleteEntryHeader").style.display = entry ? "block" : "none";
@@ -1077,25 +1063,21 @@
     hrActive = entry ? (entry.hr != null) : !!settings.incHr;
     $("boxWHr").classList.toggle("disabled", !hrActive);
 
-    var sorted = sortedDesc();
-    var latest = sorted.length ? sorted[0] : null;
-    var defaultSys = latest && latest.sys != null ? latest.sys : settings.defSys;
-    var defaultDia = latest && latest.dia != null ? latest.dia : settings.defDia;
-    var defaultHr  = lastKnown("hr", settings.defHr, sorted);
-    var defaultWgt = lastKnown("wgt", settings.defWgt, sorted);
+    // Pola nowego wpisu są PUSTE (placeholder to tylko podpowiedź) — poprzedni pomiar
+    // nie może przypadkiem zostać zapisany jako nowy odczyt.
 
     wgtActive = entry ? (entry.wgt != null) : !!settings.incWgt;
     $("boxWWgt").classList.toggle("disabled", !wgtActive);
     syncOptionalWheels();
     labelWheels();
-    weightField.set(entry ? entry.wgt : (wgtActive ? defaultWgt : null));
+    weightField.set(entry ? entry.wgt : null);
 
     setModalState(addOverlay, true);
     // Audyt UX: pola numeryczne — bez wartości poza zakresem nie ma
     // warninga o "przycięciu" (zakresy pól = LIMITS).
-    if (settings.trackSys) sysField.set(entry ? entry.sys : defaultSys);
-    if (settings.trackDia) diaField.set(entry ? entry.dia : defaultDia);
-    if (settings.trackHr) hrField.set(entry ? (entry.hr != null ? entry.hr : defaultHr) : defaultHr);
+    if (settings.trackSys) sysField.set(entry ? entry.sys : null);
+    if (settings.trackDia) diaField.set(entry ? entry.dia : null);
+    if (settings.trackHr) hrField.set(entry ? entry.hr : null);
     addSnapshot = JSON.stringify(collectAddState());
   }
 
@@ -1140,15 +1122,26 @@
 
     var errEl = $("bpInlineError");
     function badNum(v){ return v === null || isNaN(v); }
+    // Wpis edytowany, który kiedyś powstał przy wyłączonym parametrze, może mieć w nim pustkę.
+    var origEntry = editingId ? entries.find(function(x){ return x.id === editingId; }) : null;
+    function missing(v, key){ return badNum(v) && !(origEntry && origEntry[key] == null && v === null); }
+    function outOfRange(v, lim){ return v !== null && !isNaN(v) && (v < lim[0] || v > lim[1]); }
     // Audyt UX: pusty obowiązkowy parametr = błąd (kiedyś bębenek gwarantował wartość)
-    if ((settings.trackSys && badNum(sysVal)) || (settings.trackDia && badNum(diaVal)) ||
-        (settings.trackHr && hrActive && badNum(hrVal))) {
+    if ((settings.trackSys && missing(sysVal, "sys")) || (settings.trackDia && missing(diaVal, "dia")) ||
+        (settings.trackHr && hrActive && missing(hrVal, "hr"))) {
       errEl.textContent = t("numRequiredMsg");
       errEl.hidden = false;
       try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
       return;
     }
-    if (settings.trackSys && settings.trackDia && sysVal <= diaVal) {
+    if ((settings.trackSys && outOfRange(sysVal, LIMITS.sys)) || (settings.trackDia && outOfRange(diaVal, LIMITS.dia)) ||
+        (settings.trackHr && hrActive && outOfRange(hrVal, LIMITS.hr))) {
+      errEl.textContent = t("rangeMsg");
+      errEl.hidden = false;
+      try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
+      return;
+    }
+    if (settings.trackSys && settings.trackDia && sysVal !== null && diaVal !== null && sysVal <= diaVal) {
       errEl.textContent = t("bpErrorMsg");
       errEl.hidden = false;
       try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
@@ -1165,6 +1158,13 @@
     var note = $("noteField").value.trim();
     var dtVal = $("dtField").value;
     var ts = dtVal ? new Date(dtVal).getTime() : Date.now();
+    // Data poza zakresem akceptowanym przy ładowaniu = wpis zniknąłby po odświeżeniu.
+    if (!QardisCore.validFormTs(ts)) {
+      errEl.textContent = t("dateRangeMsg");
+      errEl.hidden = false;
+      try { $("dtField").focus(); } catch(e){}
+      return;
+    }
     // Audyt: data z przyszłości — ostrzeż (kolejka, nie pilne), ale pozwól zapisać.
     // Pilne zastąpiłoby toast "zapisano"; tak potwierdzenie pokazuje się pierwsze.
     // Jeden komunikat zamiast dwóch: ostrzeżenie o dacie z przyszłości stałoby w kolejce
@@ -1173,22 +1173,22 @@
     var okMs = 2200;
     if (ts > Date.now() + 60000) { okMsg += ". ⚠ " + t("futureDateWarn"); okMs = 4500; }
     
-    if (editingId){
-      var e = entries.find(function(x){ return x.id===editingId; });
-      if (e) {
-        var updated = { note: note, ts: ts };
-        if (settings.trackSys) updated.sys = sysVal;
-        if (settings.trackDia) updated.dia = diaVal;
-        if (settings.trackHr) updated.hr = hrVal;
-        if (settings.trackWgt) updated.wgt = wgtVal;
-        Object.assign(e, updated);
-      }
-      toast(okMsg, okMs);
+    var e = editingId ? entries.find(function(x){ return x.id===editingId; }) : null;
+    if (e) {
+      var updated = { note: note, ts: ts };
+      if (settings.trackSys) updated.sys = sysVal;
+      if (settings.trackDia) updated.dia = diaVal;
+      if (settings.trackHr) updated.hr = hrVal;
+      if (settings.trackWgt) updated.wgt = wgtVal;
+      Object.assign(e, updated);
     } else {
+      // Nowy wpis — także gdy edytowany wpis zniknął w międzyczasie (usunięty w innej karcie):
+      // dane użytkownika nie przepadają po cichu.
       entries.push({id: makeId(), ts:ts, note:note, sys:sysVal, dia:diaVal, hr:hrVal, wgt:wgtVal});
-      toast(okMsg, okMs);
     }
-    if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
+    // Najpierw zapis, potem komunikat — „zapisano” tylko, gdy zapis się udał.
+    if (StorageModule.saveEntries(entries)) toast(okMsg, okMs);
+    else toast(t("storageError"), 6000, true);
     addSnapshot = null;   // zapisano — zamykamy bez dirty-check
     setModalState(addOverlay, false);
     render();
@@ -1196,17 +1196,20 @@
   };
 
   $("btnBackup").onclick = function(){
-    openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveNotInBackup"), ok: t("btnExport") }, function(proceed){
+    // Audyt(8): kopia "wszystko w jednym" (v3) — wpisy + archiwum + ustawienia.
+    // Pełna migracja urządzenia to jeden plik, nie dwa.
+    openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveInBackup"), ok: t("btnExport") }, function(proceed){
     if (!proceed) return;
     var exp = {};
     ["theme","lang","fontSize","trackSys","trackDia","trackHr","trackWgt","incHr","incWgt"]
       .forEach(function(k){ exp[k] = settings[k]; });
     var backupObj = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       createdAt: new Date().toISOString(),
       app: "Qardis",
       settings: exp,
-      entries: entries
+      entries: entries,
+      archive: StorageModule.loadArchive()
     };
     downloadFile("qardis-kopia-"+ymd(new Date())+".json", JSON.stringify(backupObj, null, 2));
     settings.lastBackupAt = Date.now();     // audyt(3): odmierzaj czas do przypominacza
@@ -1242,13 +1245,15 @@
       try{
         var j = JSON.parse(r.result);
         if (!ValidationModule.validateImport(j)) throw new Error("invalid schema or ranges");
-        // Audyt: wersja formatu. Odrzucamy tylko NOWSZE niż znane (v > 2), bo
-        // starsze potrafimy poprawnie wczytać: kopia v2, starsze obiekty bez
-        // pola, plik archiwum (type: "qardis-archive", v1) i surowa tablica.
+        // Audyt: wersja formatu. Odrzucamy tylko NOWSZE niż znane (v > 3), bo
+        // starsze potrafimy poprawnie wczytać: kopia v3/v2 (v3 = z archiwum),
+        // starsze obiekty bez pola, plik archiwum (type: "qardis-archive", v1)
+        // i surowa tablica.
         var v = (j && !Array.isArray(j)) ? j.schemaVersion : undefined;
-        if (v !== undefined && !(v >= 1 && v <= 2)) throw new Error("unsupported schemaVersion");
+        if (v !== undefined && !(v >= 1 && v <= 3)) throw new Error("unsupported schemaVersion");
         var list = j.entries || j;
-        var ids = Object.create(null); entries.forEach(function(e){ ids[e.id]=1; });
+        var ids = Object.create(null), sigs = Object.create(null);
+        entries.forEach(function(e){ ids[e.id]=1; sigs[QardisCore.entrySig(e)]=1; });
         var added = 0, skipped = 0;
         list.forEach(function(e){
           var item = sanitizeEntry(e);
@@ -1259,10 +1264,27 @@
           if (item.sys != null && item.dia != null && item.sys <= item.dia) { skipped++; return; }
           if (!item.id) item.id = makeId();
           if (ids[item.id]) { skipped++; return; }   // duplikat id liczony jako pominięty
-          entries.push(item); ids[item.id]=1; added++;
+          var sig = QardisCore.entrySig(item);
+          if (sigs[sig]) { skipped++; return; }     // ten sam odczyt z innego urządzenia (inne id)
+          entries.push(item); ids[item.id]=1; sigs[sig]=1; added++;
         });
         var saved = StorageModule.saveEntries(entries);
         if (!saved) toast(t("importSavedWarning"), 9000, true);   // audyt(10): dane tylko w RAM do przeładowania
+        // Audyt(8): kopia v3 zawiera archiwum — scal po id z lokalnym archiwum.
+        if (j && !Array.isArray(j) && Array.isArray(j.archive)) {
+          var arc = StorageModule.loadArchive();
+          var arcIds = Object.create(null);
+          arc.forEach(function(e){ arcIds[e.id] = 1; });
+          var arcAdded = 0;
+          j.archive.forEach(function(e){
+            var c = sanitizeEntry(e);
+            if (!c || !c.ts || lossy(e, c)) return;
+            if (!c.id) c.id = makeId();
+            if (arcIds[c.id] || ids[c.id]) return;   // już w archiwum albo na liście głównej
+            arc.push(c); arcIds[c.id] = 1; arcAdded++;
+          });
+          if (arcAdded && !StorageModule.saveArchive(arc)) toast(t("storageError"), 5000, true);
+        }
         render();
         if (j && !Array.isArray(j) && j.settings && typeof j.settings === "object") {
           openDialog({ title: t("settingsTitle"), text: t("importSettingsConfirm") }, function(yes){
@@ -1292,17 +1314,14 @@
     setModalState(pdfOverlayEl, true);
   };
   // Audyt UX: eksport CSV — otwieralny w Excelu/LibreOffice bez konwersji.
-  function csvEscape(v){
-    if (v == null) return "";
-    var s = String(v);
-    return /[";\n,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
+  // (csvEscape w core.js — testowane jednostkowo.)
   $("btnCsv").onclick = function(){
     if (!entries.length) { toast(t("noEntriesPdf")); return; }
     var head = ["date","time","sys_mmhg","dia_mmhg","hr_bpm","weight_kg","note"].join(";");
     var rows = sortedDesc().map(function(e){
       var f = fmtDate(e.ts);
-      return [f.date, f.time, e.sys, e.dia, e.hr, e.wgt, e.note].map(csvEscape).join(";");
+      var comma = settings.lang !== "en";
+      return [f.date, f.time, e.sys, e.dia, e.hr, e.wgt, e.note].map(function(v){ return QardisCore.csvEscape(v, comma); }).join(";");
     });
     // BOM UTF-8 (poprawne polskie znaki w Excelu) + \r\n (konwencja CSV dla Windows)
     downloadFile("qardis-dane-"+ymd(new Date())+".csv",
@@ -1318,35 +1337,170 @@
   pdfOverlayEl.addEventListener("click", function(e){ if (e.target === pdfOverlayEl) setModalState(pdfOverlayEl, false); });
   $("btnPdfExport").onclick = function(){
     setModalState(pdfOverlayEl, false);
-    exportPdf();
+    savePdf();
   };
-  function exportPdf(){
-    var arr = sortedDesc().filter(function(e){
+  $("btnPdfPrint").onclick = function(){
+    setModalState(pdfOverlayEl, false);
+    printReport();
+  };
+
+  function reportEntries(){
+    return sortedDesc().filter(function(e){
       if (pdfExportRange === "all") return true;
       return e.ts >= Date.now() - pdfExportRange * 24 * 60 * 60 * 1000;
     });
-    if (!arr.length){ toast(t("trendsNoData")); return; }
+  }
+  function reportCols(){
+    var cols = [];
+    if (settings.trackSys) cols.push({ label: "sysLabel", key: "sys", unit: "mmHg" });
+    if (settings.trackDia) cols.push({ label: "diaLabel", key: "dia", unit: "mmHg" });
+    if (settings.trackHr)  cols.push({ label: "hrLabel",  key: "hr",  unit: "bpm" });
+    if (settings.trackWgt) cols.push({ label: "wgtLabel", key: "wgt", unit: "kg" });
+    return cols;
+  }
+
+  // --- Zapis PDF bez okna drukowania ---
+  // Strony rysujemy na canvasie (A4 poziomo, 2x) i pakujemy jako JPEG do PDF
+  // (QardisCore.buildPdf). Dzięki temu nie trzeba osadzać fontów (polskie znaki
+  // działają od razu), a CSP nie blokuje niczego. Tekst w pliku nie jest zaznaczalny —
+  // do tego służy opcja „Drukuj”.
+  function renderReportPages(arr, cols){
+    var PW = 842, PH = 595, M = 34, S = 2, FONT = "Arial, Helvetica, sans-serif";
+    var DATE_W = 100, COL_W = 70, HEAD_H = 30, LINE = 13, PADY = 5, MINROW = 20;
+    var noteW = PW - 2 * M - DATE_W - COL_W * cols.length;
+    var loc = settings.lang === "en" ? "en-US" : "pl-PL";
+    var cv = document.createElement("canvas");
+    cv.width = PW * S; cv.height = PH * S;
+    var ctx = cv.getContext("2d");
+    ctx.font = "italic 11px " + FONT;
+    function measure(s){ return ctx.measureText(s).width; }
+
     var rows = arr.map(function(e){
       var f = fmtDate(e.ts);
-      return "<tr><td>"+f.date+" "+f.time+"</td><td>"+escapeHtml(String(e.sys||""))+"</td><td>"+escapeHtml(String(e.dia||""))+"</td><td>"+escapeHtml(String(e.hr||""))+"</td><td>"+escapeHtml(String(e.wgt||""))+"</td><td>"+escapeHtml(e.note||"")+"</td></tr>";
+      var lines = e.note ? QardisCore.wrapText(e.note, noteW - 12, measure, 6) : [];
+      return {
+        date: f.date + " " + f.time,
+        vals: cols.map(function(c){ return e[c.key] != null ? String(e[c.key]) : ""; }),
+        lines: lines,
+        h: Math.max(MINROW, lines.length * LINE + 2 * PADY)
+      };
+    });
+
+    // Paginacja: pierwsza strona ma blok tytułowy
+    var limit = PH - M - 8, pageRows = [], cur = [], y = M + 46 + HEAD_H;
+    rows.forEach(function(r){
+      if (cur.length && y + r.h > limit) { pageRows.push(cur); cur = []; y = M + HEAD_H; }
+      cur.push(r); y += r.h;
+    });
+    pageRows.push(cur);
+
+    var head = [{ w: DATE_W, label: t("pdfHeaderDt"), unit: "" }]
+      .concat(cols.map(function(c){ return { w: COL_W, label: t(c.label), unit: c.unit }; }))
+      .concat([{ w: noteW, label: t("pdfHeaderNotes"), unit: "" }]);
+
+    var out = [];
+    pageRows.forEach(function(list, pi){
+      ctx.setTransform(S, 0, 0, S, 0, 0);
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, PW, PH);
+      ctx.textBaseline = "alphabetic"; ctx.lineWidth = 0.5; ctx.strokeStyle = "#999";
+      var y = M;
+      if (pi === 0) {
+        ctx.textAlign = "left"; ctx.fillStyle = "#000"; ctx.font = "bold 18px " + FONT;
+        ctx.fillText(t("pdfTitle"), M, y + 16);
+        ctx.font = "11px " + FONT; ctx.fillStyle = "#555";
+        ctx.fillText(t("pdfGen") + new Date().toLocaleString(loc), M, y + 34);
+        y += 46;
+      }
+      var x = M;
+      ctx.textAlign = "center";
+      head.forEach(function(c){
+        ctx.fillStyle = "#eee"; ctx.fillRect(x, y, c.w, HEAD_H); ctx.strokeRect(x, y, c.w, HEAD_H);
+        ctx.fillStyle = "#000"; ctx.font = "bold 10px " + FONT;
+        ctx.fillText(c.label, x + c.w / 2, y + (c.unit ? 13 : 18), c.w - 6);
+        if (c.unit) { ctx.font = "9px " + FONT; ctx.fillStyle = "#555"; ctx.fillText(c.unit, x + c.w / 2, y + 24, c.w - 6); }
+        x += c.w;
+      });
+      y += HEAD_H;
+      list.forEach(function(r){
+        var cx = M, mid = y + r.h / 2 + 4;
+        ctx.fillStyle = "#000"; ctx.font = "11px " + FONT;
+        ctx.strokeRect(cx, y, DATE_W, r.h);
+        ctx.textAlign = "left"; ctx.fillText(r.date, cx + 6, mid, DATE_W - 8);
+        cx += DATE_W;
+        ctx.textAlign = "center";
+        r.vals.forEach(function(v){
+          ctx.strokeRect(cx, y, COL_W, r.h);
+          ctx.fillText(v, cx + COL_W / 2, mid, COL_W - 6);
+          cx += COL_W;
+        });
+        ctx.strokeRect(cx, y, noteW, r.h);
+        ctx.textAlign = "left"; ctx.font = "italic 11px " + FONT;
+        r.lines.forEach(function(ln, li){ ctx.fillText(ln, cx + 6, y + PADY + 9 + li * LINE); });
+        y += r.h;
+      });
+      ctx.font = "9px " + FONT; ctx.fillStyle = "#777";
+      ctx.textAlign = "left"; ctx.fillText("Qardis", M, PH - 16);
+      ctx.textAlign = "right"; ctx.fillText((pi + 1) + " / " + pageRows.length, PW - M, PH - 16);
+
+      var b64 = cv.toDataURL("image/jpeg", 0.82).split(",")[1];
+      if (!b64) throw new Error("canvas export failed");
+      var bin = atob(b64), data = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) data[i] = bin.charCodeAt(i);
+      out.push({ data: data, w: cv.width, h: cv.height });
+    });
+    return out;
+  }
+  function savePdf(){
+    var arr = reportEntries();
+    if (!arr.length){ toast(t("trendsNoData")); return; }
+    setTimeout(function(){   // krótka zwłoka: arkusz zdąży się zamknąć przed ciężką pracą
+      try {
+        var pages = renderReportPages(arr, reportCols());
+        var bytes = QardisCore.buildPdf(pages, 842, 595, t("pdfTitle"));
+        downloadFile("qardis-raport-" + ymd(new Date()) + ".pdf", new Blob([bytes], { type: "application/pdf" }));
+        toast("✓ " + t("pdfSaved"));
+      } catch (err) { toast(t("pdfSaveError"), 5000, true); }
+    }, 40);
+  }
+
+  // --- Drukuj (okno wydruku przeglądarki) ---
+  function printReport(){
+    var arr = reportEntries();
+    if (!arr.length){ toast(t("trendsNoData")); return; }
+    var pdfCols = [];
+    if (settings.trackSys) pdfCols.push(["sysLabel", "sys"]);
+    if (settings.trackDia) pdfCols.push(["diaLabel", "dia"]);
+    if (settings.trackHr)  pdfCols.push(["hrLabel", "hr"]);
+    if (settings.trackWgt) pdfCols.push(["wgtLabel", "wgt"]);
+    var rows = arr.map(function(e){
+      var f = fmtDate(e.ts);
+      return "<tr><td>"+escapeHtml(f.date+" "+f.time)+"</td>"
+        + pdfCols.map(function(c){ return "<td>"+escapeHtml(e[c[1]] != null ? String(e[c[1]]) : "")+"</td>"; }).join("")
+        + "<td>"+escapeHtml(e.note||"")+"</td></tr>";
     }).join("");
     var loc = settings.lang === "en" ? "en-US" : "pl-PL";
     // Style jako osobny ciąg: okno about:blank dziedziczy CSP otwierającego,
     // więc inline <style> byłby zablokowany przez 'style-src self'. Arkusz
     // konstruowany (CSSOM) omija restrykcje CSP — patrz adoptedStyleSheets niżej.
-    var css = '@page{size:A4 landscape;margin:12mm;}'
-      +'body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;}'
-      +'h1{font-size:18px;margin:0 0 4px;}p.sub{font-size:11px;color:#555;margin:0 0 16px;}'
-      +'table{border-collapse:collapse;width:100%;font-size:12px;}'
-      +'th,td{border:1px solid #999;padding:5px 8px;text-align:center;}'
-      +'th{background:#eee;}td:first-child{text-align:left;white-space:nowrap;}td:last-child{text-align:left;font-style:italic;}'
-      +'thead{display:table-header-group;}tr{page-break-inside:avoid;}'
-      +'@media print{p.hint{display:none;}}';
+    var cssRules = [
+      '@page{size:A4 landscape;margin:12mm;}',
+      'body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;}',
+      'h1{font-size:18px;margin:0 0 4px;}',
+      'p.sub{font-size:11px;color:#555;margin:0 0 16px;}',
+      'table{border-collapse:collapse;width:100%;font-size:12px;}',
+      'th,td{border:1px solid #999;padding:5px 8px;text-align:center;}',
+      'th{background:#eee;}',
+      'td:first-child{text-align:left;white-space:nowrap;}',
+      'td:last-child{text-align:left;font-style:italic;}',
+      'thead{display:table-header-group;}',
+      'tr{page-break-inside:avoid;}',
+      '@media print{p.hint{display:none;}}'
+    ];
     var html = '<!doctype html><html lang="'+escapeHtml(settings.lang)+'"><head><meta charset="utf-8"><title>'+escapeHtml(t("pdfTitle"))+'</title></head><body>'
       +'<h1>'+escapeHtml(t("pdfTitle"))+'</h1>'
       +'<p class="sub">'+escapeHtml(t("pdfGen")+new Date().toLocaleString(loc))+'</p>'
       +'<p class="hint">'+escapeHtml(t("pdfHint"))+'</p>'
-      +'<table><thead><tr><th>'+escapeHtml(t("pdfHeaderDt"))+'</th><th>'+escapeHtml(t("sysLabel"))+'</th><th>'+escapeHtml(t("diaLabel"))+'</th><th>'+escapeHtml(t("hrLabel"))+'</th><th>'+escapeHtml(t("wgtLabel"))+'</th><th>'+escapeHtml(t("pdfHeaderNotes"))+'</th></tr></thead>'
+      +'<table><thead><tr><th>'+escapeHtml(t("pdfHeaderDt"))+'</th>'+pdfCols.map(function(c){ return '<th>'+escapeHtml(t(c[0]))+'</th>'; }).join('')+'<th>'+escapeHtml(t("pdfHeaderNotes"))+'</th></tr></thead>'
       +'<tbody>'+rows+'</tbody></table></body></html>';
 
     // Audyt CSP: zamiast ukrytego iframe.srcdoc (dziedziczy CSP rodzica i
@@ -1358,9 +1512,17 @@
       w.document.open();
       w.document.write(html);
       w.document.close();
-      var sheet = new w.CSSStyleSheet();
-      sheet.replaceSync(css);
-      w.document.adoptedStyleSheets = [sheet];
+      // Style przez CSSOM (omija style-src CSP). Safari < 16.4 nie ma adoptedStyleSheets —
+      // wtedy pusty <style> + insertRule (też CSSOM), zamiast przerywać cały eksport.
+      try {
+        var sheet = new w.CSSStyleSheet();
+        sheet.replaceSync(cssRules.join(""));
+        w.document.adoptedStyleSheets = [sheet];
+      } catch (errSheet) {
+        var st = w.document.createElement("style");
+        w.document.head.appendChild(st);
+        cssRules.forEach(function(r){ try { st.sheet.insertRule(r, st.sheet.cssRules.length); } catch(e3){} });
+      }
       w.document.title = t("pdfTitle");
       // Po wydruku (lub anulowaniu) zamknij okno, żeby nie zostawała pusta karta.
       w.onafterprint = function(){ try { w.close(); } catch(e){} };
@@ -1448,6 +1610,8 @@
     var bg = [$("viewport"), $("dock")];
     if (isOpen) {
       if (!document.querySelector(".overlay.open")) lastFocusEl = document.activeElement;
+      // Okno potwierdzenia leży nad arkuszem: arkusz pod spodem też nie może łapać Tab/czytnika.
+      document.querySelectorAll(".overlay.open").forEach(function(o){ if (o !== el) o.setAttribute("inert", ""); });
       el.classList.add("open");
       el.removeAttribute("inert");
       bg.forEach(function(b){ b.setAttribute("inert", ""); });
@@ -1459,7 +1623,13 @@
     } else {
       el.classList.remove("open");
       el.setAttribute("inert", "");
-      if (!document.querySelector(".overlay.open")) {
+      var below = document.querySelectorAll(".overlay.open");
+      below.forEach(function(o){ o.removeAttribute("inert"); });
+      if (below.length) {
+        var bsheet = below[below.length - 1].querySelector(".sheet");
+        if (bsheet) setTimeout(function(){ try { bsheet.focus({preventScroll:true}); } catch(e){} }, 30);
+      }
+      if (!below.length) {
         bg.forEach(function(b){ b.removeAttribute("inert"); });
         if (lastFocusEl && document.contains(lastFocusEl) && lastFocusEl.focus) { try { lastFocusEl.focus({preventScroll:true}); } catch(e){} }
         lastFocusEl = null;
@@ -1590,18 +1760,18 @@
   if (StorageModule.hadIssue()) toast(t("storageCorrupt"), 9000, true);
 
   // Audyt(2): przycisk eksportu zachowanej kopii uszkodzonych danych w menu
-  var btnCorrupt = $("btnCorrupt");
-  if (btnCorrupt) {
-    var corruptData = StorageModule.corruptRaw();
-    if (corruptData) {
-      btnCorrupt.style.display = "flex";
-      btnCorrupt.onclick = function(){
-        downloadFile("qardis-dane-uszkodzone-"+ymd(new Date())+".json", corruptData);
-        setModalState(toolsOverlay, false);
-        toast("✓ " + t("corruptExported"));
-      };
-    }
+  function refreshCorruptBtn(){
+    var btn = $("btnCorrupt"); if (!btn) return;
+    var data = StorageModule.corruptRaw();
+    btn.style.display = data ? "flex" : "none";
+    btn.onclick = function(){
+      var d = StorageModule.corruptRaw(); if (!d) return;
+      downloadFile("qardis-dane-uszkodzone-"+ymd(new Date())+".json", d);
+      setModalState(toolsOverlay, false);
+      toast("✓ " + t("corruptExported"));
+    };
   }
+  refreshCorruptBtn();
   // === Archiwum pomiarów (wpisy starsze niż 9 mies.) ===
   var ARCHIVE_MS = 273 * 24 * 60 * 60 * 1000;
   var archiveOverlayEl = $("archiveOverlay");
@@ -1609,11 +1779,55 @@
   function updateArchiveSummary(){
     var el = $("archiveSummary");
     var archive = StorageModule.loadArchive();
-    if (!archive.length) { el.textContent = t("archiveEmpty"); return; }
+    var peek = $("btnArchivePeek"), list = $("archiveList");
+    if (!archive.length) {
+      el.textContent = t("archiveEmpty");
+      if (peek) peek.hidden = true;
+      if (list) { list.hidden = true; list.textContent = ""; }
+      return;
+    }
     var mn = Infinity, mx = -Infinity;
     archive.forEach(function(e){ if (e.ts < mn) mn = e.ts; if (e.ts > mx) mx = e.ts; });
     el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " – " + fmtDate(mx).date + ")";
+    // Audyt(7): podgląd zawartości archiwum — zwijana lista wpisów.
+    if (peek) {
+      peek.hidden = false;
+      peek.textContent = list && !list.hidden && list.childNodes.length ? t("archiveHide") : t("archiveShow");
+    }
   }
+  function renderArchiveList(){
+    var list = $("archiveList");
+    var archive = StorageModule.loadArchive()
+      .sort(function(a,b){ return b.ts - a.ts; })
+      .slice(0, 50);   // limit czytelności; pełne dane w eksporcie
+    list.textContent = "";
+    archive.forEach(function(e){
+      var f = fmtDate(e.ts);
+      var row = document.createElement("div");
+      row.className = "archive-row";
+      var d = document.createElement("span");
+      d.textContent = f.date + " " + f.time;
+      var v = document.createElement("span");
+      var parts = [];
+      if (e.sys != null || e.dia != null) parts.push((e.sys != null ? e.sys : "--") + "/" + (e.dia != null ? e.dia : "--"));
+      if (e.hr != null) parts.push(e.hr + " bpm");
+      if (e.wgt != null) parts.push(e.wgt + " kg");
+      v.textContent = parts.join(" · ") || "—";
+      row.appendChild(d); row.appendChild(v);
+      list.appendChild(row);
+    });
+    list.hidden = false;
+  }
+  function resetArchivePeek(){
+    var list = $("archiveList");
+    if (list) { list.hidden = true; list.textContent = ""; }
+  }
+  $("btnArchivePeek").onclick = function(){
+    var list = $("archiveList");
+    if (list.hidden) { renderArchiveList(); }
+    else { list.hidden = true; list.textContent = ""; }
+    updateArchiveSummary();
+  };
   function archiveOldEntries(){
     var cutoff = Date.now() - ARCHIVE_MS;
     var toMove = entries.filter(function(e){ return e.ts < cutoff; });
@@ -1628,6 +1842,7 @@
     if (!StorageModule.saveArchive(archive)) { toast(t("storageError"), 5000, true); return; }
     entries = entries.filter(function(e){ return e.ts >= cutoff; });
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"), 5000, true);
+    resetArchivePeek();
     updateArchiveSummary();
     render();
     toast("✓ " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
@@ -1643,6 +1858,7 @@
     // duplikaty przy ponownej próbie są odfiltrowywane po id.
     if (!StorageModule.saveEntries(entries)) { toast(t("storageError"), 5000, true); return; }
     if (!StorageModule.saveArchive([])) toast(t("storageError"), 5000, true);
+    resetArchivePeek();
     updateArchiveSummary();
     render();
     toast("✓ " + t("archiveRestoredMsg") + added + pluralEntries(added));
@@ -1693,6 +1909,18 @@
       }
     }
   });
+
+  // Karta w tle (zwłaszcza mobilna PWA) nie dostaje zdarzeń „storage”: po powrocie sprawdzamy,
+  // czy dane się zmieniły, zanim użytkownik zapisze coś na nieaktualnym stanie.
+  function refreshIfStale(){
+    if (document.visibilityState === "hidden") return;
+    if ($("addOverlay").classList.contains("open") || !StorageModule.isStale()) return;
+    entries = StorageModule.loadEntries();
+    render();
+  }
+  document.addEventListener("visibilitychange", refreshIfStale);
+  window.addEventListener("pageshow", function(ev){ if (ev.persisted) refreshIfStale(); });
+  window.addEventListener("focus", refreshIfStale);
 
   // Audyt P1: obsługa ?action=add przeniesiona z inline <script> do app.js,
   // żeby CSP mogło być czystym script-src 'self' (koniec z utrzymywaniem hasha).

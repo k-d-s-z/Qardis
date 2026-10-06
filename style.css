@@ -260,7 +260,7 @@
   .chart-toggle[aria-pressed="true"], .chart-toggle:active { color: var(--accent-fg); border-color: var(--accent); }
   #trendsChart svg { display:block; width:100%; height:auto; touch-action: pan-y; cursor: grab; }
   #trendsChart svg:active { cursor: grabbing; }
-  #trendsChart .axis { font-size: 10px; fill: var(--muted); }
+  #trendsChart .axis { font-size: 11px; fill: var(--muted); }
   #trendsChart .axis-gap { font-style: italic; }
   #trendsChart .grid { stroke: var(--line); stroke-width: 1; }
   /* Kolory serii — jawnie w CSS, niezależne od dziedziczenia atrybutów */
@@ -268,8 +268,11 @@
   #trendsChart .dot-dia { fill: #4f83cc; }
   #trendsChart .ln-sys { stroke: #e05252; stroke-width: 2.5; stroke-linecap: round; }
   #trendsChart .ln-dia { stroke: #4f83cc; stroke-width: 2.5; stroke-linecap: round; }
-  #trendsChart .lg-sys { fill: #e05252; font-size: 11px; font-weight: 700; }
-  #trendsChart .lg-dia { fill: #4f83cc; font-size: 11px; font-weight: 700; }
+  #trendsChart .lg-sys { fill: #c53030; font-size: 11px; font-weight: 700; }
+  #trendsChart .lg-dia { fill: #2b6cb0; font-size: 11px; font-weight: 700; }
+  /* Kontrast tekstu legendy (min. 4,5:1) w obu motywach */
+  html[data-theme="dark"] #trendsChart .lg-sys { fill: #f87171; }
+  html[data-theme="dark"] #trendsChart .lg-dia { fill: #7fb0f0; }
   .chart-hint { font-size: .6875rem; color: var(--muted); text-align: center; margin-top: 2px; }
 
   /* Settings Sliders UI */
@@ -328,6 +331,11 @@
   .segmented-full { width: 100%; justify-content: space-between; }
   #btnCorrupt { display: none; }
   #btnDeleteEntryHeader { display: none; }
+
+  /* Audyt(7): podgląd zawartości archiwum */
+  .archive-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; padding: 4px 10px; margin: 6px 0; }
+  .archive-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+  .archive-row:last-child { border-bottom: none; }
   .empty-box .btn { max-width: 220px; margin: 0 auto; }
   .btn--sm { padding: 10px 14px; font-size: .9rem; max-width: 200px; margin: 0 auto; }
 

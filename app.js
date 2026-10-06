@@ -191,6 +191,8 @@
         
         langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
         titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Eksportuj raport do PDF",
+        titleBtnCsv: "Eksportuj dane (CSV)", csvDone: "Pobrano plik CSV",
+        discardTitle: "Niezapisane zmiany", discardConfirm: "Arkusz edycji zawiera niezapisane zmiany. Porzucić je?", btnDiscard: "Porzuć",
         titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopię danych uszkodzonych",
         backupReminder: "Minęło ponad 30 dni od ostatniej kopii zapasowej – rozważ jej utworzenie (menu „Dane i eksport”).",
         importedMsg: "Zaimportowano ", importError: "Nieprawidłowy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utwórz nową kopię zapasową w aplikacji.",
@@ -258,6 +260,8 @@
         
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
         titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Export PDF report",
+        titleBtnCsv: "Export data (CSV)", csvDone: "CSV file downloaded",
+        discardTitle: "Unsaved changes", discardConfirm: "The edit form contains unsaved changes. Discard them?", btnDiscard: "Discard",
         titleBtnCorrupt: "Export corrupted data (safety copy)", corruptExported: "Corrupted data copy downloaded",
         backupReminder: "More than 30 days since your last backup – consider creating one (Data & Export menu).",
         importedMsg: "Imported ", importError: "Invalid backup file.", importVersionError: "Unknown backup format version (schemaVersion). Create a new backup in the app.",
@@ -321,19 +325,10 @@
   // --- MODUŁ 4: Table Renderer ---
   var TableModule = (function(){
     return {
-      renderTable: function(tableMount, entries, settings, rangeDays, tCb, fmtDateCb){
+      // Audyt kodu: filtr zakresu wykonuje JEDEN raz wywołujący (drawTrends) —
+      // tabela dostaje już przefiltrowaną, posortowaną malejąco listę.
+      renderTable: function(tableMount, filtered, settings, tCb, fmtDateCb){
         tableMount.innerHTML = "";
-        if (!entries.length){
-          tableMount.innerHTML = '<div class="trends-empty">' + tCb("emptyTitle") + '</div>';
-          return;
-        }
-        var now = Date.now();
-        var filtered = entries.filter(function(e){
-          if (rangeDays === "all") return true;
-          var cutoff = now - (rangeDays * 24 * 60 * 60 * 1000);
-          return e.ts >= cutoff;
-        }).sort(function(a,b){ return b.ts - a.ts; });
-
         if (!filtered.length){
           tableMount.innerHTML = '<div class="trends-empty">' + tCb("trendsNoData") + '</div>';
           return;
@@ -409,6 +404,27 @@
 
   function t(key) { return I18nModule.t(key, settings.lang); }
 
+  // Audyt kodu: wspólne helpery dat w jednym miejscu (wcześniej zdefiniowane
+  // trzykrotnie w różnych miejscach pliku — pad2/fmtDate/toLocalInput/ymd).
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function fmtDate(ts){
+    var d = new Date(ts);
+    var locale = settings.lang === "en" ? "en-US" : "pl-PL";
+    try {
+      return {
+        date: d.toLocaleDateString(locale, { year:"numeric", month:"2-digit", day:"2-digit" }),
+        time: d.toLocaleTimeString(locale, { hour:"2-digit", minute:"2-digit", hour12:false })
+      };
+    } catch(e) {
+      return { date: pad2(d.getDate())+"."+pad2(d.getMonth()+1)+"."+d.getFullYear(), time: pad2(d.getHours())+":"+pad2(d.getMinutes()) };
+    }
+  }
+  function toLocalInput(ts){
+    var d = new Date(ts);
+    return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())+"T"+pad2(d.getHours())+":"+pad2(d.getMinutes());
+  }
+  function ymd(d){ return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate()); }
+
   // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries)
   function pluralEntries(n){
     if (settings.lang === "en") return n === 1 ? " entry." : " entries.";
@@ -461,20 +477,6 @@
       var key = btn.dataset.param;
       btn.setAttribute('aria-pressed', settingsDraft[key] ? 'true' : 'false');
     });
-  }
-
-  // Audyt i18n: format daty zależny od języka (pl: dd.mm.rrrr, en: mm/dd/yyyy)
-  function fmtDate(ts){
-    var d = new Date(ts);
-    function p(n){ return (n<10?"0":"")+n; }
-    var locale = settings.lang === "en" ? "en-US" : "pl-PL";
-    try {
-      var date = d.toLocaleDateString(locale, { year:"numeric", month:"2-digit", day:"2-digit" });
-      var time = d.toLocaleTimeString(locale, { hour:"2-digit", minute:"2-digit", hour12:false });
-      return { date: date, time: time };
-    } catch(e) {
-      return { date: p(d.getDate())+"."+p(d.getMonth()+1)+"."+d.getFullYear(), time: p(d.getHours())+":"+p(d.getMinutes()) };
-    }
   }
 
   var entryList = $("entryList");
@@ -544,9 +546,8 @@
   }
 
   // Audyt kodu: wspólne helpery zamiast powtórzonych bloków w trzech eksportach
-  function ymd(d){ function p(n){ return (n<10?"0":"")+n; } return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
-  function downloadFile(name, text){
-    var blob = new Blob([text], {type:"application/json"});
+  function downloadFile(name, text, mime){
+    var blob = new Blob([text], {type: mime || "application/json"});
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -568,6 +569,7 @@
     entries.splice(idx, 1);
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
     if (editingId === id) editingId = null;
+    addSnapshot = null;   // usunięto wpis — zamykamy arkusz bez dirty-check
     render();
     if($("addOverlay").classList.contains("open")) setModalState($("addOverlay"), false);
 
@@ -616,12 +618,11 @@
 
   function renderSummary(list, mount){
     mount.textContent = "";
+    mount.appendChild(mkEl("div", "sum-count", t("sumCount").replace("{n}", list.length)));
     var s = settings.trackSys ? statOf(list, "sys") : null;
     var d = settings.trackDia ? statOf(list, "dia") : null;
     var h = settings.trackHr  ? statOf(list, "hr")  : null;
     var w = settings.trackWgt ? statOf(list, "wgt") : null;
-
-    mount.appendChild(mkEl("div", "sum-count", t("sumCount").replace("{n}", list.length)));
     if (!s && !d && !h && !w) return;
 
     var grid = mkEl("div", "sum-grid");
@@ -634,14 +635,19 @@
       c.appendChild(mkEl("div", "sum-range", t("minMax") + ": " + rangeText));
       grid.appendChild(c);
     }
-    if (s || d) {
-      var avgParts = [], rngParts = [];
-      if (s) { avgParts.push(rnd(s.avg)); rngParts.push("SYS " + rangeTxt(s, rnd)); }
-      if (d) { avgParts.push(rnd(d.avg)); rngParts.push("DIA " + rangeTxt(d, rnd)); }
-      card("wide", t("sumBp"), avgParts.join(" / "), "mmHg", rngParts.join(" · "));
+    // Audyt kodu: generyczny helper zamiast trzech kopiowanych bloków kart
+    function cardFor(st, labelKey, unit, f){
+      if (!st) return;
+      card("", t(labelKey), f(st.avg), unit, rangeTxt(st, f));
     }
-    if (h) card("", t("sumHr"), rnd(h.avg), "bpm", rangeTxt(h, rnd));
-    if (w) card("", t("sumWgt"), fmt1(w.avg), "kg", rangeTxt(w, fmt1));
+    if (s || d) {
+      var avg = [s ? rnd(s.avg) : "--", d ? rnd(d.avg) : "--"].join(" / ");
+      var rng = [s ? "SYS " + rangeTxt(s, rnd) : "", d ? "DIA " + rangeTxt(d, rnd) : ""]
+        .filter(Boolean).join(" · ");
+      card("wide", t("sumBp"), avg, "mmHg", rng);
+    }
+    cardFor(h, "sumHr", "bpm", rnd);
+    cardFor(w, "sumWgt", "kg", fmt1);
     mount.appendChild(grid);
   }
 
@@ -666,8 +672,9 @@
     }
 
     var cutoff = (trendsRangeDays === "all") ? -Infinity : Date.now() - trendsRangeDays * DAY_MS;
+    // Jedno filtrowanie i jedno sortowanie (malejąco) dla podsumowania i tabeli.
     var filtered = entries.filter(function(e){ return e.ts >= cutoff; })
-      .sort(function(a, b){ return a.ts - b.ts; });
+      .sort(function(a, b){ return b.ts - a.ts; });
 
     if (!filtered.length) {
       empty.textContent = t("trendsNoData");
@@ -677,7 +684,7 @@
 
     renderSummary(filtered, sumMount);
     tableMount.hidden = false;
-    TableModule.renderTable(tableMount, entries, settings, trendsRangeDays, t, fmtDate);
+    TableModule.renderTable(tableMount, filtered, settings, t, fmtDate);
   }
 
   // Audyt kodu: jeden wspólny handler przełączników zakresu (stan tylko w aria-pressed)
@@ -769,6 +776,7 @@
 
   var addOverlay = $("addOverlay");
   var editingId = null;
+  var addSnapshot = null;   // audyt UX: stan formularza w chwili otwarcia (dirty-check)
   var ROW = 40;
   function makeWheel(elId, cfg){
     var el = $(elId);
@@ -956,12 +964,6 @@
       .catch(function(){});
   }
 
-  function toLocalInput(ts){
-    var d = new Date(ts);
-    function p(n){ return (n<10?"0":"")+n; }
-    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());
-  }
-
   function openAdd(entry){
     editingId = entry ? entry.id : null;
     $("addTitle").textContent = entry ? t("addTitleEdit") : t("addTitleNew");
@@ -1009,12 +1011,43 @@
       if (settings.trackSys) wheels.wSys.set(entry ? entry.sys : defaultSys);
       if (settings.trackDia) wheels.wDia.set(entry ? entry.dia : defaultDia);
       if (settings.trackHr) wheels.wHr.set(entry ? (entry.hr || defaultHr) : defaultHr);
+      // audyt UX: snapshot do dirty-check dopiero PO ustawieniu bębnów,
+      // żeby animacja dosunięcia nie liczyła się jako "zmiana".
+      addSnapshot = JSON.stringify(collectAddState());
     }, 60);
   }
 
+  // --- Audyt UX: dirty-check arkusza edycji ---
+  // Klik w tło / Escape / "Anuluj" przy niezapisanych zmianach pytają
+  // o potwierdzenie, zamiast po cichu gubić dane użytkownika.
+  function collectAddState(){
+    return {
+      note: $("noteField").value,
+      dt: $("dtField").value,
+      hrActive: hrActive, wgtActive: wgtActive,
+      sys: settings.trackSys ? wheels.wSys.get() : null,
+      dia: settings.trackDia ? wheels.wDia.get() : null,
+      hr:  (settings.trackHr && hrActive) ? wheels.wHr.get() : null,
+      wgt: (settings.trackWgt && wgtActive) ? weightField.get() : null
+    };
+  }
+  function isAddDirty(){
+    if (!addSnapshot || !addOverlay.classList.contains("open")) return false;
+    return JSON.stringify(collectAddState()) !== addSnapshot;
+  }
+  function requestCloseAdd(){
+    var dirty = isAddDirty();
+    addSnapshot = null;
+    if (!dirty) { setModalState(addOverlay, false); return; }
+    openDialog({ title: t("discardTitle"), text: t("discardConfirm"), ok: t("btnDiscard"), danger: true }, function(proceed){
+      if (proceed) setModalState(addOverlay, false);
+      else addSnapshot = JSON.stringify(collectAddState());   // przywróć snapshot — arkusz zostaje otwarty
+    });
+  }
+
   $("btnAdd").onclick = function(){ openAdd(null); };
-  addOverlay.addEventListener("click", function(e){ if (e.target === addOverlay) setModalState(addOverlay, false); });
-  $("btnCancelEntry").onclick = function(){ setModalState(addOverlay, false); };
+  addOverlay.addEventListener("click", function(e){ if (e.target === addOverlay) requestCloseAdd(); });
+  $("btnCancelEntry").onclick = requestCloseAdd;
   $("btnDeleteEntryHeader").onclick = function(){ if(editingId) deleteEntryWithUndo(editingId); };
 
   $("btnSave").onclick = function(){
@@ -1065,6 +1098,7 @@
       toast(okMsg, okMs);
     }
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
+    addSnapshot = null;   // zapisano — zamykamy bez dirty-check
     setModalState(addOverlay, false);
     render();
     requestPersist();
@@ -1166,6 +1200,26 @@
     if (!entries.length){ toast(t("noEntriesPdf")); return; }
     setModalState(pdfOverlayEl, true);
   };
+  // Audyt UX: eksport CSV — otwieralny w Excelu/LibreOffice bez konwersji.
+  function csvEscape(v){
+    if (v == null) return "";
+    var s = String(v);
+    return /[";\n,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  $("btnCsv").onclick = function(){
+    if (!entries.length) { toast(t("noEntriesPdf")); return; }
+    var head = ["date","time","sys_mmhg","dia_mmhg","hr_bpm","weight_kg","note"].join(";");
+    var rows = sortedDesc().map(function(e){
+      var f = fmtDate(e.ts);
+      return [f.date, f.time, e.sys, e.dia, e.hr, e.wgt, e.note].map(csvEscape).join(";");
+    });
+    // BOM UTF-8 (poprawne polskie znaki w Excelu) + \r\n (konwencja CSV dla Windows)
+    downloadFile("qardis-dane-"+ymd(new Date())+".csv",
+      "\uFEFF" + head + "\r\n" + rows.join("\r\n"), "text/csv");
+    setModalState(toolsOverlay, false);
+    toast("✓ " + t("csvDone"));
+  };
+
   bindRangeControls("pdfRange", function(r){
     pdfExportRange = (r === "all") ? "all" : parseInt(r, 10);
   });
@@ -1346,9 +1400,17 @@
   }
 
   document.addEventListener("keydown", function(e){
+    // Audyt UX: skróty klawiszowe dla desktopu — 1 = Pomiary, 2 = Trendy
+    // (tylko gdy fokus nie jest w polu tekstowym i żaden arkusz nie jest otwarty)
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "1" || e.key === "2")) {
+      var ae = document.activeElement, tag = ae ? ae.tagName : "";
+      var inField = tag === "INPUT" || tag === "TEXTAREA" || (ae && ae.isContentEditable);
+      if (!inField && !document.querySelector(".overlay.open")) go(e.key === "1" ? 0 : 1);
+      return;
+    }
     if (e.key === "Escape"){
       if (dialogEl && dialogEl.classList.contains("open")) closeDialog(false);
-      else if (addOverlay.classList.contains("open")) setModalState(addOverlay, false);
+      else if (addOverlay.classList.contains("open")) requestCloseAdd();
       else if (settingsOverlay.classList.contains("open")) cancelSettings();
       else if (toolsOverlay.classList.contains("open")) setModalState(toolsOverlay, false);
       else if (pdfOverlayEl.classList.contains("open")) setModalState(pdfOverlayEl, false);

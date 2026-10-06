@@ -23,7 +23,9 @@
    6) Zapis do cache jest w try/catch: błąd (limit pamięci, wyczyszczony
       storage) nie zamienia udanej odpowiedzi sieci w błąd dla użytkownika.
    7) Wydanie porządkowe: toasty przeniesione do klas CSS, zmienne z-index,
-      CSP z img-src 'self'. Zmiana tego pliku wymusza przebudowę cache. */
+      CSP z img-src 'self'. Zmiana tego pliku wymusza przebudowę cache.
+   8) Wydanie audytu UX/kodu: dirty-check arkusza edycji, eksport CSV,
+      skróty klawiszowe 1/2, deduplikacja helperów dat i filtrowania. */
 
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;

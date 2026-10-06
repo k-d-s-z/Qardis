@@ -150,6 +150,7 @@
   .data-table .th-l, .data-table .th-u, .data-table .td-d, .data-table .td-t { display: block; overflow: hidden; text-overflow: ellipsis; }
   .data-table .th-u { font-weight: 500; color: var(--muted); font-size: 0.6875rem; }
   .data-table .td-t { color: var(--muted); font-size: 0.75rem; }
+  .data-table th:first-child { width: 32%; }   /* kolumna daty; pozostałe dzielą resztę po równo (table-layout: fixed) */
   .data-table td:first-child { text-align: left; }
 
 

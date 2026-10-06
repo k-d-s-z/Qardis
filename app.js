@@ -324,14 +324,7 @@
         if (settings.trackHr)  cols.push({ label: "hrLabel",  unit: "bpm",  key: "hr" });
         if (settings.trackWgt) cols.push({ label: "wgtLabel", unit: "kg",   key: "wgt" });
 
-        // Sztywne szerokości kolumn: tabela nigdy nie wychodzi poza ekran
-        var colW = Math.floor(68 / Math.max(cols.length, 1));
-        var colgroup = document.createElement("colgroup");
-        var cDate = document.createElement("col");
-        cDate.style.width = (100 - colW * cols.length) + "%";
-        colgroup.appendChild(cDate);
-        cols.forEach(function(){ var c = document.createElement("col"); c.style.width = colW + "%"; colgroup.appendChild(c); });
-        table.appendChild(colgroup);
+        // Szerokości kolumn: table-layout: fixed + .data-table th:first-child w style.css
 
         var thead = document.createElement("thead");
         var htr = document.createElement("tr");
@@ -486,19 +479,19 @@
       card.setAttribute("role", "group");
       var f = fmtDate(e.ts);
       
-      var bpText = (settings.trackSys && e.sys ? e.sys : '--') + ' / ' + (settings.trackDia && e.dia ? e.dia : '--');
+      var bpText = escapeHtml(String(settings.trackSys && e.sys ? e.sys : '--') + ' / ' + String(settings.trackDia && e.dia ? e.dia : '--'));
 
       var html = '<div class="card-top">'
         + '<div class="card-main">'
         +   '<span class="card-sysdia">' + bpText + '</span>'
         +   '<span class="card-unit">mmHg</span>'
         + '</div>'
-        + '<div class="card-date">' + f.date + '<small>' + f.time + '</small></div>'
+        + '<div class="card-date">' + escapeHtml(f.date) + '<small>' + escapeHtml(f.time) + '</small></div>'
         + '</div>';
 
       var subItems = [];
-      if (settings.trackHr && e.hr) subItems.push('<span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + e.hr + ' bpm</span>');
-      if (settings.trackWgt && e.wgt) subItems.push('<span><svg viewBox="0 0 24 24"><path d="M5 19h14l-1.6-8.2a2 2 0 0 0-2-1.6H8.6a2 2 0 0 0-2 1.6z"/><path d="M12 9V7"/><circle cx="12" cy="6" r="1.6"/></svg>' + e.wgt + ' kg</span>');
+      if (settings.trackHr && e.hr) subItems.push('<span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + escapeHtml(String(e.hr)) + ' bpm</span>');
+      if (settings.trackWgt && e.wgt) subItems.push('<span><svg viewBox="0 0 24 24"><path d="M5 19h14l-1.6-8.2a2 2 0 0 0-2-1.6H8.6a2 2 0 0 0-2 1.6z"/><path d="M12 9V7"/><circle cx="12" cy="6" r="1.6"/></svg>' + escapeHtml(String(e.wgt)) + ' kg</span>');
 
       if (subItems.length) {
         html += '<div class="card-sub">' + subItems.join('') + '</div>';

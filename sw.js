@@ -32,7 +32,13 @@
       okno do 4 pomiarów, etykiety liczby dni między pomiarami,
       kolory serii/legendy wymuszone klasami CSS.
   11) Wykres w3 poprawki: płynne przesuwanie (ułamkowy offset okna,
-      przelicznik px SVG), przełącznik osi z aria-pressed. */
+      przelicznik px SVG), przełącznik osi z aria-pressed.
+  12) Szybkie fixy po audycie: usunięty martwy wheelClampWarn (i18n),
+      resize wykresu z debounce, próg czytelności etykiet "X dni",
+      touch target 44px dla przełącznika osi, wyrównanie pól numerycznych,
+      myślniki w datach nazw plików (backup/CSV/archiwum).
+  13) Bugfix: listener przełącznika osi z flagą jednorazowej rejestracji
+      (kumulacja listenerów na kontenerze czyniła przycisk "martwym"). */
 
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;

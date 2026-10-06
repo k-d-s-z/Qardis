@@ -202,11 +202,10 @@
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
         numRequiredMsg: "Podaj wartości liczbowe w polach pomiaru.",
         chartPanHint: "Przeciągnij wykres w bok, aby przeglądać kolejne pomiary (do 4 na ekran). Przełącznik zmienia oś na rzeczywisty upływ czasu.",
-        axisCatSwitch: "Oś: równa", axisTimeSwitch: "Oś: czasowa",
+        axisCatSwitch: "Oś: równomierna", axisTimeSwitch: "Oś: rzeczywisty czas",
         minParamWarn: "Co najmniej jeden parametr musi pozostać włączony.",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
         storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
-        wheelClampWarn: "Wpis zawiera wartość spoza zakresu bębenka – zapis przywróci ją do najbliższej dopuszczalnej.",
         backupDone: "Kopia zapasowa pobrana",
         settingsSaved: "Ustawienia zapisane",
         
@@ -278,7 +277,6 @@
         minParamWarn: "At least one parameter must stay enabled.",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
         storageError: "Failed to save data (private browsing mode?).",
-        wheelClampWarn: "This entry has a value outside the wheel range – saving will snap it to the nearest allowed value.",
         backupDone: "Backup downloaded",
         settingsSaved: "Settings saved",
         
@@ -428,7 +426,7 @@
     var d = new Date(ts);
     return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())+"T"+pad2(d.getHours())+":"+pad2(d.getMinutes());
   }
-  function ymd(d){ return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate()); }
+  function ymd(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }   // audyt(6): czytelna nazwa pliku backupu (2026-10-06)
 
   // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries)
   function pluralEntries(n){
@@ -744,7 +742,9 @@
       svg += '<text x="'+n1(xk)+'" y="'+(H-8)+'" text-anchor="middle" class="axis axis-date">'+escapeHtml(shortDate(pts[k].ts))+'</text>';
       if (k > 0) {
         var xm = (xk + X(k-1)) / 2;
-        if (xm >= padL - 4 && xm <= W - padR + 4) {
+        // Audyt(3): próg czytelności — etykieta "X dni" tylko wtedy, gdy
+        // odstęp na ekranie daje jej miejsce (min. 40 jednostek SVG).
+        if (xm >= padL - 4 && xm <= W - padR + 4 && (xk - X(k-1)) >= 40) {
           var days = Math.max(0, Math.round((pts[k].ts - pts[k-1].ts) / DAY_MS));
           svg += '<text x="'+n1(xm)+'" y="'+(H-20)+'" text-anchor="middle" class="axis axis-gap">'+escapeHtml(gapLabel(days))+'</text>';
         }
@@ -796,6 +796,14 @@
       function endDrag(){ drag = null; }
       svgEl.addEventListener("pointerup", endDrag);
       svgEl.addEventListener("pointercancel", endDrag);
+    }
+    // Audyt bugfix: listener przełącznika osi na KONTENERZE, z flagą jednorazowej
+    // rejestracji. Kontener jest wieczny, a struktura wewnątrz (przycisk+SVG)
+    // jest niszczona przy <2 pomiarach i tworzona od nowa — wcześniejsze
+    // rejestrowanie listenera przy każdej rekreacji kumulkowało kopie
+    // (2+ listenerów = kliknięcie przełączało tryb parzyście = "martwy" przycisk).
+    if (!mount.dataset.chartInit) {
+      mount.dataset.chartInit = "1";
       mount.addEventListener("click", function(ev){
         if (!ev.target.closest("#btnAxisMode") || !chartCtx) return;
         chartMode = (chartMode === "cat") ? "time" : "cat";
@@ -816,6 +824,15 @@
     svgEl.innerHTML = content;
   }
   var chartCtx = null;   // {n, visN, slotPx, list} — żywy kontekst dla panu/toggle
+
+  // Audyt(2): po rotacji/zmianie szerokości okna wykres sam się przerysowuje
+  // (debounce 150 ms, tylko gdy ekran Trendy jest aktywny i istnieje kontekst).
+  var chartResizeT = null;
+  window.addEventListener("resize", function(){
+    if (!chartCtx || screenIdx !== 1) return;
+    if (chartResizeT) clearTimeout(chartResizeT);
+    chartResizeT = setTimeout(function(){ chartResizeT = null; drawChart(chartCtx.list, $("trendsChart")); }, 150);
+  });
 
   function drawTrends(force){
     // Rysuj tylko gdy ekran Trendy jest aktywny, chyba że wymuszono (zmiana ustawień)

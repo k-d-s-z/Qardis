@@ -1,0 +1,1 @@
+var s = "Zażółć gęślą jaźń, Śrem, Łódź; — test";

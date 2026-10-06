@@ -8,7 +8,7 @@
     --accent-fg: #277a3b; --focus: #277a3b;
     --dock: #ffffffee; --dock-shadow: 0 10px 32px rgba(20,30,60,.15);
     --input: #f3f4f6;
-    /* Skala warstw: dock < nakładka < arkusz = toast < okno potwierdzenia */
+    /* Skala warstw: dock < nakladka < arkusz = toast < okno potwierdzenia */
     --z-dock: 50; --z-overlay: 90; --z-sheet: 200; --z-toast: 200; --z-dialog: 999;
     color-scheme: light;
   }
@@ -23,8 +23,8 @@
     --input: #202327;
     color-scheme: dark;
   }
-  /* Pierwszy render, zanim app.js ustawi data-theme: trzymaj się motywu systemowego,
-     żeby nie było błysku jasnego tła. Po starcie skryptu data-theme jest zawsze ustawione. */
+  /* Pierwszy render, zanim app.js ustawi data-theme: trzymaj sie motywu systemowego,
+     zeby nie bylo blysku jasnego tla. Po starcie skryptu data-theme jest zawsze ustawione. */
   @media (prefers-color-scheme: dark) {
     html:not([data-theme]) {
       --bg-base: #1b1d20;
@@ -251,9 +251,9 @@
   .sheet-actions .btn { margin-top: 0; }
   .sheet-actions-col { flex-direction: column; }
   .empty-gap { margin-bottom: 12px; }
-  #dialogText { font-size: .9375rem; color: var(--text); line-height: 1.5; white-space: pre-line; } /* \n\n z tekstów dialogów = osobne akapity */
+  #dialogText { font-size: .9375rem; color: var(--text); line-height: 1.5; white-space: pre-line; } /* \n\n z tekstow dialogow = osobne akapity */
 
-  /* Wykres trendów (SVG, okno do 4 pomiarów, przesuwany) */
+  /* Wykres trendow (SVG, okno do 4 pomiarow, przesuwany) */
   #trendsChart { margin: 6px 0 2px; }
   .chart-bar { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .chart-toggle { border: 1px solid var(--line); background: var(--input); color: var(--muted); font-size: .6875rem; font-weight: 700; padding: 10px 12px; border-radius: 10px; cursor: pointer; min-height: 44px; }
@@ -263,7 +263,7 @@
   #trendsChart .axis { font-size: 11px; fill: var(--muted); }
   #trendsChart .axis-gap { font-style: italic; }
   #trendsChart .grid { stroke: var(--line); stroke-width: 1; }
-  /* Kolory serii — jawnie w CSS, niezależne od dziedziczenia atrybutów */
+  /* Kolory serii - jawnie w CSS, niezalezne od dziedziczenia atrybutow */
   #trendsChart .dot-sys { fill: #e05252; }
   #trendsChart .dot-dia { fill: #4f83cc; }
   #trendsChart .ln-sys { stroke: #e05252; stroke-width: 2.5; stroke-linecap: round; }
@@ -307,8 +307,7 @@
 
 
   /* Weight number field */
-  .wheel-box.input-mode::after { display: none; }
-  .num-field { height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding-top: 12px; }
+    .num-field { height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding-top: 12px; }
   .num-field input { width: 100%; max-width: 128px; height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--accent-fg); font: inherit; font-size: 1.375rem; font-weight: 700; text-align: center; padding: 0 6px; }
   .num-btns { display: flex; gap: 6px; }
   .num-btns button { width: 56px; height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--accent); font-size: 1.5rem; font-weight: 700; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -326,20 +325,20 @@
     .dock-nav-segmented button { padding: 6px 10px; }
   }
 
-  /* Sprzątanie po audytach: klasy zamiast inline style, ukryte kontrolki */
+  /* Sprzatanie po audytach: klasy zamiast inline style, ukryte kontrolki */
   .set-row-col { flex-direction: column; align-items: flex-start; gap: 8px; }
   .segmented-full { width: 100%; justify-content: space-between; }
   #btnCorrupt { display: none; }
   #btnDeleteEntryHeader { display: none; }
 
-  /* Audyt(7): podgląd zawartości archiwum */
+  /* Audyt(7): podglad zawartosci archiwum */
   .archive-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; padding: 4px 10px; margin: 6px 0; }
   .archive-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: .8125rem; font-variant-numeric: tabular-nums; }
   .archive-row:last-child { border-bottom: none; }
   .empty-box .btn { max-width: 220px; margin: 0 auto; }
   .btn--sm { padding: 10px 14px; font-size: .9rem; max-width: 200px; margin: 0 auto; }
 
-  /* Toasty (wcześniej style w JS) */
+  /* Toasty (wczesniej style w JS) */
   .toast {
     position: fixed; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); left: 50%;
     transform: translateX(-50%); width: max-content; max-width: 92vw;
@@ -356,7 +355,7 @@
   }
   .toast-hide { opacity: 0; }
 
-  /* Audyt dostępności: uszanuj prefers-reduced-motion */
+  /* Audyt dostepnosci: uszanuj prefers-reduced-motion */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   }

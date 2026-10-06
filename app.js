@@ -4,34 +4,34 @@
   function $(id){ return document.getElementById(id); }
 
   // Audyt(9): czysta logika (limity, sanityzacja, CSV, pluralizacja, interpolacja
-  // osi czasu, walidacja importu) wydzielona do core.js — jedna implementacja
-  // dla aplikacji i testów jednostkowych (tests.html).
+  // osi czasu, walidacja importu) wydzielona do core.js \u2014 jedna implementacja
+  // dla aplikacji i test\u00f3w jednostkowych (tests.html).
   var LIMITS = QardisCore.LIMITS;
   var sanitizeEntry = QardisCore.sanitizeEntry;
   var lossy = QardisCore.lossy;
 
-  // --- MODUŁ 1: Storage & State ---
+  // --- MODU\u0141 1: Storage & State ---
   var StorageModule = (function(){
     var LS = "qardis.entries.v1", LS_SET = "qardis.settings.v1", LS_ARC = "qardis.archive.v1";
     var issue = false;
-    var lastRaw = null;   // ostatni stan localStorage znany tej karcie (wykrywanie zapisów z innych kart)
+    var lastRaw = null;   // ostatni stan localStorage znany tej karcie (wykrywanie zapis\u00f3w z innych kart)
     function stash(raw){
       issue = true;
-      // Zachowujemy PIERWSZĄ kopię — kolejne wykrycia nie nadpisują oryginału
-      // i nie dublują całego zbioru w limicie localStorage.
+      // Zachowujemy PIERWSZ\u0104 kopi\u0119 \u2014 kolejne wykrycia nie nadpisuj\u0105 orygina\u0142u
+      // i nie dubluj\u0105 ca\u0142ego zbioru w limicie localStorage.
       try { if (!localStorage.getItem(LS + ".corrupt")) localStorage.setItem(LS + ".corrupt", raw); } catch(e){}
     }
     function buildDefaults(){
       var autoTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
       return {
-        defSys:120, defDia:80, defHr:70, defWgt:75, theme:autoTheme, lang:"pl", fontSize:"medium",
+        defWgt:75, theme:autoTheme, lang:"pl", fontSize:"medium",
         trackSys:true, trackDia:true, trackHr:true, trackWgt:true,
-        incHr: false, incWgt: false,      // czy nowy wpis domyślnie zawiera tętno / wagę (pamiętane)
+        incHr: false, incWgt: false,      // czy nowy wpis domy\u015blnie zawiera t\u0119tno / wag\u0119 (pami\u0119tane)
         persistAsked: false,
         lastBackupAt: 0                   // czas ostatniej kopii zapasowej (przypominacz ~30 dni)
       };
     }
-    function sanitizeSettings(s, fromLoad){
+    function sanitizeSettings(s){
       var def = buildDefaults();
       if (!s || typeof s !== "object" || Array.isArray(s)) return def;
       var out = Object.assign({}, def);
@@ -42,7 +42,7 @@
       if (["dark","light"].indexOf(out.theme) < 0) out.theme = def.theme;
       if (["pl","en"].indexOf(out.lang) < 0) out.lang = "pl";
       if (["small","medium","large"].indexOf(out.fontSize) < 0) out.fontSize = "medium";
-      // Co najmniej jeden monitorowany parametr — inaczej formularz i lista są puste.
+      // Co najmniej jeden monitorowany parametr \u2014 inaczej formularz i lista s\u0105 puste.
       if (!out.trackSys && !out.trackDia && !out.trackHr && !out.trackWgt) {
         out.trackSys = out.trackDia = out.trackHr = out.trackWgt = true;
       }
@@ -51,11 +51,11 @@
     return {
       hadIssue: function(){ return issue; },
       corruptRaw: function(){
-        // Audyt(2): zachowana kopia uszkodzonych danych – eksportowana z menu.
+        // Audyt(2): zachowana kopia uszkodzonych danych \u2013 eksportowana z menu.
         try { return localStorage.getItem(LS + ".corrupt"); } catch(e){ return null; }
       },
       loadArchive: function(){
-        // Archiwum: wpisy starsze niż 9 mies., przeniesione ręcznie z menu — osobny magazyn.
+        // Archiwum: wpisy starsze ni\u017c 9 mies., przeniesione r\u0119cznie z menu \u2014 osobny magazyn.
         var raw = null;
         try { raw = localStorage.getItem(LS_ARC); } catch(e){ return []; }
         if (!raw) return [];
@@ -97,9 +97,9 @@
       },
       saveEntries: function(entries){
         try {
-          // Scalanie zapisów między kartami: jeśli inna karta/PWA zapisała dane
+          // Scalanie zapis\u00f3w mi\u0119dzy kartami: je\u015bli inna karta/PWA zapisa\u0142a dane
           // od naszego ostatniego odczytu, dopnij jej wpisy (po id) przed zapisem,
-          // żeby nie skasować ich nadpisaniem całej tablicy.
+          // \u017ceby nie skasowa\u0107 ich nadpisaniem ca\u0142ej tablicy.
           var cur = null;
           try { cur = localStorage.getItem(LS); } catch(e){}
           if (cur && cur !== lastRaw) {
@@ -111,7 +111,7 @@
                 remote.forEach(function(re){
                   var c = sanitizeEntry(re);
                   if (!c || !c.id || byId[c.id]) return;
-                  entries.push(c); byId[c.id] = c;   // mutujemy przekazaną tablicę (global `entries`)
+                  entries.push(c); byId[c.id] = c;   // mutujemy przekazan\u0105 tablic\u0119 (global `entries`)
                 });
               }
             } catch(e){}
@@ -126,7 +126,7 @@
         var s = null;
         try { var raw = localStorage.getItem(LS_SET); s = raw ? JSON.parse(raw) : null; } catch(e){ s = null; }
         if (!s) return buildDefaults();
-        var out = sanitizeSettings(s, true);
+        var out = sanitizeSettings(s);
         return out;
       },
       sanitizeSettings: function(s){ return sanitizeSettings(s, false); },
@@ -146,59 +146,59 @@
     };
   })();
 
-  // --- MODUŁ 2: Validation --- (implementacja w core.js — audyt(9))
+  // --- MODU\u0141 2: Validation --- (implementacja w core.js \u2014 audyt(9))
   var ValidationModule = (function(){
     return {
       validateImport: function(j){ return QardisCore.validateImport(j); }
     };
   })();
 
-  // --- MODUŁ 3: I18n ---
+  // --- MODU\u0141 3: I18n ---
   var I18nModule = (function(){
     var translations = {
       pl: {
-        trendsTitle: "Qardis – Trendy pomiarów", trendsDesc: "Średnie i zakresy wartości w wybranym okresie.", trendsNoData: "Brak pomiarów w wybranym okresie.",
-        sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
-        normsNote: "Zalecenia dotyczące interpretacji ciśnienia skurczowego i rozkurczowego mogą się zmieniać. Najświeższe wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
-        wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
+        trendsTitle: "Qardis \u2013 Trendy pomiar\u00f3w", trendsDesc: "\u015arednie i zakresy warto\u015bci w wybranym okresie.", trendsNoData: "Brak pomiar\u00f3w w wybranym okresie.",
+        sumCount: "Pomiar\u00f3w: {n}", sumBp: "Ci\u015bnienie \u2013 \u015brednia", sumHr: "T\u0119tno \u2013 \u015brednia", sumWgt: "Waga \u2013 \u015brednia", minMax: "min\u2013maks",
+        normsNote: "Zalecenia dotycz\u0105ce interpretacji ci\u015bnienia skurczowego i rozkurczowego mog\u0105 si\u0119 zmienia\u0107. Naj\u015bwie\u017csze wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadci\u015bnienia T\u0119tniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
+        wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urz\u0105dzenia.",
         navHistory: "Pomiary", navTrends: "Trendy", 
-        sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "Tętno", wgtLabel: "Waga",
-        emptyTitle: "Brak pomiarów", emptyDesc: "Dodaj pierwszy pomiar ciśnienia, aby rozpocząć śledzenie wyników.", btnAddFirst: "+ Dodaj pierwszy pomiar",
+        sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "T\u0119tno", wgtLabel: "Waga",
+        emptyTitle: "Brak pomiar\u00f3w", emptyDesc: "Dodaj pierwszy pomiar ci\u015bnienia, aby rozpocz\u0105\u0107 \u015bledzenie wynik\u00f3w.", btnAddFirst: "+ Dodaj pierwszy pomiar",
         addTitleNew: "Nowy wpis", addTitleEdit: "Edytuj wpis", dtLabel: "Data i godzina pomiaru",
-        notePlaceholder: "Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)",
-        btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij", btnProceed: "Kontynuuj",
+        notePlaceholder: "Dodatkowe informacje... (np. przezi\u0119bienie, z\u0142e samopoczucie)",
+        btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usu\u0144", btnUndo: "Cofnij", btnProceed: "Kontynuuj",
         toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", 
         
         
-        langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
-        titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Raport: zapisz PDF lub drukuj",
+        langLabel: "J\u0119zyk", fontSizeLabel: "Wielko\u015b\u0107 czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
+        titleBtnBackup: "Utw\u00f3rz kopi\u0119 zapasow\u0105", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Raport: zapisz PDF lub drukuj",
         titleBtnCsv: "Eksportuj dane (CSV)", csvDone: "Pobrano plik CSV",
-        discardTitle: "Niezapisane zmiany", discardConfirm: "Arkusz edycji zawiera niezapisane zmiany. Porzucić je?", btnDiscard: "Porzuć",
-        titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopię danych uszkodzonych",
-        backupReminder: "Minęło ponad 30 dni od ostatniej kopii zapasowej – rozważ jej utworzenie (menu „Dane i eksport”).",
-        importedMsg: "Zaimportowano ", importError: "Nieprawidłowy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utwórz nową kopię zapasową w aplikacji.",
-        noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Raport pomiarów", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj", btnSavePdf: "Zapisz jako PDF", btnPrint: "Drukuj", pdfSaved: "Raport PDF zapisany", pdfSaveError: "Nie udało się utworzyć pliku PDF.",
-        savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", futureDateWarn: "Data pomiaru przypada w przyszłości — upewnij się, że to zamierzone.", deletedMsg: "Wpis został usunięty", importConfirm: "Dane z kopii zostaną połączone z istniejącymi wpisami. Kontynuować?",
+        discardTitle: "Niezapisane zmiany", discardConfirm: "Arkusz edycji zawiera niezapisane zmiany. Porzuci\u0107 je?", btnDiscard: "Porzu\u0107",
+        titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopi\u0119 danych uszkodzonych",
+        backupReminder: "Min\u0119\u0142o ponad 30 dni od ostatniej kopii zapasowej \u2013 rozwa\u017c jej utworzenie (menu \u201eDane i eksport\u201d).",
+        importedMsg: "Zaimportowano ", importError: "Nieprawid\u0142owy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utw\u00f3rz now\u0105 kopi\u0119 zapasow\u0105 w aplikacji.",
+        noEntriesPdf: "Brak wpis\u00f3w do wydruku.", pdfError: "Nie uda\u0142o si\u0119 otworzy\u0107 okna wydruku.", pdfTitle: "Qardis \u2013 historia pomiar\u00f3w", pdfGen: "Wygenerowano: ", pdfHint: "U\u017cyj Ctrl+P / \u2318+P i wybierz \u201eZapisz jako PDF\u201d.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Raport pomiar\u00f3w", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj", btnSavePdf: "Zapisz jako PDF", btnPrint: "Drukuj", pdfSaved: "Raport PDF zapisany", pdfSaveError: "Nie uda\u0142o si\u0119 utworzy\u0107 pliku PDF.",
+        savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", futureDateWarn: "Data pomiaru przypada w przysz\u0142o\u015bci \u2014 upewnij si\u0119, \u017ce to zamierzone.", deletedMsg: "Wpis zosta\u0142 usuni\u0119ty", importConfirm: "Dane z kopii zostan\u0105 po\u0142\u0105czone z istniej\u0105cymi wpisami. Kontynuowa\u0107?",
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
         
-        bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
-        numRequiredMsg: "Podaj wartości liczbowe w polach pomiaru.",
-        rangeMsg: "Wartość poza zakresem: SYS 50–300, DIA 30–200, tętno 20–250.",
-        dateRangeMsg: "Podaj poprawną datę (lata 2000–2099).",
-        chartPanHint: "Przeciągnij wykres w bok, aby przeglądać kolejne pomiary (do 4 na ekran). Przełącznik zmienia oś na rzeczywisty upływ czasu.",
-        axisCatSwitch: "Oś: równa", axisTimeSwitch: "Oś: czasowa",
-        minParamWarn: "Co najmniej jeden parametr musi pozostać włączony.",
-        privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
-        storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
+        bpErrorMsg: "Warto\u015b\u0107 skurczowa (SYS) musi by\u0107 wy\u017csza ni\u017c rozkurczowa (DIA).",
+        numRequiredMsg: "Podaj warto\u015bci liczbowe w polach pomiaru.",
+        rangeMsg: "Warto\u015b\u0107 poza zakresem: SYS 50\u2013300, DIA 30\u2013200, t\u0119tno 20\u2013250.",
+        dateRangeMsg: "Podaj poprawn\u0105 dat\u0119 (lata 2000\u20132099).",
+        chartPanHint: "Przeci\u0105gnij wykres w bok, aby przegl\u0105da\u0107 kolejne pomiary (do 4 na ekran). Prze\u0142\u0105cznik zmienia o\u015b na rzeczywisty up\u0142yw czasu.",
+        axisCatSwitch: "O\u015b: r\u00f3wna", axisTimeSwitch: "O\u015b: czasowa",
+        minParamWarn: "Co najmniej jeden parametr musi pozosta\u0107 w\u0142\u0105czony.",
+        privacyAlert: "Uwaga: Ten plik zawiera wra\u017cliwe dane dotycz\u0105ce zdrowia. Przechowuj go w bezpiecznym miejscu i nie udost\u0119pniaj osobom nieupowa\u017cnionym.",
+        storageError: "Nie uda\u0142o si\u0119 zapisa\u0107 danych (mo\u017ce tryb prywatny?).",
         backupDone: "Kopia zapasowa pobrana",
         settingsSaved: "Ustawienia zapisane",
         
         
         
-        deletedMsgN: "Usunięto wpisów: {n}",
-        importSkipped: " Pominięto: ",
-        skipHr: "Pomiń tętno", skipWgt: "Pomiń wagę",
-        storageCorrupt: "Wykryto uszkodzone dane. Kopię zachowano w pamięci przeglądarki, nie zostały nadpisane.",
+        deletedMsgN: "Usuni\u0119to wpis\u00f3w: {n}",
+        importSkipped: " Pomini\u0119to: ",
+        skipHr: "Pomi\u0144 t\u0119tno", skipWgt: "Pomi\u0144 wag\u0119",
+        storageCorrupt: "Wykryto uszkodzone dane. Kopi\u0119 zachowano w pami\u0119ci przegl\u0105darki, nie zosta\u0142y nadpisane.",
         
         
         
@@ -206,33 +206,33 @@
         ariaTools: "Dane i eksport", ariaAdd: "Dodaj pomiar", ariaSettings: "Ustawienia", ariaView: "Widok",
         
         
-        addHr: "Dodaj tętno", addWgt: "Dodaj wagę",
-        wgtDec: "Zmniejsz wagę o 0,1 kg", wgtInc: "Zwiększ wagę o 0,1 kg", wgtLabelKg: "Waga [kg]",
-        wgtErrorMsg: "Podaj wagę w zakresie 20–300 kg (np. 75,5).",
-        titleBtnWipe: "Usuń wszystkie dane",
-        wipeConfirm: "Usunąć WSZYSTKIE pomiary, archiwum i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową (zawiera również archiwum).",
-        wipeDone: "Wszystkie dane zostały usunięte",
-        privacyNote: "Dane są przechowywane wyłącznie na tym urządzeniu.",
-        importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?",
-        archiveTitle: "Archiwum pomiarów",
-        archiveDesc: "Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z listy i Trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.",
+        addHr: "Dodaj t\u0119tno", addWgt: "Dodaj wag\u0119",
+        wgtDec: "Zmniejsz wag\u0119 o 0,1 kg", wgtInc: "Zwi\u0119ksz wag\u0119 o 0,1 kg", wgtLabelKg: "Waga [kg]",
+        wgtErrorMsg: "Podaj wag\u0119 w zakresie 20\u2013300 kg (np. 75,5).",
+        titleBtnWipe: "Usu\u0144 wszystkie dane",
+        wipeConfirm: "Usun\u0105\u0107 WSZYSTKIE pomiary, archiwum i ustawienia z tego urz\u0105dzenia? Tej operacji nie mo\u017cna cofn\u0105\u0107. Je\u015bli chcesz zachowa\u0107 dane, najpierw utw\u00f3rz kopi\u0119 zapasow\u0105 (zawiera r\u00f3wnie\u017c archiwum).",
+        wipeDone: "Wszystkie dane zosta\u0142y usuni\u0119te",
+        privacyNote: "Dane s\u0105 przechowywane wy\u0142\u0105cznie na tym urz\u0105dzeniu.",
+        importSettingsConfirm: "Plik zawiera te\u017c ustawienia (j\u0119zyk, monitorowane parametry). Zast\u0105pi\u0107 nimi bie\u017c\u0105ce ustawienia?",
+        archiveTitle: "Archiwum pomiar\u00f3w",
+        archiveDesc: "Wpisy starsze ni\u017c 9 mies. mo\u017cna przenie\u015b\u0107 do archiwum \u2014 znikaj\u0105 z listy i Trend\u00f3w, ale zostaj\u0105 na urz\u0105dzeniu i mo\u017cna je przywr\u00f3ci\u0107 lub wyeksportowa\u0107.",
         btnArchiveOpen: "Archiwum",
-        archiveEmpty: "Brak zarchiwizowanych wpisów.",
+        archiveEmpty: "Brak zarchiwizowanych wpis\u00f3w.",
         archiveCount: "W archiwum: {n}",
-        btnArchiveMove: "Archiwizuj wpisy starsze niż 9 mies.",
-        archiveShow: "Pokaż wpisy", archiveHide: "Ukryj wpisy",
-        btnArchiveRestore: "Przywróć wszystkie",
+        btnArchiveMove: "Archiwizuj wpisy starsze ni\u017c 9 mies.",
+        archiveShow: "Poka\u017c wpisy", archiveHide: "Ukryj wpisy",
+        btnArchiveRestore: "Przywr\u00f3\u0107 wszystkie",
         btnArchiveExport: "Eksportuj archiwum",
         archivedMsg: "Zarchiwizowano ",
-        archiveRestoredMsg: "Przywrócono ",
+        archiveRestoredMsg: "Przywr\u00f3cono ",
         archiveExportedMsg: "Pobrano archiwum",
-        nothingToArchiveMsg: "Brak wpisów starszych niż 9 mies.",
-        archiveInBackup: "Kopia zawiera pomiary, archiwum i ustawienia — pełna migracja urządzenia w jednym pliku.",
-        importSavedWarning: "Nie udało się zapisać danych (może limit pamięci lub tryb prywatny?). Zaimportowane wpisy są widoczne, ale znikną po odświeżeniu strony."
+        nothingToArchiveMsg: "Brak wpis\u00f3w starszych ni\u017c 9 mies.",
+        archiveInBackup: "Kopia zawiera pomiary, archiwum i ustawienia \u2014 pe\u0142na migracja urz\u0105dzenia w jednym pliku.",
+        importSavedWarning: "Nie uda\u0142o si\u0119 zapisa\u0107 danych (mo\u017ce limit pami\u0119ci lub tryb prywatny?). Zaimportowane wpisy s\u0105 widoczne, ale znikn\u0105 po od\u015bwie\u017ceniu strony."
       },
       en: {
-        trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.", trendsNoData: "No measurements in the selected period.",
-        sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
+        trendsTitle: "Qardis \u2013 Measurement trends", trendsDesc: "Averages and value ranges for the selected period.", trendsNoData: "No measurements in the selected period.",
+        sumCount: "Measurements: {n}", sumBp: "Blood pressure \u2013 average", sumHr: "Pulse \u2013 average", sumWgt: "Weight \u2013 average", minMax: "min\u2013max",
         normsNote: "Guidelines for interpreting systolic and diastolic blood pressure may change over time. Check the latest recommendations on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, or of equivalent institutions in your country.",
         wipeDesc: "Deletes all measurements and settings from this device.",
         navHistory: "Readings", navTrends: "Trends", 
@@ -249,16 +249,16 @@
         titleBtnCsv: "Export data (CSV)", csvDone: "CSV file downloaded",
         discardTitle: "Unsaved changes", discardConfirm: "The edit form contains unsaved changes. Discard them?", btnDiscard: "Discard",
         titleBtnCorrupt: "Export corrupted data (safety copy)", corruptExported: "Corrupted data copy downloaded",
-        backupReminder: "More than 30 days since your last backup – consider creating one (Data & Export menu).",
+        backupReminder: "More than 30 days since your last backup \u2013 consider creating one (Data & Export menu).",
         importedMsg: "Imported ", importError: "Invalid backup file.", importVersionError: "Unknown backup format version (schemaVersion). Create a new backup in the app.",
-        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Measurement report", pdfRangeTitle: "Data range", btnExport: "Export", btnSavePdf: "Save as PDF", btnPrint: "Print", pdfSaved: "PDF report saved", pdfSaveError: "Failed to create the PDF file.",
-        savedMsg: "Measurement saved", updatedMsg: "Measurement updated", futureDateWarn: "The measurement date is in the future — make sure this is intentional.", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
+        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis \u2013 measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / \u2318+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Measurement report", pdfRangeTitle: "Data range", btnExport: "Export", btnSavePdf: "Save as PDF", btnPrint: "Print", pdfSaved: "PDF report saved", pdfSaveError: "Failed to create the PDF file.",
+        savedMsg: "Measurement saved", updatedMsg: "Measurement updated", futureDateWarn: "The measurement date is in the future \u2014 make sure this is intentional.", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
         
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
         numRequiredMsg: "Enter numeric values in the measurement fields.",
-        rangeMsg: "Value out of range: SYS 50–300, DIA 30–200, pulse 20–250.",
-        dateRangeMsg: "Enter a valid date (years 2000–2099).",
+        rangeMsg: "Value out of range: SYS 50\u2013300, DIA 30\u2013200, pulse 20\u2013250.",
+        dateRangeMsg: "Enter a valid date (years 2000\u20132099).",
         chartPanHint: "Drag the chart sideways to browse measurements (up to 4 on screen). The toggle switches the axis to real time spacing.",
         axisCatSwitch: "Axis: even", axisTimeSwitch: "Axis: time",
         minParamWarn: "At least one parameter must stay enabled.",
@@ -289,7 +289,7 @@
         privacyNote: "Data is stored only on this device.",
         importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?",
         archiveTitle: "Measurement archive",
-        archiveDesc: "Entries older than 9 months can be moved to the archive — they disappear from the list and Trends, but stay on this device and can be restored or exported at any time.",
+        archiveDesc: "Entries older than 9 months can be moved to the archive \u2014 they disappear from the list and Trends, but stay on this device and can be restored or exported at any time.",
         btnArchiveOpen: "Archive",
         archiveEmpty: "No archived entries.",
         archiveCount: "In archive: {n}",
@@ -301,7 +301,7 @@
         archiveRestoredMsg: "Restored ",
         archiveExportedMsg: "Archive downloaded",
         nothingToArchiveMsg: "No entries older than 9 months.",
-        archiveInBackup: "The backup contains measurements, archive and settings — a full device migration in one file.",
+        archiveInBackup: "The backup contains measurements, archive and settings \u2014 a full device migration in one file.",
         importSavedWarning: "Failed to save data (storage limit or private mode?). Imported entries are visible, but will disappear after refreshing the page."
       }
     };
@@ -313,11 +313,11 @@
     };
   })();
 
-  // --- MODUŁ 4: Table Renderer ---
+  // --- MODU\u0141 4: Table Renderer ---
   var TableModule = (function(){
     return {
-      // Audyt kodu: filtr zakresu wykonuje JEDEN raz wywołujący (drawTrends) —
-      // tabela dostaje już przefiltrowaną, posortowaną malejąco listę.
+      // Audyt kodu: filtr zakresu wykonuje JEDEN raz wywo\u0142uj\u0105cy (drawTrends) \u2014
+      // tabela dostaje ju\u017c przefiltrowan\u0105, posortowan\u0105 malej\u0105co list\u0119.
       renderTable: function(tableMount, filtered, settings, tCb, fmtDateCb){
         tableMount.innerHTML = "";
         if (!filtered.length){
@@ -336,7 +336,7 @@
         if (settings.trackHr)  cols.push({ label: "hrLabel",  unit: "bpm",  key: "hr" });
         if (settings.trackWgt) cols.push({ label: "wgtLabel", unit: "kg",   key: "wgt" });
 
-        // Sztywne szerokości kolumn: tabela nigdy nie wychodzi poza ekran
+        // Sztywne szeroko\u015bci kolumn: tabela nigdy nie wychodzi poza ekran
         var colW = Math.floor(68 / Math.max(cols.length, 1));
         var colgroup = document.createElement("colgroup");
         var cDate = document.createElement("col");
@@ -349,7 +349,7 @@
         var htr = document.createElement("tr");
         function addTh(text, unit){
           var th = document.createElement("th");
-          th.title = unit ? text + " (" + unit + ")" : text;     // pełny tekst po najechaniu / przytrzymaniu
+          th.title = unit ? text + " (" + unit + ")" : text;     // pe\u0142ny tekst po najechaniu / przytrzymaniu
           var l = document.createElement("span"); l.className = "th-l"; l.textContent = text; th.appendChild(l);
           if (unit) { var u = document.createElement("span"); u.className = "th-u"; u.textContent = unit; th.appendChild(u); }
           htr.appendChild(th);
@@ -382,10 +382,10 @@
     };
   })();
 
-  // --- MODUŁ 5: Main App Logic & UI Coordinator ---
+  // --- MODU\u0141 5: Main App Logic & UI Coordinator ---
   var entries = StorageModule.loadEntries();
   var settings = StorageModule.loadSettings();
-  var trendsRangeDays = 30;
+  var trendsRangeDays = "all";
   var settingsDraft = null;
   var settingsBefore = null;
   var hrActive = true;
@@ -395,8 +395,8 @@
 
   function t(key) { return I18nModule.t(key, settings.lang); }
 
-  // Audyt kodu: wspólne helpery dat w jednym miejscu (wcześniej zdefiniowane
-  // trzykrotnie w różnych miejscach pliku — pad2/fmtDate/toLocalInput/ymd).
+  // Audyt kodu: wsp\u00f3lne helpery dat w jednym miejscu (wcze\u015bniej zdefiniowane
+  // trzykrotnie w r\u00f3\u017cnych miejscach pliku \u2014 pad2/fmtDate/toLocalInput/ymd).
   function pad2(n){ return (n<10?"0":"")+n; }
   function fmtDate(ts){
     var d = new Date(ts);
@@ -416,8 +416,8 @@
   }
   function ymd(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }   // audyt(6): czytelna nazwa pliku backupu (2026-10-06)
 
-  // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries) —
-  // implementacja w core.js, tutaj tylko podpięcie języka.
+  // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpis\u00f3w, en: entry/entries) \u2014
+  // implementacja w core.js, tutaj tylko podpi\u0119cie j\u0119zyka.
   function pluralEntries(n){ return QardisCore.pluralEntries(n, settings.lang); }
 
   function applyLanguage() {
@@ -451,9 +451,9 @@
 
   function applyTheme(){
     document.documentElement.setAttribute("data-theme", settings.theme);
-    // Są dwa metatagi theme-color (z media prefers-color-scheme, dla pierwszego renderu
-    // przed startem skryptu). Ręczny wybór motywu może różnić się od systemowego,
-    // więc ustawiamy ten sam kolor w obu — wtedy wygrywa wybór użytkownika.
+    // S\u0105 dwa metatagi theme-color (z media prefers-color-scheme, dla pierwszego renderu
+    // przed startem skryptu). R\u0119czny wyb\u00f3r motywu mo\u017ce r\u00f3\u017cni\u0107 si\u0119 od systemowego,
+    // wi\u0119c ustawiamy ten sam kolor w obu \u2014 wtedy wygrywa wyb\u00f3r u\u017cytkownika.
     var color = settings.theme === "dark" ? "#1b1d20" : "#f0f4f9";
     document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){ m.setAttribute("content", color); });
   }
@@ -467,7 +467,7 @@
   }
 
   var entryList = $("entryList");
-  // Audyt kodu: delegacja zdarzeń na liście wpisów zamiast listenera per karta
+  // Audyt kodu: delegacja zdarze\u0144 na li\u015bcie wpis\u00f3w zamiast listenera per karta
   entryList.addEventListener("click", function(ev){
     var hit = ev.target.closest(".card-hit"); if (!hit) return;
     var en = entries.find(function(x){ return x.id === hit.dataset.id; });
@@ -516,7 +516,7 @@
         html += '<div class="card-sub">' + subItems.join('') + '</div>';
       }
       if (e.note) {
-        html += '<div class="card-note">✎ ' + escapeHtml(e.note) + '</div>';
+        html += '<div class="card-note">\u270e ' + escapeHtml(e.note) + '</div>';
       }
 
       card.innerHTML = html;
@@ -533,7 +533,7 @@
     drawTrends();
   }
 
-  // Audyt kodu: wspólne helpery zamiast powtórzonych bloków w trzech eksportach
+  // Audyt kodu: wsp\u00f3lne helpery zamiast powt\u00f3rzonych blok\u00f3w w trzech eksportach
   function downloadFile(name, text, mime){
     var blob = (typeof Blob !== "undefined" && text instanceof Blob) ? text : new Blob([text], {type: mime || "application/json"});
     var a = document.createElement("a");
@@ -557,7 +557,7 @@
     entries.splice(idx, 1);
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
     if (editingId === id) editingId = null;
-    addSnapshot = null;   // usunięto wpis — zamykamy arkusz bez dirty-check
+    addSnapshot = null;   // usuni\u0119to wpis \u2014 zamykamy arkusz bez dirty-check
     render();
     if($("addOverlay").classList.contains("open")) setModalState($("addOverlay"), false);
 
@@ -581,7 +581,7 @@
     }, UNDO_MS + 600);
   }
 
-  // --- Ekran Trendy: podsumowanie liczbowe + pionowe słupki zakresowe + tabela ---
+  // --- Ekran Trendy: podsumowanie liczbowe + pionowe s\u0142upki zakresowe + tabela ---
   var DAY_MS = 86400000;
   function mkEl(tag, cls, text){
     var n = document.createElement(tag);
@@ -601,7 +601,7 @@
     return n ? { n: n, avg: sum / n, min: mn, max: mx } : null;
   }
   function fmt1(v){ return (Math.round(v * 10) / 10).toFixed(1); }
-  function rangeTxt(st, f){ var a = f(st.min), b = f(st.max); return a === b ? a : a + "–" + b; }
+  function rangeTxt(st, f){ var a = f(st.min), b = f(st.max); return a === b ? a : a + "\u2013" + b; }
   function rnd(v){ return String(Math.round(v)); }
 
   function renderSummary(list, mount){
@@ -623,7 +623,7 @@
       c.appendChild(mkEl("div", "sum-range", t("minMax") + ": " + rangeText));
       grid.appendChild(c);
     }
-    // Audyt kodu: generyczny helper zamiast trzech kopiowanych bloków kart
+    // Audyt kodu: generyczny helper zamiast trzech kopiowanych blok\u00f3w kart
     function cardFor(st, labelKey, unit, f){
       if (!st) return;
       card("", t(labelKey), f(st.avg), unit, rangeTxt(st, f));
@@ -631,7 +631,7 @@
     if (s || d) {
       var avg = [s ? rnd(s.avg) : "--", d ? rnd(d.avg) : "--"].join(" / ");
       var rng = [s ? "SYS " + rangeTxt(s, rnd) : "", d ? "DIA " + rangeTxt(d, rnd) : ""]
-        .filter(Boolean).join(" · ");
+        .filter(Boolean).join(" \u00b7 ");
       card("wide", t("sumBp"), avg, "mmHg", rng);
     }
     cardFor(h, "sumHr", "bpm", rnd);
@@ -640,19 +640,19 @@
   }
 
   // --- Audyt UX (w3): wykres czytelny od pierwszego rzutu oka ---
-  // • Oś X domyślnie RÓWNA: każdy pomiar to kolejna pozycja, niezależnie od
-  //   upływu czasu (kilka pomiarów jednego dnia nie zlewa się w jeden punkt).
-  // • Przełącznik "oś czasowa": odstępy proporcjonalne do rzeczywistego czasu.
-  // • Okno do 4 pomiarów na ekran; przesuwanie przeciągnięciem (po jednym
-  //   kroku na pomiar). Brak trybu "pokaż wszystko" — skala jest zawsze czytelna.
-  // • Między punktami etykieta z liczbą dni (np. "3 dni"), pod punktami data.
+  // \u2022 O\u015b X domy\u015blnie R\u00d3WNA: ka\u017cdy pomiar to kolejna pozycja, niezale\u017cnie od
+  //   up\u0142ywu czasu (kilka pomiar\u00f3w jednego dnia nie zlewa si\u0119 w jeden punkt).
+  // \u2022 Prze\u0142\u0105cznik "o\u015b czasowa": odst\u0119py proporcjonalne do rzeczywistego czasu.
+  // \u2022 Okno do 4 pomiar\u00f3w na ekran; przesuwanie przeci\u0105gni\u0119ciem (po jednym
+  //   kroku na pomiar). Brak trybu "poka\u017c wszystko" \u2014 skala jest zawsze czytelna.
+  // \u2022 Mi\u0119dzy punktami etykieta z liczb\u0105 dni (np. "3 dni"), pod punktami data.
   var VISIBLE_MAX = 4;
-  var chartMode = "cat";     // "cat" = oś równa, "time" = oś rzeczywistego czasu
+  var chartMode = "cat";     // "cat" = o\u015b r\u00f3wna, "time" = o\u015b rzeczywistego czasu
   var chartStart = Infinity; // indeks pierwszego widocznego pomiaru (float); Infinity = koniec osi (najnowsze), clamp w drawChart
   function resetChart(){ chartStart = Infinity; }
   function gapLabel(days){
     if (days < 1) return "0 d";
-    if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzień";
+    if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzie\u0144";
     return days + (settings.lang === "en" ? " days" : " dni");
   }
   function drawChart(list, mount){
@@ -660,12 +660,12 @@
     var pts = (showSys || showDia) ? list.filter(function(e){
       return (showSys && e.sys != null) || (showDia && e.dia != null);
     }).sort(function(a,b){ return a.ts - b.ts; }) : [];
-    if (pts.length < 2) { mount.textContent = ""; chartCtx = null; return; }   // wykres od 2 pomiarów
+    if (pts.length < 2) { mount.textContent = ""; chartCtx = null; return; }   // wykres od 2 pomiar\u00f3w
 
     var n = pts.length;
     var visN = Math.min(VISIBLE_MAX, n);
-    // chartStart pozostaje UŁAMKOWY (bez Math.round) — to daje płynne
-    // przesuwanie: punkty przesuwają się piksel po pikselu, nie skokami.
+    // chartStart pozostaje U\u0141AMKOWY (bez Math.round) \u2014 to daje p\u0142ynne
+    // przesuwanie: punkty przesuwaj\u0105 si\u0119 piksel po pikselu, nie skokami.
     chartStart = clamp(chartStart, 0, n - visN);
 
     var W = Math.max(mount.clientWidth || 320, 240), H = 250;
@@ -674,7 +674,7 @@
 
     var lo = Infinity, hi = -Infinity;
     // Skala Y liczona po WSZYSTKICH punktach okna z zapasem (nie tylko
-    // widocznych) — przesuwanie nie zmienia skali w trakcie panu.
+    // widocznych) \u2014 przesuwanie nie zmienia skali w trakcie panu.
     var winA = Math.floor(chartStart), winB = Math.min(n - 1, Math.ceil(chartStart + visN - 1) + 1);
     for (var q = winA; q <= winB; q++) {
       var pe = pts[q];
@@ -685,10 +685,10 @@
     lo -= yPad; hi += yPad;
     if (hi - lo < 10) { lo -= 5; hi += 5; }
 
-    // Mapowanie ułamkowego indeksu -> X:
-    //  • tryb "cat":  pozycja liniowa względem chartStart (równe odstępy)
-    //  • tryb "time": interpolacja znacznika czasu między indeksami
-    // Audyt(9): interpolacja (lerpTs) w core.js — testowana jednostkowo.
+    // Mapowanie u\u0142amkowego indeksu -> X:
+    //  \u2022 tryb "cat":  pozycja liniowa wzgl\u0119dem chartStart (r\u00f3wne odst\u0119py)
+    //  \u2022 tryb "time": interpolacja znacznika czasu mi\u0119dzy indeksami
+    // Audyt(9): interpolacja (lerpTs) w core.js \u2014 testowana jednostkowo.
     var tsArr = pts.map(function(p){ return p.ts; });
     function tsAt(f){ return QardisCore.lerpTs(tsArr, f); }
     var tA = tsAt(chartStart), tB = tsAt(chartStart + visN - 1);
@@ -713,20 +713,20 @@
            + '<text x="'+(padL-6)+'" y="'+n1(y+3.5)+'" text-anchor="end" class="axis">'+Math.round(v)+'</text>';
     }
 
-    // Zakres rysowanych indeksów z zapasem, żeby punkty wjeżdżały/wyjeżdżały
-    // płynnie przy krawędziach okna.
+    // Zakres rysowanych indeks\u00f3w z zapasem, \u017ceby punkty wje\u017cd\u017ca\u0142y/wyje\u017cd\u017ca\u0142y
+    // p\u0142ynnie przy kraw\u0119dziach okna.
     var iFrom = Math.max(0, Math.floor(chartStart));
     var iTo = Math.min(n - 1, Math.ceil(chartStart + visN - 1));
 
-    // Daty pod punktami + liczba dni między punktami (w połowie odstępu)
+    // Daty pod punktami + liczba dni mi\u0119dzy punktami (w po\u0142owie odst\u0119pu)
     for (var k = iFrom; k <= iTo; k++) {
       var xk = X(k);
       if (xk < padL - 4 || xk > W - padR + 4) continue;
       svg += '<text x="'+n1(xk)+'" y="'+(H-8)+'" text-anchor="middle" class="axis axis-date">'+escapeHtml(shortDate(pts[k].ts))+'</text>';
       if (k > 0) {
         var xm = (xk + X(k-1)) / 2;
-        // Audyt(3): próg czytelności — etykieta "X dni" tylko wtedy, gdy
-        // odstęp na ekranie daje jej miejsce (min. 40 jednostek SVG).
+        // Audyt(3): pr\u00f3g czytelno\u015bci \u2014 etykieta "X dni" tylko wtedy, gdy
+        // odst\u0119p na ekranie daje jej miejsce (min. 40 jednostek SVG).
         if (xm >= padL - 4 && xm <= W - padR + 4 && (xk - X(k-1)) >= 40) {
           var days = Math.max(0, Math.round((pts[k].ts - pts[k-1].ts) / DAY_MS));
           svg += '<text x="'+n1(xm)+'" y="'+(H-20)+'" text-anchor="middle" class="axis axis-gap">'+escapeHtml(gapLabel(days))+'</text>';
@@ -747,14 +747,14 @@
     }
     var legend = "";
     var lx = padL;
-    if (showSys) { legend += '<text x="'+lx+'" y="14" class="lg-sys">● SYS</text>'; lx += 58; }
-    if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">● DIA</text>'; }
+    if (showSys) { legend += '<text x="'+lx+'" y="14" class="lg-sys">\u25cf SYS</text>'; lx += 58; }
+    if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">\u25cf DIA</text>'; }
     var content = svg + series("sys", "sys") + series("dia", "dia") + legend;
 
-    // Audyt bugfix: struktura (pasek + SVG + podpowiedź) tworzona RAZ i nigdy
-    // nie czyszczona w trakcie rysowania — wcześniejsze mount.textContent=""
-    // niszczyło SVG razem z listenerami przy każdym przeciągnięciu (drag się
-    // zacinał). Kontekst dla panu żyje w chartCtx, odświeżany przy każdym
+    // Audyt bugfix: struktura (pasek + SVG + podpowied\u017a) tworzona RAZ i nigdy
+    // nie czyszczona w trakcie rysowania \u2014 wcze\u015bniejsze mount.textContent=""
+    // niszczy\u0142o SVG razem z listenerami przy ka\u017cdym przeci\u0105gni\u0119ciu (drag si\u0119
+    // zacina\u0142). Kontekst dla panu \u017cyje w chartCtx, od\u015bwie\u017cany przy ka\u017cdym
     // rysowaniu.
     var svgEl = mount.querySelector("svg");
     if (!svgEl) {
@@ -771,8 +771,8 @@
       });
       svgEl.addEventListener("pointermove", function(ev){
         if (!drag || !chartCtx) return;
-        // Delta myszy jest w pikselach CSS — przeliczamy przez slotPx
-        // (jednostki SVG * stosunek ekranu do viewBoxu). Szerokość slotu = 1 pomiar.
+        // Delta myszy jest w pikselach CSS \u2014 przeliczamy przez slotPx
+        // (jednostki SVG * stosunek ekranu do viewBoxu). Szeroko\u015b\u0107 slotu = 1 pomiar.
         chartStart = clamp(drag.start + (drag.x - ev.clientX) / chartCtx.slotPx, 0, chartCtx.n - chartCtx.visN);
         drawChart(chartCtx.list, mount);
       });
@@ -780,11 +780,11 @@
       svgEl.addEventListener("pointerup", endDrag);
       svgEl.addEventListener("pointercancel", endDrag);
     }
-    // Audyt bugfix: listener przełącznika osi na KONTENERZE, z flagą jednorazowej
-    // rejestracji. Kontener jest wieczny, a struktura wewnątrz (przycisk+SVG)
-    // jest niszczona przy <2 pomiarach i tworzona od nowa — wcześniejsze
-    // rejestrowanie listenera przy każdej rekreacji kumulkowało kopie
-    // (2+ listenerów = kliknięcie przełączało tryb parzyście = "martwy" przycisk).
+    // Audyt bugfix: listener prze\u0142\u0105cznika osi na KONTENERZE, z flag\u0105 jednorazowej
+    // rejestracji. Kontener jest wieczny, a struktura wewn\u0105trz (przycisk+SVG)
+    // jest niszczona przy <2 pomiarach i tworzona od nowa \u2014 wcze\u015bniejsze
+    // rejestrowanie listenera przy ka\u017cdej rekreacji kumulkowa\u0142o kopie
+    // (2+ listener\u00f3w = klikni\u0119cie prze\u0142\u0105cza\u0142o tryb parzy\u015bcie = "martwy" przycisk).
     if (!mount.dataset.chartInit) {
       mount.dataset.chartInit = "1";
       mount.addEventListener("click", function(ev){
@@ -795,8 +795,8 @@
     }
     var btn = mount.querySelector("#btnAxisMode");
     if (btn) {
-      // Etykieta pokazuje tryb, na który przełączy NASTĘPNE kliknięcie
-      // (przycisk to "akcja", nie wskaźnik stanu).
+      // Etykieta pokazuje tryb, na kt\u00f3ry prze\u0142\u0105czy NAST\u0118PNE klikni\u0119cie
+      // (przycisk to "akcja", nie wska\u017anik stanu).
       btn.textContent = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
       btn.title = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
       btn.setAttribute("aria-pressed", chartMode === "time" ? "true" : "false");
@@ -806,9 +806,9 @@
     svgEl.setAttribute("viewBox", "0 0 "+W+" "+H);
     svgEl.innerHTML = content;
   }
-  var chartCtx = null;   // {n, visN, slotPx, list} — żywy kontekst dla panu/toggle
+  var chartCtx = null;   // {n, visN, slotPx, list} \u2014 \u017cywy kontekst dla panu/toggle
 
-  // Audyt(2): po rotacji/zmianie szerokości okna wykres sam się przerysowuje
+  // Audyt(2): po rotacji/zmianie szeroko\u015bci okna wykres sam si\u0119 przerysowuje
   // (debounce 150 ms, tylko gdy ekran Trendy jest aktywny i istnieje kontekst).
   var chartResizeT = null;
   window.addEventListener("resize", function(){
@@ -818,7 +818,7 @@
   });
 
   function drawTrends(force){
-    // Rysuj tylko gdy ekran Trendy jest aktywny, chyba że wymuszono (zmiana ustawień)
+    // Rysuj tylko gdy ekran Trendy jest aktywny, chyba \u017ce wymuszono (zmiana ustawie\u0144)
     if (!force && screenIdx !== 1) return;
     var tableMount = $("trendsTableMount");
     var empty = $("trendsEmpty");
@@ -826,7 +826,7 @@
 
     sumMount.textContent = "";
     $("trendsChart").textContent = "";
-    chartCtx = null;   // brak kontekstu = resize/pan nie rysują starych danych
+    chartCtx = null;   // brak kontekstu = resize/pan nie rysuj\u0105 starych danych
     empty.hidden = true;
     tableMount.hidden = true;
 
@@ -840,7 +840,7 @@
     }
 
     var cutoff = (trendsRangeDays === "all") ? -Infinity : Date.now() - trendsRangeDays * DAY_MS;
-    // Jedno filtrowanie i jedno sortowanie (malejąco) dla podsumowania i tabeli.
+    // Jedno filtrowanie i jedno sortowanie (malej\u0105co) dla podsumowania i tabeli.
     var filtered = entries.filter(function(e){ return e.ts >= cutoff; })
       .sort(function(a, b){ return b.ts - a.ts; });
 
@@ -856,7 +856,7 @@
     TableModule.renderTable(tableMount, filtered, settings, t, fmtDate);
   }
 
-  // Audyt kodu: jeden wspólny handler przełączników zakresu (stan tylko w aria-pressed)
+  // Audyt kodu: jeden wsp\u00f3lny handler prze\u0142\u0105cznik\u00f3w zakresu (stan tylko w aria-pressed)
   function bindRangeControls(containerId, onChange){
     var root = $(containerId);
     root.addEventListener("click", function(e){
@@ -868,7 +868,7 @@
   }
   bindRangeControls("trendsRange", function(r){
     trendsRangeDays = (r === "all") ? "all" : parseInt(r, 10);
-    resetChart();   // audyt UX: nowy zakres danych = wykres na pełnym widoku
+    resetChart();   // audyt UX: nowy zakres danych = wykres na pe\u0142nym widoku
     drawTrends();
   });
 
@@ -915,7 +915,7 @@
     dy = e.touches[0].clientY - startY;
     if (axis === null) {
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-      axis = Math.abs(dx) > Math.abs(dy) * 1.5 ? "x" : "y";   // oś ustalana raz, na początku gestu
+      axis = Math.abs(dx) > Math.abs(dy) * 1.5 ? "x" : "y";   // o\u015b ustalana raz, na pocz\u0105tku gestu
     }
     if (axis !== "x") return;
     var half = viewport.clientWidth;
@@ -927,12 +927,12 @@
   function endSwipe(){
     if (startX === null) return;
     track.classList.remove("dragging");
-    // Audyt(7): przebudowa ekranu (drawTrends) tylko po rzeczywistym geście
-    // poziomym; zwykłe dotknięcia i przewinięcia pionowe nie ruszają UI.
+    // Audyt(7): przebudowa ekranu (drawTrends) tylko po rzeczywistym ge\u015bcie
+    // poziomym; zwyk\u0142e dotkni\u0119cia i przewini\u0119cia pionowe nie ruszaj\u0105 UI.
     if (axis === "x") {
       if (dx < -60 && screenIdx === 0) go(1);
       else if (dx > 60 && screenIdx === 1) go(0);
-      else go(screenIdx);   // dosunięcie z powrotem
+      else go(screenIdx);   // dosuni\u0119cie z powrotem
     }
     startX = null; startY = null; axis = null;
   }
@@ -947,9 +947,9 @@
   var addOverlay = $("addOverlay");
   var editingId = null;
   var addSnapshot = null;   // audyt UX: stan formularza w chwili otwarcia (dirty-check)
-  // Audyt UX: pola numeryczne zamiast bębnów (wheel). Zakresy pól są
-  // identyczne z LIMITS (koniec z rozjazdem zakresów bębenka i danych),
-  // pełna kontrola wartości z klawiatury numerycznej, mniej kodu.
+  // Audyt UX: pola numeryczne zamiast b\u0119bn\u00f3w (wheel). Zakresy p\u00f3l s\u0105
+  // identyczne z LIMITS (koniec z rozjazdem zakres\u00f3w b\u0119benka i danych),
+  // pe\u0142na kontrola warto\u015bci z klawiatury numerycznej, mniej kodu.
   function makeNumField(id, lo, hi){
     var inp = $(id);
     inp.min = lo; inp.max = hi;
@@ -959,7 +959,7 @@
         var raw = String(inp.value).replace(",", ".").trim();
         if (raw === "") return null;
         var v = parseFloat(raw);
-        return isFinite(v) ? v : NaN;   // bez przycinania: zakres sprawdza btnSave i pokazuje błąd
+        return isFinite(v) ? v : NaN;   // bez przycinania: zakres sprawdza btnSave i pokazuje b\u0142\u0105d
       }
     };
   }
@@ -975,12 +975,12 @@
   var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
   var wgtInput = $("wWgt");
   var weightField = makeNumField("wWgt", WGT_MIN, WGT_MAX);
-  // Audyt kodu: jedno miejsce sortowania malejąco po dacie
+  // Audyt kodu: jedno miejsce sortowania malej\u0105co po dacie
   function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
 
-  // ostatnia znana wartość (nie tylko z najnowszego wpisu, który mógł jej nie mieć)
-  function lastKnown(key, fallback, sorted){
-    var arr = sorted || sortedDesc();
+  // ostatnia znana warto\u015b\u0107 (nie tylko z najnowszego wpisu, kt\u00f3ry m\u00f3g\u0142 jej nie mie\u0107)
+  function lastKnown(key, fallback){
+    var arr = sortedDesc();
     for (var i = 0; i < arr.length; i++) { if (arr[i][key] != null) return arr[i][key]; }
     return fallback;
   }
@@ -1003,17 +1003,15 @@
   function syncOptionalWheels(){
     [["boxWHr","wHr","btnClearWHr",hrActive,"Hr"],["boxWWgt","wWgt","btnClearWWgt",wgtActive,"Wgt"]].forEach(function(a){
       $(a[0]).classList.toggle("disabled", !a[3]);
-      // Audyt UX: wszystkie parametry to teraz pola input — jedno-disable wystarcza
+      // Audyt UX: wszystkie parametry to teraz pola input \u2014 jedno-disable wystarcza
       $(a[1]).disabled = !a[3];
       if (a[1] === "wWgt") document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){ b.disabled = !a[3]; });
       var b = $(a[2]);
       var lbl = t((a[3] ? "skip" : "add") + a[4]);
       b.setAttribute("aria-label", lbl); b.title = lbl;
-      b.textContent = a[3] ? "✕" : "+";
+      b.textContent = a[3] ? "\u2715" : "+";
     });
-  }
-  function labelWheels(){
-    // Audyt UX: bębny usunięte — zostają tylko etykiety przycisków wagi
+    // Audyt UX: b\u0119bny usuni\u0119te \u2014 zostaj\u0105 tylko etykiety przycisk\u00f3w wagi
     $("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
     $("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
   }
@@ -1021,6 +1019,8 @@
     hrActive = !hrActive;
     if (!editingId) { settings.incHr = hrActive; StorageModule.saveSettings(settings); }
     syncOptionalWheels();
+    // W\u0142\u0105czenie t\u0119tna ustawia fokus na pustym polu (bez podstawiania starej warto\u015bci).
+    if (hrActive) { try { $("wHr").focus(); } catch(e){} }
   };
   $("btnClearWWgt").onclick = function(){
     wgtActive = !wgtActive;
@@ -1028,8 +1028,6 @@
     syncOptionalWheels();
     if (wgtActive) { try { wgtInput.focus(); } catch(e){} }
   };
-  // Włączenie tętna ustawia fokus na pustym polu (bez podstawiania starej wartości).
-  $("btnClearWHr").addEventListener("click", function(){ if (hrActive) { try { $("wHr").focus(); } catch(e){} } });
 
   var persistTried = false;
   function requestPersist(){
@@ -1038,8 +1036,8 @@
     if (!(navigator.storage && navigator.storage.persist && navigator.storage.persisted)) return;
     navigator.storage.persisted().then(function(p){ return p ? true : navigator.storage.persist(); })
       .then(function(granted){
-        // Flaga "pytano" tylko, gdy trwałość faktycznie przyznano; w przeciwnym
-        // razie (np. iOS Safari w przeglądarce) spróbujemy ponownie w kolejnej sesji.
+        // Flaga "pytano" tylko, gdy trwa\u0142o\u015b\u0107 faktycznie przyznano; w przeciwnym
+        // razie (np. iOS Safari w przegl\u0105darce) spr\u00f3bujemy ponownie w kolejnej sesji.
         if (granted) { settings.persistAsked = true; StorageModule.saveSettings(settings); }
       })
       .catch(function(){});
@@ -1063,18 +1061,17 @@
     hrActive = entry ? (entry.hr != null) : !!settings.incHr;
     $("boxWHr").classList.toggle("disabled", !hrActive);
 
-    // Pola nowego wpisu są PUSTE (placeholder to tylko podpowiedź) — poprzedni pomiar
-    // nie może przypadkiem zostać zapisany jako nowy odczyt.
+    // Pola nowego wpisu s\u0105 PUSTE (placeholder to tylko podpowied\u017a) \u2014 poprzedni pomiar
+    // nie mo\u017ce przypadkiem zosta\u0107 zapisany jako nowy odczyt.
 
     wgtActive = entry ? (entry.wgt != null) : !!settings.incWgt;
     $("boxWWgt").classList.toggle("disabled", !wgtActive);
     syncOptionalWheels();
-    labelWheels();
     weightField.set(entry ? entry.wgt : null);
 
     setModalState(addOverlay, true);
-    // Audyt UX: pola numeryczne — bez wartości poza zakresem nie ma
-    // warninga o "przycięciu" (zakresy pól = LIMITS).
+    // Audyt UX: pola numeryczne \u2014 bez warto\u015bci poza zakresem nie ma
+    // warninga o "przyci\u0119ciu" (zakresy p\u00f3l = LIMITS).
     if (settings.trackSys) sysField.set(entry ? entry.sys : null);
     if (settings.trackDia) diaField.set(entry ? entry.dia : null);
     if (settings.trackHr) hrField.set(entry ? entry.hr : null);
@@ -1082,8 +1079,8 @@
   }
 
   // --- Audyt UX: dirty-check arkusza edycji ---
-  // Klik w tło / Escape / "Anuluj" przy niezapisanych zmianach pytają
-  // o potwierdzenie, zamiast po cichu gubić dane użytkownika.
+  // Klik w t\u0142o / Escape / "Anuluj" przy niezapisanych zmianach pytaj\u0105
+  // o potwierdzenie, zamiast po cichu gubi\u0107 dane u\u017cytkownika.
   function collectAddState(){
     return {
       note: $("noteField").value,
@@ -1105,7 +1102,7 @@
     if (!dirty) { setModalState(addOverlay, false); return; }
     openDialog({ title: t("discardTitle"), text: t("discardConfirm"), ok: t("btnDiscard"), danger: true }, function(proceed){
       if (proceed) setModalState(addOverlay, false);
-      else addSnapshot = JSON.stringify(collectAddState());   // przywróć snapshot — arkusz zostaje otwarty
+      else addSnapshot = JSON.stringify(collectAddState());   // przywr\u00f3\u0107 snapshot \u2014 arkusz zostaje otwarty
     });
   }
 
@@ -1122,11 +1119,11 @@
 
     var errEl = $("bpInlineError");
     function badNum(v){ return v === null || isNaN(v); }
-    // Wpis edytowany, który kiedyś powstał przy wyłączonym parametrze, może mieć w nim pustkę.
+    // Wpis edytowany, kt\u00f3ry kiedy\u015b powsta\u0142 przy wy\u0142\u0105czonym parametrze, mo\u017ce mie\u0107 w nim pustk\u0119.
     var origEntry = editingId ? entries.find(function(x){ return x.id === editingId; }) : null;
     function missing(v, key){ return badNum(v) && !(origEntry && origEntry[key] == null && v === null); }
     function outOfRange(v, lim){ return v !== null && !isNaN(v) && (v < lim[0] || v > lim[1]); }
-    // Audyt UX: pusty obowiązkowy parametr = błąd (kiedyś bębenek gwarantował wartość)
+    // Audyt UX: pusty obowi\u0105zkowy parametr = b\u0142\u0105d (kiedy\u015b b\u0119benek gwarantowa\u0142 warto\u015b\u0107)
     if ((settings.trackSys && missing(sysVal, "sys")) || (settings.trackDia && missing(diaVal, "dia")) ||
         (settings.trackHr && hrActive && missing(hrVal, "hr"))) {
       errEl.textContent = t("numRequiredMsg");
@@ -1158,20 +1155,20 @@
     var note = $("noteField").value.trim();
     var dtVal = $("dtField").value;
     var ts = dtVal ? new Date(dtVal).getTime() : Date.now();
-    // Data poza zakresem akceptowanym przy ładowaniu = wpis zniknąłby po odświeżeniu.
+    // Data poza zakresem akceptowanym przy \u0142adowaniu = wpis znikn\u0105\u0142by po od\u015bwie\u017ceniu.
     if (!QardisCore.validFormTs(ts)) {
       errEl.textContent = t("dateRangeMsg");
       errEl.hidden = false;
       try { $("dtField").focus(); } catch(e){}
       return;
     }
-    // Audyt: data z przyszłości — ostrzeż (kolejka, nie pilne), ale pozwól zapisać.
-    // Pilne zastąpiłoby toast "zapisano"; tak potwierdzenie pokazuje się pierwsze.
-    // Jeden komunikat zamiast dwóch: ostrzeżenie o dacie z przyszłości stałoby w kolejce
-    // przed potwierdzeniem zapisu i opóźniało je o kilka sekund.
-    var okMsg = "✓ " + t(editingId ? "updatedMsg" : "savedMsg");
+    // Audyt: data z przysz\u0142o\u015bci \u2014 ostrze\u017c (kolejka, nie pilne), ale pozw\u00f3l zapisa\u0107.
+    // Pilne zast\u0105pi\u0142oby toast "zapisano"; tak potwierdzenie pokazuje si\u0119 pierwsze.
+    // Jeden komunikat zamiast dw\u00f3ch: ostrze\u017cenie o dacie z przysz\u0142o\u015bci sta\u0142oby w kolejce
+    // przed potwierdzeniem zapisu i op\u00f3\u017ania\u0142o je o kilka sekund.
+    var okMsg = "\u2713 " + t(editingId ? "updatedMsg" : "savedMsg");
     var okMs = 2200;
-    if (ts > Date.now() + 60000) { okMsg += ". ⚠ " + t("futureDateWarn"); okMs = 4500; }
+    if (ts > Date.now() + 60000) { okMsg += ". \u26a0 " + t("futureDateWarn"); okMs = 4500; }
     
     var e = editingId ? entries.find(function(x){ return x.id===editingId; }) : null;
     if (e) {
@@ -1182,22 +1179,22 @@
       if (settings.trackWgt) updated.wgt = wgtVal;
       Object.assign(e, updated);
     } else {
-      // Nowy wpis — także gdy edytowany wpis zniknął w międzyczasie (usunięty w innej karcie):
-      // dane użytkownika nie przepadają po cichu.
+      // Nowy wpis \u2014 tak\u017ce gdy edytowany wpis znikn\u0105\u0142 w mi\u0119dzyczasie (usuni\u0119ty w innej karcie):
+      // dane u\u017cytkownika nie przepadaj\u0105 po cichu.
       entries.push({id: makeId(), ts:ts, note:note, sys:sysVal, dia:diaVal, hr:hrVal, wgt:wgtVal});
     }
-    // Najpierw zapis, potem komunikat — „zapisano” tylko, gdy zapis się udał.
+    // Najpierw zapis, potem komunikat \u2014 \u201ezapisano\u201d tylko, gdy zapis si\u0119 uda\u0142.
     if (StorageModule.saveEntries(entries)) toast(okMsg, okMs);
     else toast(t("storageError"), 6000, true);
-    addSnapshot = null;   // zapisano — zamykamy bez dirty-check
+    addSnapshot = null;   // zapisano \u2014 zamykamy bez dirty-check
     setModalState(addOverlay, false);
     render();
     requestPersist();
   };
 
   $("btnBackup").onclick = function(){
-    // Audyt(8): kopia "wszystko w jednym" (v3) — wpisy + archiwum + ustawienia.
-    // Pełna migracja urządzenia to jeden plik, nie dwa.
+    // Audyt(8): kopia "wszystko w jednym" (v3) \u2014 wpisy + archiwum + ustawienia.
+    // Pe\u0142na migracja urz\u0105dzenia to jeden plik, nie dwa.
     openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveInBackup"), ok: t("btnExport") }, function(proceed){
     if (!proceed) return;
     var exp = {};
@@ -1215,7 +1212,7 @@
     settings.lastBackupAt = Date.now();     // audyt(3): odmierzaj czas do przypominacza
     StorageModule.saveSettings(settings);
     setModalState(toolsOverlay, false);
-    toast("✓ " + t("backupDone"));
+    toast("\u2713 " + t("backupDone"));
     });
   };
 
@@ -1229,7 +1226,7 @@
     if (deleteTimeout) { clearTimeout(deleteTimeout); deleteTimeout = null; }
     settings = StorageModule.loadSettings();
     applyTheme(); applyLanguage(); applyFontSize(); render();
-    toast("✓ " + t("wipeDone"));
+    toast("\u2713 " + t("wipeDone"));
     });
   };
 
@@ -1245,8 +1242,8 @@
       try{
         var j = JSON.parse(r.result);
         if (!ValidationModule.validateImport(j)) throw new Error("invalid schema or ranges");
-        // Audyt: wersja formatu. Odrzucamy tylko NOWSZE niż znane (v > 3), bo
-        // starsze potrafimy poprawnie wczytać: kopia v3/v2 (v3 = z archiwum),
+        // Audyt: wersja formatu. Odrzucamy tylko NOWSZE ni\u017c znane (v > 3), bo
+        // starsze potrafimy poprawnie wczyta\u0107: kopia v3/v2 (v3 = z archiwum),
         // starsze obiekty bez pola, plik archiwum (type: "qardis-archive", v1)
         // i surowa tablica.
         var v = (j && !Array.isArray(j)) ? j.schemaVersion : undefined;
@@ -1257,20 +1254,20 @@
         var added = 0, skipped = 0;
         list.forEach(function(e){
           var item = sanitizeEntry(e);
-          // Rekordy bez ważnego ts pomijamy jawnie (koniec z cichym Date.now());
-          // rekordy z wartościami poza zakresem (np. waga < 20 kg) również –
-          // bez utraty danych i bez odrzucania całego pliku.
+          // Rekordy bez wa\u017cnego ts pomijamy jawnie (koniec z cichym Date.now());
+          // rekordy z warto\u015bciami poza zakresem (np. waga < 20 kg) r\u00f3wnie\u017c \u2013
+          // bez utraty danych i bez odrzucania ca\u0142ego pliku.
           if (!item || item.ts === null || lossy(e, item)) { skipped++; return; }
           if (item.sys != null && item.dia != null && item.sys <= item.dia) { skipped++; return; }
           if (!item.id) item.id = makeId();
-          if (ids[item.id]) { skipped++; return; }   // duplikat id liczony jako pominięty
+          if (ids[item.id]) { skipped++; return; }   // duplikat id liczony jako pomini\u0119ty
           var sig = QardisCore.entrySig(item);
-          if (sigs[sig]) { skipped++; return; }     // ten sam odczyt z innego urządzenia (inne id)
+          if (sigs[sig]) { skipped++; return; }     // ten sam odczyt z innego urz\u0105dzenia (inne id)
           entries.push(item); ids[item.id]=1; sigs[sig]=1; added++;
         });
         var saved = StorageModule.saveEntries(entries);
-        if (!saved) toast(t("importSavedWarning"), 9000, true);   // audyt(10): dane tylko w RAM do przeładowania
-        // Audyt(8): kopia v3 zawiera archiwum — scal po id z lokalnym archiwum.
+        if (!saved) toast(t("importSavedWarning"), 9000, true);   // audyt(10): dane tylko w RAM do prze\u0142adowania
+        // Audyt(8): kopia v3 zawiera archiwum \u2014 scal po id z lokalnym archiwum.
         if (j && !Array.isArray(j) && Array.isArray(j.archive)) {
           var arc = StorageModule.loadArchive();
           var arcIds = Object.create(null);
@@ -1280,7 +1277,7 @@
             var c = sanitizeEntry(e);
             if (!c || !c.ts || lossy(e, c)) return;
             if (!c.id) c.id = makeId();
-            if (arcIds[c.id] || ids[c.id]) return;   // już w archiwum albo na liście głównej
+            if (arcIds[c.id] || ids[c.id]) return;   // ju\u017c w archiwum albo na li\u015bcie g\u0142\u00f3wnej
             arc.push(c); arcIds[c.id] = 1; arcAdded++;
           });
           if (arcAdded && !StorageModule.saveArchive(arc)) toast(t("storageError"), 5000, true);
@@ -1298,7 +1295,7 @@
             applyTheme(); applyLanguage(); applyFontSize(); render();
           });
         }
-        toast("✓ " + t("importedMsg")+added+pluralEntries(added)+(skipped ? t("importSkipped")+skipped : ""));
+        toast("\u2713 " + t("importedMsg")+added+pluralEntries(added)+(skipped ? t("importSkipped")+skipped : ""));
       }catch(err){ toast(err && err.message === "unsupported schemaVersion" ? t("importVersionError") : t("importError")); }
     };
       r.readAsText(f);
@@ -1306,15 +1303,15 @@
     ev.target.value = "";
   });
 
-  var pdfExportRange = "30";
+  var pdfExportRange = "all";
   var pdfOverlayEl = $("pdfRangeOverlay");
   $("btnPdf").onclick = function(){
     setModalState(toolsOverlay, false);
     if (!entries.length){ toast(t("noEntriesPdf")); return; }
     setModalState(pdfOverlayEl, true);
   };
-  // Audyt UX: eksport CSV — otwieralny w Excelu/LibreOffice bez konwersji.
-  // (csvEscape w core.js — testowane jednostkowo.)
+  // Audyt UX: eksport CSV \u2014 otwieralny w Excelu/LibreOffice bez konwersji.
+  // (csvEscape w core.js \u2014 testowane jednostkowo.)
   $("btnCsv").onclick = function(){
     if (!entries.length) { toast(t("noEntriesPdf")); return; }
     var head = ["date","time","sys_mmhg","dia_mmhg","hr_bpm","weight_kg","note"].join(";");
@@ -1327,7 +1324,7 @@
     downloadFile("qardis-dane-"+ymd(new Date())+".csv",
       "\uFEFF" + head + "\r\n" + rows.join("\r\n"), "text/csv");
     setModalState(toolsOverlay, false);
-    toast("✓ " + t("csvDone"));
+    toast("\u2713 " + t("csvDone"));
   };
 
   bindRangeControls("pdfRange", function(r){
@@ -1347,7 +1344,7 @@
   function reportEntries(){
     return sortedDesc().filter(function(e){
       if (pdfExportRange === "all") return true;
-      return e.ts >= Date.now() - pdfExportRange * 24 * 60 * 60 * 1000;
+      return e.ts >= Date.now() - pdfExportRange * DAY_MS;
     });
   }
   function reportCols(){
@@ -1361,9 +1358,9 @@
 
   // --- Zapis PDF bez okna drukowania ---
   // Strony rysujemy na canvasie (A4 poziomo, 2x) i pakujemy jako JPEG do PDF
-  // (QardisCore.buildPdf). Dzięki temu nie trzeba osadzać fontów (polskie znaki
-  // działają od razu), a CSP nie blokuje niczego. Tekst w pliku nie jest zaznaczalny —
-  // do tego służy opcja „Drukuj”.
+  // (QardisCore.buildPdf). Dzi\u0119ki temu nie trzeba osadza\u0107 font\u00f3w (polskie znaki
+  // dzia\u0142aj\u0105 od razu), a CSP nie blokuje niczego. Tekst w pliku nie jest zaznaczalny \u2014
+  // do tego s\u0142u\u017cy opcja \u201eDrukuj\u201d.
   function renderReportPages(arr, cols){
     var PW = 842, PH = 595, M = 34, S = 2, FONT = "Arial, Helvetica, sans-serif";
     var DATE_W = 100, COL_W = 70, HEAD_H = 30, LINE = 13, PADY = 5, MINROW = 20;
@@ -1386,7 +1383,7 @@
       };
     });
 
-    // Paginacja: pierwsza strona ma blok tytułowy
+    // Paginacja: pierwsza strona ma blok tytu\u0142owy
     var limit = PH - M - 8, pageRows = [], cur = [], y = M + 46 + HEAD_H;
     rows.forEach(function(r){
       if (cur.length && y + r.h > limit) { pageRows.push(cur); cur = []; y = M + HEAD_H; }
@@ -1453,17 +1450,17 @@
   function savePdf(){
     var arr = reportEntries();
     if (!arr.length){ toast(t("trendsNoData")); return; }
-    setTimeout(function(){   // krótka zwłoka: arkusz zdąży się zamknąć przed ciężką pracą
+    setTimeout(function(){   // kr\u00f3tka zw\u0142oka: arkusz zd\u0105\u017cy si\u0119 zamkn\u0105\u0107 przed ci\u0119\u017ck\u0105 prac\u0105
       try {
         var pages = renderReportPages(arr, reportCols());
         var bytes = QardisCore.buildPdf(pages, 842, 595, t("pdfTitle"));
         downloadFile("qardis-raport-" + ymd(new Date()) + ".pdf", new Blob([bytes], { type: "application/pdf" }));
-        toast("✓ " + t("pdfSaved"));
+        toast("\u2713 " + t("pdfSaved"));
       } catch (err) { toast(t("pdfSaveError"), 5000, true); }
     }, 40);
   }
 
-  // --- Drukuj (okno wydruku przeglądarki) ---
+  // --- Drukuj (okno wydruku przegl\u0105darki) ---
   function printReport(){
     var arr = reportEntries();
     if (!arr.length){ toast(t("trendsNoData")); return; }
@@ -1479,9 +1476,9 @@
         + "<td>"+escapeHtml(e.note||"")+"</td></tr>";
     }).join("");
     var loc = settings.lang === "en" ? "en-US" : "pl-PL";
-    // Style jako osobny ciąg: okno about:blank dziedziczy CSP otwierającego,
-    // więc inline <style> byłby zablokowany przez 'style-src self'. Arkusz
-    // konstruowany (CSSOM) omija restrykcje CSP — patrz adoptedStyleSheets niżej.
+    // Style jako osobny ci\u0105g: okno about:blank dziedziczy CSP otwieraj\u0105cego,
+    // wi\u0119c inline <style> by\u0142by zablokowany przez 'style-src self'. Arkusz
+    // konstruowany (CSSOM) omija restrykcje CSP \u2014 patrz adoptedStyleSheets ni\u017cej.
     var cssRules = [
       '@page{size:A4 landscape;margin:12mm;}',
       'body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;}',
@@ -1504,16 +1501,16 @@
       +'<tbody>'+rows+'</tbody></table></body></html>';
 
     // Audyt CSP: zamiast ukrytego iframe.srcdoc (dziedziczy CSP rodzica i
-    // wymuszał 'unsafe-inline' w style-src) — osobne okno wydruku window.open.
-    // Wywołanie z gestu użytkownika, więc blokady pop-upów nie przeszkadzają.
+    // wymusza\u0142 'unsafe-inline' w style-src) \u2014 osobne okno wydruku window.open.
+    // Wywo\u0142anie z gestu u\u017cytkownika, wi\u0119c blokady pop-up\u00f3w nie przeszkadzaj\u0105.
     var w = window.open("", "_blank");
-    if (!w) { toast(t("pdfError")); return; }   // blokada pop-upów lub tryb prywatny
+    if (!w) { toast(t("pdfError")); return; }   // blokada pop-up\u00f3w lub tryb prywatny
     try {
       w.document.open();
       w.document.write(html);
       w.document.close();
-      // Style przez CSSOM (omija style-src CSP). Safari < 16.4 nie ma adoptedStyleSheets —
-      // wtedy pusty <style> + insertRule (też CSSOM), zamiast przerywać cały eksport.
+      // Style przez CSSOM (omija style-src CSP). Safari < 16.4 nie ma adoptedStyleSheets \u2014
+      // wtedy pusty <style> + insertRule (te\u017c CSSOM), zamiast przerywa\u0107 ca\u0142y eksport.
       try {
         var sheet = new w.CSSStyleSheet();
         sheet.replaceSync(cssRules.join(""));
@@ -1524,7 +1521,7 @@
         cssRules.forEach(function(r){ try { st.sheet.insertRule(r, st.sheet.cssRules.length); } catch(e3){} });
       }
       w.document.title = t("pdfTitle");
-      // Po wydruku (lub anulowaniu) zamknij okno, żeby nie zostawała pusta karta.
+      // Po wydruku (lub anulowaniu) zamknij okno, \u017ceby nie zostawa\u0142a pusta karta.
       w.onafterprint = function(){ try { w.close(); } catch(e){} };
       setTimeout(function(){ try { w.focus(); w.print(); } catch(err){ toast(t("pdfError")); } }, 200);
     } catch(err){
@@ -1553,7 +1550,7 @@
     var key = btn.dataset.param;
     if (settingsDraft[key]) {
       var othersOn = ["trackSys","trackDia","trackHr","trackWgt"].some(function(k){ return k !== key && settingsDraft[k]; });
-      if (!othersOn) { toast("⚠ " + t("minParamWarn")); return; }   // ostatniego nie wyłączamy
+      if (!othersOn) { toast("\u26a0 " + t("minParamWarn")); return; }   // ostatniego nie wy\u0142\u0105czamy
     }
     settingsDraft[key] = !settingsDraft[key];
     renderMonitoredButtons();
@@ -1582,7 +1579,7 @@
     setModalState(settingsOverlay, false);
     settingsDraft=null; settingsBefore=null;
     render();
-    toast("✓ " + t("settingsSaved"));
+    toast("\u2713 " + t("settingsSaved"));
   }
   function cancelSettings(){
     setModalState(settingsOverlay, false);
@@ -1610,7 +1607,7 @@
     var bg = [$("viewport"), $("dock")];
     if (isOpen) {
       if (!document.querySelector(".overlay.open")) lastFocusEl = document.activeElement;
-      // Okno potwierdzenia leży nad arkuszem: arkusz pod spodem też nie może łapać Tab/czytnika.
+      // Okno potwierdzenia le\u017cy nad arkuszem: arkusz pod spodem te\u017c nie mo\u017ce \u0142apa\u0107 Tab/czytnika.
       document.querySelectorAll(".overlay.open").forEach(function(o){ if (o !== el) o.setAttribute("inert", ""); });
       el.classList.add("open");
       el.removeAttribute("inert");
@@ -1637,7 +1634,7 @@
     }
   }
 
-  // Audyt(1): arkusz potwierdzeń w stylu aplikacji zamiast systemowych okien
+  // Audyt(1): arkusz potwierdze\u0144 w stylu aplikacji zamiast systemowych okien
   var dialogEl = $("dialogOverlay");
   var dialogCb = null;
   function openDialog(opts, cb){
@@ -1661,9 +1658,9 @@
   }
 
   document.addEventListener("keydown", function(e){
-    // Audyt UX: nawigacja klawiaturą — strzałki lewo/prawo przełączają ekrany
-    // (tylko gdy fokus nie jest w polu tekstowym i żaden arkusz nie jest otwarty;
-    // strzałki w polach numerycznych zostają przy inkrementacji wartości)
+    // Audyt UX: nawigacja klawiatur\u0105 \u2014 strza\u0142ki lewo/prawo prze\u0142\u0105czaj\u0105 ekrany
+    // (tylko gdy fokus nie jest w polu tekstowym i \u017caden arkusz nie jest otwarty;
+    // strza\u0142ki w polach numerycznych zostaj\u0105 przy inkrementacji warto\u015bci)
     if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       var ae = document.activeElement, tag = ae ? ae.tagName : "";
       var inField = tag === "INPUT" || tag === "TEXTAREA" || (ae && ae.isContentEditable);
@@ -1682,20 +1679,20 @@
 
   var toastEl = null, toastTimers = [];
   var UNDO_MS = 6000;
-  // Wygląd toastów: klasy .toast / .toast-undo / .toast-hide w style.css
+  // Wygl\u0105d toast\u00f3w: klasy .toast / .toast-undo / .toast-hide w style.css
 
   var toastQueue = [];
 
   function clearToast(){
     toastTimers.forEach(clearTimeout);
     toastTimers = [];
-    toastQueue = [];   // jawnie zamknięte toasty kasują również kolejkę
+    toastQueue = [];   // jawnie zamkni\u0119te toasty kasuj\u0105 r\u00f3wnie\u017c kolejk\u0119
     if (toastEl) { toastEl.remove(); toastEl = null; }
   }
 
-  // Audyt: toasty już się nie nadpisują. Pilne (np. uszkodzone dane) zastępują
-  // bieżący toast natychmiast; zwykłe czekają w kolejce (max 3) i są puszczane
-  // w skróconej wersji po zakończeniu bieżącego.
+  // Audyt: toasty ju\u017c si\u0119 nie nadpisuj\u0105. Pilne (np. uszkodzone dane) zast\u0119puj\u0105
+  // bie\u017c\u0105cy toast natychmiast; zwyk\u0142e czekaj\u0105 w kolejce (max 3) i s\u0105 puszczane
+  // w skr\u00f3conej wersji po zako\u0144czeniu bie\u017c\u0105cego.
   function showToast(el, msg, ms, urgent){
     if (urgent) {
       toastTimers.forEach(clearTimeout); toastTimers = [];
@@ -1747,8 +1744,8 @@
     el.appendChild(undoBtn);
 
     el.className = "toast toast-undo";
-    // Audyt(1): pilny — toast z cofnięciem NIE może trafić do kolejki, bo
-    // pendingDeletes żyją krócej niż toast skrócony przez kolejkę (utrata danych).
+    // Audyt(1): pilny \u2014 toast z cofni\u0119ciem NIE mo\u017ce trafi\u0107 do kolejki, bo
+    // pendingDeletes \u017cyj\u0105 kr\u00f3cej ni\u017c toast skr\u00f3cony przez kolejk\u0119 (utrata danych).
     showToast(el, msg + " " + t("btnUndo"), UNDO_MS, true);
   }
 
@@ -1768,11 +1765,11 @@
       var d = StorageModule.corruptRaw(); if (!d) return;
       downloadFile("qardis-dane-uszkodzone-"+ymd(new Date())+".json", d);
       setModalState(toolsOverlay, false);
-      toast("✓ " + t("corruptExported"));
+      toast("\u2713 " + t("corruptExported"));
     };
   }
   refreshCorruptBtn();
-  // === Archiwum pomiarów (wpisy starsze niż 9 mies.) ===
+  // === Archiwum pomiar\u00f3w (wpisy starsze ni\u017c 9 mies.) ===
   var ARCHIVE_MS = 273 * 24 * 60 * 60 * 1000;
   var archiveOverlayEl = $("archiveOverlay");
 
@@ -1788,8 +1785,8 @@
     }
     var mn = Infinity, mx = -Infinity;
     archive.forEach(function(e){ if (e.ts < mn) mn = e.ts; if (e.ts > mx) mx = e.ts; });
-    el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " – " + fmtDate(mx).date + ")";
-    // Audyt(7): podgląd zawartości archiwum — zwijana lista wpisów.
+    el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " \u2013 " + fmtDate(mx).date + ")";
+    // Audyt(7): podgl\u0105d zawarto\u015bci archiwum \u2014 zwijana lista wpis\u00f3w.
     if (peek) {
       peek.hidden = false;
       peek.textContent = list && !list.hidden && list.childNodes.length ? t("archiveHide") : t("archiveShow");
@@ -1799,7 +1796,7 @@
     var list = $("archiveList");
     var archive = StorageModule.loadArchive()
       .sort(function(a,b){ return b.ts - a.ts; })
-      .slice(0, 50);   // limit czytelności; pełne dane w eksporcie
+      .slice(0, 50);   // limit czytelno\u015bci; pe\u0142ne dane w eksporcie
     list.textContent = "";
     archive.forEach(function(e){
       var f = fmtDate(e.ts);
@@ -1812,7 +1809,7 @@
       if (e.sys != null || e.dia != null) parts.push((e.sys != null ? e.sys : "--") + "/" + (e.dia != null ? e.dia : "--"));
       if (e.hr != null) parts.push(e.hr + " bpm");
       if (e.wgt != null) parts.push(e.wgt + " kg");
-      v.textContent = parts.join(" · ") || "—";
+      v.textContent = parts.join(" \u00b7 ") || "\u2014";
       row.appendChild(d); row.appendChild(v);
       list.appendChild(row);
     });
@@ -1836,16 +1833,16 @@
     var ids = Object.create(null);
     archive.forEach(function(e){ ids[e.id] = 1; });
     toMove.forEach(function(e){ if (!ids[e.id]) { archive.push(e); ids[e.id] = 1; } });
-    // Audyt(2): najpierw trwały zapis archiwum — przy porażce (limit pamięci)
-    // przerywamy, zanim wpisy znikną z listy. Ewentualne duplikaty przy wznowieniu
-    // operacji są odfiltrowywane po id, ale nic nie przepada.
+    // Audyt(2): najpierw trwa\u0142y zapis archiwum \u2014 przy pora\u017cce (limit pami\u0119ci)
+    // przerywamy, zanim wpisy znikn\u0105 z listy. Ewentualne duplikaty przy wznowieniu
+    // operacji s\u0105 odfiltrowywane po id, ale nic nie przepada.
     if (!StorageModule.saveArchive(archive)) { toast(t("storageError"), 5000, true); return; }
     entries = entries.filter(function(e){ return e.ts >= cutoff; });
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"), 5000, true);
     resetArchivePeek();
     updateArchiveSummary();
     render();
-    toast("✓ " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
+    toast("\u2713 " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
   }
   function restoreArchive(){
     var archive = StorageModule.loadArchive();
@@ -1854,21 +1851,21 @@
     entries.forEach(function(e){ ids[e.id] = 1; });
     var added = 0;
     archive.forEach(function(e){ if (!ids[e.id]) { entries.push(e); ids[e.id] = 1; added++; } });
-    // Audyt(3): nie czyścić archiwum, gdy zapis wpisów się nie powiódł —
-    // duplikaty przy ponownej próbie są odfiltrowywane po id.
+    // Audyt(3): nie czy\u015bci\u0107 archiwum, gdy zapis wpis\u00f3w si\u0119 nie powi\u00f3d\u0142 \u2014
+    // duplikaty przy ponownej pr\u00f3bie s\u0105 odfiltrowywane po id.
     if (!StorageModule.saveEntries(entries)) { toast(t("storageError"), 5000, true); return; }
     if (!StorageModule.saveArchive([])) toast(t("storageError"), 5000, true);
     resetArchivePeek();
     updateArchiveSummary();
     render();
-    toast("✓ " + t("archiveRestoredMsg") + added + pluralEntries(added));
+    toast("\u2713 " + t("archiveRestoredMsg") + added + pluralEntries(added));
   }
   function exportArchive(){
     var archive = StorageModule.loadArchive();
     if (!archive.length) { toast(t("archiveEmpty")); return; }
     var obj = { schemaVersion: 1, type: "qardis-archive", exportedAt: new Date().toISOString(), entries: archive };
     downloadFile("qardis-archiwum-"+ymd(new Date())+".json", JSON.stringify(obj, null, 2));
-    toast("✓ " + t("archiveExportedMsg"));
+    toast("\u2713 " + t("archiveExportedMsg"));
   }
   if (archiveOverlayEl) {
     $("btnArchiveOpen").onclick = function(){
@@ -1888,19 +1885,19 @@
     if (!entries.length) return;
     var MONTH = 30 * 24 * 60 * 60 * 1000;
     if (!settings.lastBackupAt || Date.now() - settings.lastBackupAt > MONTH) {
-      toast("⏰ " + t("backupReminder"), 9000);
+      toast("\u23f0 " + t("backupReminder"), 9000);
     }
   })();
 
-  // Synchronizacja między kartami/oknami PWA tego samego originu.
+  // Synchronizacja mi\u0119dzy kartami/oknami PWA tego samego originu.
   window.addEventListener("storage", function(ev){
     if (ev.key === StorageModule.entriesKey()) {
-      // Podczas edycji wpisu nie przerywamy formularza – odświeżamy tylko dane;
-      // scaleniem zmian z innej karty przy naszym zapisie zajmie się saveEntries.
+      // Podczas edycji wpisu nie przerywamy formularza \u2013 od\u015bwie\u017camy tylko dane;
+      // scaleniem zmian z innej karty przy naszym zapisie zajmie si\u0119 saveEntries.
       entries = StorageModule.loadEntries();
       if (editingId === null) render(); else drawTrends(true);
     } else if (ev.key === StorageModule.settingsKey()) {
-      // Nie nadpisujemy ustawień, gdy użytkownik ma otwarty arkusz ustawień/edycji.
+      // Nie nadpisujemy ustawie\u0144, gdy u\u017cytkownik ma otwarty arkusz ustawie\u0144/edycji.
       var busy = $("settingsOverlay").classList.contains("open")
         || $("addOverlay").classList.contains("open");
       if (!busy) {
@@ -1910,8 +1907,8 @@
     }
   });
 
-  // Karta w tle (zwłaszcza mobilna PWA) nie dostaje zdarzeń „storage”: po powrocie sprawdzamy,
-  // czy dane się zmieniły, zanim użytkownik zapisze coś na nieaktualnym stanie.
+  // Karta w tle (zw\u0142aszcza mobilna PWA) nie dostaje zdarze\u0144 \u201estorage\u201d: po powrocie sprawdzamy,
+  // czy dane si\u0119 zmieni\u0142y, zanim u\u017cytkownik zapisze co\u015b na nieaktualnym stanie.
   function refreshIfStale(){
     if (document.visibilityState === "hidden") return;
     if ($("addOverlay").classList.contains("open") || !StorageModule.isStale()) return;
@@ -1922,8 +1919,8 @@
   window.addEventListener("pageshow", function(ev){ if (ev.persisted) refreshIfStale(); });
   window.addEventListener("focus", refreshIfStale);
 
-  // Audyt P1: obsługa ?action=add przeniesiona z inline <script> do app.js,
-  // żeby CSP mogło być czystym script-src 'self' (koniec z utrzymywaniem hasha).
+  // Audyt P1: obs\u0142uga ?action=add przeniesiona z inline <script> do app.js,
+  // \u017ceby CSP mog\u0142o by\u0107 czystym script-src 'self' (koniec z utrzymywaniem hasha).
   if (new URLSearchParams(window.location.search).get("action") === "add") {
     try { history.replaceState(null, "", location.pathname); } catch(e){}
     setTimeout(function(){ var b = $("btnAdd"); if (b) b.click(); }, 80);
@@ -1931,7 +1928,7 @@
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js").catch(function(e){ /* instalacja PWA niedostępna; aplikacja działa online */ });
+      navigator.serviceWorker.register("sw.js").catch(function(e){ /* instalacja PWA niedost\u0119pna; aplikacja dzia\u0142a online */ });
     });
   }
 })();

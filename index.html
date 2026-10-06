@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta id="themeColorMeta" name="theme-color" content="#f0f4f9" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#f0f4f9" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#1b1d20" media="(prefers-color-scheme: dark)" />
 <link rel="icon" type="image/png" sizes="32x32" href="icon-192.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
@@ -29,15 +29,15 @@
       <div id="trendsWrap">
         <div class="trends-heading">
           <div>
-            <div class="trends-title" data-i18n="trendsTitle">Qardis – Trendy pomiarów</div>
-            <div class="trends-desc" data-i18n="trendsDesc">Średnie i zakresy wartości w wybranym okresie.</div>
+            <div class="trends-title" data-i18n="trendsTitle">Qardis &#8211; Trendy pomiar&#243;w</div>
+            <div class="trends-desc" data-i18n="trendsDesc">&#346;rednie i zakresy warto&#347;ci w wybranym okresie.</div>
           </div>
         </div>
         <div class="range-controls" id="trendsRange">
           <button type="button" data-range="7" aria-pressed="false" data-i18n="r7">7 dni</button>
-          <button type="button" data-range="30" aria-pressed="true" data-i18n="r30">30 dni</button>
+          <button type="button" data-range="30" aria-pressed="false" data-i18n="r30">30 dni</button>
           <button type="button" data-range="90" aria-pressed="false" data-i18n="r90">3 mies.</button>
-          <button type="button" data-range="all" aria-pressed="false" data-i18n="rAll">Wszystkie</button>
+          <button type="button" data-range="all" aria-pressed="true" data-i18n="rAll">Wszystkie</button>
         </div>
         <div id="trendsSummary"></div>
         <div id="trendsChart"></div>
@@ -67,7 +67,7 @@
 <input type="file" id="importFile" accept="application/json" hidden>
 <div id="liveRegion" class="sr-only" role="status" aria-live="polite"></div>
 
-<!-- Arkusz potwierdzeń (audyt: zamiast systemowych okien dialogowych) -->
+<!-- Arkusz potwierdze&#324; (audyt: zamiast systemowych okien dialogowych) -->
 <div class="overlay" id="dialogOverlay" inert>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
     <div class="sheet-header"><h2 id="dialogTitle"></h2></div>
@@ -88,7 +88,7 @@
     <div class="menu-list">
       <button class="menu-item" id="btnBackup">
         <svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 3h9a2 2 0 0 1 2 .6l3 3A2 2 0 0 1 20.5 8v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><rect x="8" y="13" width="8" height="8" rx="1.5"/></svg>
-        <span data-i18n="titleBtnBackup">Utwórz kopię zapasową</span>
+        <span data-i18n="titleBtnBackup">Utw&#243;rz kopi&#281; zapasow&#261;</span>
       </button>
       <button class="menu-item" id="btnImport">
         <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
@@ -111,7 +111,7 @@
         <span data-i18n="btnArchiveOpen">Archiwum</span>
       </button>
     </div>
-    <p class="list-note" data-i18n="privacyNote">Dane są przechowywane wyłącznie na tym urządzeniu.</p>
+    <p class="list-note" data-i18n="privacyNote">Dane s&#261; przechowywane wy&#322;&#261;cznie na tym urz&#261;dzeniu.</p>
     <div class="sheet-actions">
       <button class="btn ghost" id="btnToolsClose" data-i18n="btnClose">Zamknij</button>
     </div>
@@ -121,14 +121,14 @@
 <!-- Archive Sheet -->
 <div class="overlay" id="archiveOverlay" inert>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="archiveTitle">
-    <div class="sheet-header"><h2 id="archiveTitle" data-i18n="archiveTitle">Archiwum pomiarów</h2></div>
-    <p class="sheet-note" data-i18n="archiveDesc">Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z listy i Trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.</p>
+    <div class="sheet-header"><h2 id="archiveTitle" data-i18n="archiveTitle">Archiwum pomiar&#243;w</h2></div>
+    <p class="sheet-note" data-i18n="archiveDesc">Wpisy starsze ni&#380; 9 mies. mo&#380;na przenie&#347;&#263; do archiwum &#8212; znikaj&#261; z listy i Trend&#243;w, ale zostaj&#261; na urz&#261;dzeniu i mo&#380;na je przywr&#243;ci&#263; lub wyeksportowa&#263;.</p>
     <p class="sheet-note" id="archiveSummary"></p>
-    <button type="button" class="btn ghost btn--sm" id="btnArchivePeek" data-i18n="archiveShow" hidden>Pokaż wpisy</button>
+    <button type="button" class="btn ghost btn--sm" id="btnArchivePeek" data-i18n="archiveShow" hidden>Poka&#380; wpisy</button>
     <div id="archiveList" class="archive-list" hidden></div>
     <div class="sheet-actions sheet-actions-col">
-      <button type="button" class="btn" id="btnArchiveMove" data-i18n="btnArchiveMove">Archiwizuj wpisy starsze niż 9 mies.</button>
-      <button type="button" class="btn ghost" id="btnArchiveRestore" data-i18n="btnArchiveRestore">Przywróć wszystkie</button>
+      <button type="button" class="btn" id="btnArchiveMove" data-i18n="btnArchiveMove">Archiwizuj wpisy starsze ni&#380; 9 mies.</button>
+      <button type="button" class="btn ghost" id="btnArchiveRestore" data-i18n="btnArchiveRestore">Przywr&#243;&#263; wszystkie</button>
       <button type="button" class="btn ghost" id="btnArchiveExport" data-i18n="btnArchiveExport">Eksportuj archiwum</button>
       <button type="button" class="btn ghost" id="btnArchiveClose" data-i18n="btnClose">Zamknij</button>
     </div>
@@ -139,18 +139,18 @@
 <div class="overlay" id="pdfRangeOverlay" inert>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pdfExportTitle">
     <div class="sheet-header">
-      <h2 id="pdfExportTitle" data-i18n="pdfExportTitle">Raport pomiarów</h2>
+      <h2 id="pdfExportTitle" data-i18n="pdfExportTitle">Raport pomiar&#243;w</h2>
     </div>
     <div class="set-row set-row-col">
       <div class="lbl" data-i18n="pdfRangeTitle">Zakres danych</div>
       <div class="segmented-control segmented-full" id="pdfRange">
         <button type="button" data-range="7" aria-pressed="false" data-i18n="r7">7 dni</button>
-        <button type="button" data-range="30" aria-pressed="true" data-i18n="r30">30 dni</button>
+        <button type="button" data-range="30" aria-pressed="false" data-i18n="r30">30 dni</button>
         <button type="button" data-range="90" aria-pressed="false" data-i18n="r90">3 mies.</button>
-        <button type="button" data-range="all" aria-pressed="false" data-i18n="rAll">Wszystkie</button>
+        <button type="button" data-range="all" aria-pressed="true" data-i18n="rAll">Wszystkie</button>
       </div>
     </div>
-    <p class="sheet-note" data-i18n="privacyAlert">Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.</p>
+    <p class="sheet-note" data-i18n="privacyAlert">Uwaga: Ten plik zawiera wra&#380;liwe dane dotycz&#261;ce zdrowia. Przechowuj go w bezpiecznym miejscu i nie udost&#281;pniaj osobom nieupowa&#380;nionym.</p>
     <div class="sheet-actions sheet-actions-col">
       <button class="btn" id="btnPdfExport" data-i18n="btnSavePdf">Zapisz jako PDF</button>
       <button class="btn ghost" id="btnPdfPrint" data-i18n="btnPrint">Drukuj</button>
@@ -164,7 +164,7 @@
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addTitle">
     <div class="sheet-header">
       <h2 id="addTitle">Nowy wpis</h2>
-      <button type="button" id="btnDeleteEntryHeader" class="btn-text-danger" data-i18n="btnDelete">Usuń</button>
+      <button type="button" id="btnDeleteEntryHeader" class="btn-text-danger" data-i18n="btnDelete">Usu&#324;</button>
     </div>
     <div class="dt-row">
       <label for="dtField" data-i18n="dtLabel">Data i godzina pomiaru</label>
@@ -184,26 +184,26 @@
         </div>
       </div>
       <div class="wheel-box input-mode" id="boxWHr">
-        <label for="wHr" data-i18n="hrLabel">Tętno</label>
-        <button type="button" class="clear-btn" id="btnClearWHr" title="Wyczyść tętno">✕</button>
+        <label for="wHr" data-i18n="hrLabel">T&#281;tno</label>
+        <button type="button" class="clear-btn" id="btnClearWHr" title="Wyczy&#347;&#263; t&#281;tno">&#10005;</button>
         <div class="num-field">
           <input type="number" id="wHr" inputmode="numeric" step="1" min="20" max="250" placeholder="70" autocomplete="off">
         </div>
       </div>
       <div class="wheel-box input-mode" id="boxWWgt">
         <label for="wWgt" data-i18n="wgtLabelKg">Waga [kg]</label>
-        <button type="button" class="clear-btn" id="btnClearWWgt" title="Wyczyść wagę">✕</button>
+        <button type="button" class="clear-btn" id="btnClearWWgt" title="Wyczy&#347;&#263; wag&#281;">&#10005;</button>
         <div class="num-field">
           <input type="number" id="wWgt" inputmode="decimal" step="0.1" min="20" max="300" placeholder="75.0" autocomplete="off">
           <div class="num-btns">
-            <button type="button" id="btnWgtDec" data-wstep="-0.1">−</button>
+            <button type="button" id="btnWgtDec" data-wstep="-0.1">&#8722;</button>
             <button type="button" id="btnWgtInc" data-wstep="0.1">+</button>
           </div>
         </div>
       </div>
     </div>
     <span id="bpInlineError" class="inline-error" role="alert" hidden></span>
-    <textarea id="noteField" maxlength="2000" data-i18n-ph="notePlaceholder" placeholder="Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)"></textarea>
+    <textarea id="noteField" maxlength="2000" data-i18n-ph="notePlaceholder" placeholder="Dodatkowe informacje... (np. przezi&#281;bienie, z&#322;e samopoczucie)"></textarea>
     
     <div class="sheet-actions">
       <button class="btn ghost" id="btnCancelEntry" data-i18n="btnCancel">Anuluj</button>
@@ -224,20 +224,20 @@
       <div class="segmented-control segmented-full" id="monitoredSwitch" role="group" aria-labelledby="monitoredLbl">
         <button type="button" data-param="trackSys" data-i18n="sysLabel">SYS</button>
         <button type="button" data-param="trackDia" data-i18n="diaLabel">DIA</button>
-        <button type="button" data-param="trackHr" data-i18n="hrLabel">Tętno</button>
+        <button type="button" data-param="trackHr" data-i18n="hrLabel">T&#281;tno</button>
         <button type="button" data-param="trackWgt" data-i18n="wgtLabel">Waga</button>
       </div>
     </div>
 
     <div class="set-row">
-      <div><div class="lbl" data-i18n="langLabel">Język</div></div>
+      <div><div class="lbl" data-i18n="langLabel">J&#281;zyk</div></div>
       <div class="segmented-control" id="langSwitch">
         <button type="button" data-val="pl">PL</button>
         <button type="button" data-val="en">EN</button>
       </div>
     </div>
     <div class="set-row">
-      <div><div class="lbl" data-i18n="fontSizeLabel">Wielkość czcionki</div></div>
+      <div><div class="lbl" data-i18n="fontSizeLabel">Wielko&#347;&#263; czcionki</div></div>
       <div class="segmented-control" id="fontSizeSwitch">
         <button type="button" data-val="small">S</button>
         <button type="button" data-val="medium">M</button>
@@ -249,10 +249,10 @@
       <button type="button" class="toggle" id="themeToggle" role="switch" aria-checked="false"></button>
     </div>
     <div class="set-row">
-      <div><div class="lbl" data-i18n="titleBtnWipe">Usuń wszystkie dane</div><div class="desc" data-i18n="wipeDesc">Usuwa wszystkie pomiary i ustawienia z tego urządzenia.</div></div>
-      <button type="button" class="btn-outline-danger" id="btnWipe" data-i18n="btnDelete">Usuń</button>
+      <div><div class="lbl" data-i18n="titleBtnWipe">Usu&#324; wszystkie dane</div><div class="desc" data-i18n="wipeDesc">Usuwa wszystkie pomiary i ustawienia z tego urz&#261;dzenia.</div></div>
+      <button type="button" class="btn-outline-danger" id="btnWipe" data-i18n="btnDelete">Usu&#324;</button>
     </div>
-    <p class="sheet-note" data-i18n="normsNote">Aktualne normy dla ciśnienia skurczowego i rozkurczowego znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.</p>
+    <p class="sheet-note" data-i18n="normsNote">Aktualne normy dla ci&#347;nienia skurczowego i rozkurczowego znajdziesz na stronach Polskiego Towarzystwa Nadci&#347;nienia T&#281;tniczego i Polskiego Towarzystwa Kardiologicznego oraz na stronach analogicznych instytucji w innych krajach.</p>
 
     <div class="sheet-actions">
       <button class="btn ghost" id="btnSetCancel" data-i18n="btnCancel">Anuluj</button>

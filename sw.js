@@ -25,7 +25,14 @@
    7) Wydanie porządkowe: toasty przeniesione do klas CSS, zmienne z-index,
       CSP z img-src 'self'. Zmiana tego pliku wymusza przebudowę cache.
    8) Wydanie audytu UX/kodu: dirty-check arkusza edycji, eksport CSV,
-      skróty klawiszowe 1/2, deduplikacja helperów dat i filtrowania. */
+      skróty klawiszowe strzałek, deduplikacja helperów dat i filtrowania.
+   9) Wydanie "pola zamiast bębnów": numeryczne inputy dla SYS/DIA/HR,
+      nowa ikona menu, wykres trendów (SVG) z przesuwaniem po osi czasu.
+  10) Wykres w3: oś równa (kategoryczna) z przełącznikiem na oś czasu,
+      okno do 4 pomiarów, etykiety liczby dni między pomiarami,
+      kolory serii/legendy wymuszone klasami CSS.
+  11) Wykres w3 poprawki: płynne przesuwanie (ułamkowy offset okna,
+      przelicznik px SVG), przełącznik osi z aria-pressed. */
 
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;

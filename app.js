@@ -3,8 +3,7 @@
 
   function $(id){ return document.getElementById(id); }
 
-  // Jedno źródło limitów wartości (sanityzacja i pole wagi).
-  // Bębny (wheelDefs) mają celowo węższe zakresy, żeby lista pozostawała krótka.
+  // Jedno źródło limitów wartości (sanityzacja, import i pola numeryczne).
   var LIMITS = { sys:[50,300], dia:[30,200], hr:[20,250], wgt:[20,300] };
   function sanitizeEntry(e){
     if (!e || typeof e !== "object") return null;
@@ -201,6 +200,9 @@
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
         
         bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
+        numRequiredMsg: "Podaj wartości liczbowe w polach pomiaru.",
+        chartPanHint: "Przeciągnij wykres w bok, aby przeglądać kolejne pomiary (do 4 na ekran). Przełącznik zmienia oś na rzeczywisty upływ czasu.",
+        axisCatSwitch: "Oś: równa", axisTimeSwitch: "Oś: czasowa",
         minParamWarn: "Co najmniej jeden parametr musi pozostać włączony.",
         privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
         storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
@@ -270,6 +272,9 @@
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
         
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
+        numRequiredMsg: "Enter numeric values in the measurement fields.",
+        chartPanHint: "Drag the chart sideways to browse measurements (up to 4 on screen). The toggle switches the axis to real time spacing.",
+        axisCatSwitch: "Axis: even", axisTimeSwitch: "Axis: time",
         minParamWarn: "At least one parameter must stay enabled.",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
         storageError: "Failed to save data (private browsing mode?).",
@@ -651,6 +656,167 @@
     mount.appendChild(grid);
   }
 
+  // --- Audyt UX (w3): wykres czytelny od pierwszego rzutu oka ---
+  // • Oś X domyślnie RÓWNA: każdy pomiar to kolejna pozycja, niezależnie od
+  //   upływu czasu (kilka pomiarów jednego dnia nie zlewa się w jeden punkt).
+  // • Przełącznik "oś czasowa": odstępy proporcjonalne do rzeczywistego czasu.
+  // • Okno do 4 pomiarów na ekran; przesuwanie przeciągnięciem (po jednym
+  //   kroku na pomiar). Brak trybu "pokaż wszystko" — skala jest zawsze czytelna.
+  // • Między punktami etykieta z liczbą dni (np. "3 dni"), pod punktami data.
+  var VISIBLE_MAX = 4;
+  var chartMode = "cat";     // "cat" = oś równa, "time" = oś rzeczywistego czasu
+  var chartStart = 0;        // indeks pierwszego widocznego pomiaru (float, do płynnego pan)
+  function resetChart(){ chartStart = 0; }
+  function gapLabel(days){
+    if (days < 1) return settings.lang === "en" ? "0 d" : "0 d";
+    if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzień";
+    return days + (settings.lang === "en" ? " days" : " dni");
+  }
+  function drawChart(list, mount){
+    var showSys = settings.trackSys, showDia = settings.trackDia;
+    var pts = (showSys || showDia) ? list.filter(function(e){
+      return (showSys && e.sys != null) || (showDia && e.dia != null);
+    }).sort(function(a,b){ return a.ts - b.ts; }) : [];
+    if (pts.length < 2) { mount.textContent = ""; chartCtx = null; return; }   // wykres od 2 pomiarów
+
+    var n = pts.length;
+    var visN = Math.min(VISIBLE_MAX, n);
+    // chartStart pozostaje UŁAMKOWY (bez Math.round) — to daje płynne
+    // przesuwanie: punkty przesuwają się piksel po pikselu, nie skokami.
+    chartStart = clamp(chartStart, 0, n - visN);
+
+    var W = Math.max(mount.clientWidth || 320, 240), H = 250;
+    var padL = 40, padR = 12, padT = 26, padB = 34;
+    var iw = W - padL - padR, ih = H - padT - padB;
+
+    var lo = Infinity, hi = -Infinity;
+    // Skala Y liczona po WSZYSTKICH punktach okna z zapasem (nie tylko
+    // widocznych) — przesuwanie nie zmienia skali w trakcie panu.
+    var winA = Math.floor(chartStart), winB = Math.min(n - 1, Math.ceil(chartStart + visN - 1) + 1);
+    for (var q = winA; q <= winB; q++) {
+      var pe = pts[q];
+      if (showSys && pe.sys != null) { lo = Math.min(lo, pe.sys); hi = Math.max(hi, pe.sys); }
+      if (showDia && pe.dia != null) { lo = Math.min(lo, pe.dia); hi = Math.max(hi, pe.dia); }
+    }
+    var yPad = Math.max(Math.round((hi - lo) * 0.15), 5);
+    lo -= yPad; hi += yPad;
+    if (hi - lo < 10) { lo -= 5; hi += 5; }
+
+    // Mapowanie ułamkowego indeksu -> X:
+    //  • tryb "cat":  pozycja liniowa względem chartStart (równe odstępy)
+    //  • tryb "time": interpolacja znacznika czasu między indeksami
+    function tsAt(f){
+      var i0 = Math.max(0, Math.min(n - 1, Math.floor(f)));
+      var i1 = Math.min(n - 1, i0 + 1);
+      return pts[i0].ts + (pts[i1].ts - pts[i0].ts) * (f - i0);
+    }
+    var tA = tsAt(chartStart), tB = tsAt(chartStart + visN - 1);
+    var timeOk = (chartMode === "time") && (tB - tA) > 0;
+    function X(f){
+      if (timeOk) return padL + ((tsAt(f) - tA) / (tB - tA)) * iw;
+      return padL + ((f - chartStart) / (visN - 1)) * iw;
+    }
+    function Y(v){ return padT + (1 - (v - lo) / (hi - lo)) * ih; }
+    function n1(x){ return Math.round(x * 10) / 10; }
+    function shortDate(ts){
+      var d = new Date(ts);
+      var loc = settings.lang === "en" ? "en-US" : "pl-PL";
+      try { return d.toLocaleDateString(loc, { month: "short", day: "numeric" }); }
+      catch(e2) { return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1); }
+    }
+
+    var svg = "";
+    for (var i = 0; i <= 4; i++) {
+      var v = lo + (hi - lo) * i / 4, y = n1(Y(v));
+      svg += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" class="grid"/>'
+           + '<text x="'+(padL-6)+'" y="'+n1(y+3.5)+'" text-anchor="end" class="axis">'+Math.round(v)+'</text>';
+    }
+
+    // Zakres rysowanych indeksów z zapasem, żeby punkty wjeżdżały/wyjeżdżały
+    // płynnie przy krawędziach okna.
+    var iFrom = Math.max(0, Math.floor(chartStart));
+    var iTo = Math.min(n - 1, Math.ceil(chartStart + visN - 1));
+
+    // Daty pod punktami + liczba dni między punktami (w połowie odstępu)
+    for (var k = iFrom; k <= iTo; k++) {
+      var xk = X(k);
+      if (xk < padL - 4 || xk > W - padR + 4) continue;
+      svg += '<text x="'+n1(xk)+'" y="'+(H-8)+'" text-anchor="middle" class="axis axis-date">'+escapeHtml(shortDate(pts[k].ts))+'</text>';
+      if (k > 0) {
+        var xm = (xk + X(k-1)) / 2;
+        if (xm >= padL - 4 && xm <= W - padR + 4) {
+          var days = Math.max(0, Math.round((pts[k].ts - pts[k-1].ts) / DAY_MS));
+          svg += '<text x="'+n1(xm)+'" y="'+(H-20)+'" text-anchor="middle" class="axis axis-gap">'+escapeHtml(gapLabel(days))+'</text>';
+        }
+      }
+    }
+    function series(key, cls){
+      var out = "", prev = null;
+      for (var m = iFrom; m <= iTo; m++) {
+        var e = pts[m];
+        if (e[key] == null) { prev = null; continue; }
+        var x = n1(X(m)), y = n1(Y(e[key]));
+        if (prev !== null) out += '<line x1="'+prev[0]+'" y1="'+prev[1]+'" x2="'+x+'" y2="'+y+'" class="ln-'+cls+'"/>';
+        out += '<circle cx="'+x+'" cy="'+y+'" r="4.5" class="dot-'+cls+'"/>';
+        prev = [x, y];
+      }
+      return out;
+    }
+    var legend = "";
+    var lx = padL;
+    if (showSys) { legend += '<text x="'+lx+'" y="14" class="lg-sys">● SYS</text>'; lx += 58; }
+    if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">● DIA</text>'; }
+    var content = svg + series("sys", "sys") + series("dia", "dia") + legend;
+
+    // Audyt bugfix: struktura (pasek + SVG + podpowiedź) tworzona RAZ i nigdy
+    // nie czyszczona w trakcie rysowania — wcześniejsze mount.textContent=""
+    // niszczyło SVG razem z listenerami przy każdym przeciągnięciu (drag się
+    // zacinał). Kontekst dla panu żyje w chartCtx, odświeżany przy każdym
+    // rysowaniu.
+    var svgEl = mount.querySelector("svg");
+    if (!svgEl) {
+      mount.innerHTML = '<div class="chart-bar"><button type="button" id="btnAxisMode" class="chart-toggle" aria-pressed="false"></button></div>'
+        + '<svg viewBox="0 0 320 250" role="img" aria-label="'+escapeHtml(t("trendsTitle"))+'"></svg>'
+        + '<div class="chart-hint">' + escapeHtml(t("chartPanHint")) + '</div>';
+      svgEl = mount.querySelector("svg");
+      var drag = null;
+      svgEl.addEventListener("pointerdown", function(ev){
+        if (!chartCtx) return;
+        drag = { x: ev.clientX, start: chartStart };
+        try { svgEl.setPointerCapture(ev.pointerId); } catch(e2){}
+        ev.preventDefault();
+      });
+      svgEl.addEventListener("pointermove", function(ev){
+        if (!drag || !chartCtx) return;
+        // Delta myszy jest w pikselach CSS — przeliczamy przez slotPx
+        // (jednostki SVG * stosunek ekranu do viewBoxu). Szerokość slotu = 1 pomiar.
+        chartStart = clamp(drag.start + (drag.x - ev.clientX) / chartCtx.slotPx, 0, chartCtx.n - chartCtx.visN);
+        drawChart(chartCtx.list, mount);
+      });
+      function endDrag(){ drag = null; }
+      svgEl.addEventListener("pointerup", endDrag);
+      svgEl.addEventListener("pointercancel", endDrag);
+      mount.addEventListener("click", function(ev){
+        if (!ev.target.closest("#btnAxisMode") || !chartCtx) return;
+        chartMode = (chartMode === "cat") ? "time" : "cat";
+        drawChart(chartCtx.list, mount);
+      });
+    }
+    var btn = mount.querySelector("#btnAxisMode");
+    if (btn) {
+      // Etykieta pokazuje tryb, na który przełączy NASTĘPNE kliknięcie
+      // (przycisk to "akcja", nie wskaźnik stanu).
+      btn.textContent = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
+      btn.title = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
+      btn.setAttribute("aria-pressed", chartMode === "time" ? "true" : "false");
+    }
+    var rectW = (svgEl.getBoundingClientRect && svgEl.getBoundingClientRect().width) || W;
+    chartCtx = { n: n, visN: visN, slotPx: (rectW / W) * (iw / visN), list: list };
+    svgEl.setAttribute("viewBox", "0 0 "+W+" "+H);
+    svgEl.innerHTML = content;
+  }
+  var chartCtx = null;   // {n, visN, slotPx, list} — żywy kontekst dla panu/toggle
+
   function drawTrends(force){
     // Rysuj tylko gdy ekran Trendy jest aktywny, chyba że wymuszono (zmiana ustawień)
     if (!force && screenIdx !== 1) return;
@@ -659,6 +825,7 @@
     var sumMount = $("trendsSummary");
 
     sumMount.textContent = "";
+    $("trendsChart").textContent = "";
     empty.hidden = true;
     tableMount.hidden = true;
 
@@ -683,6 +850,7 @@
     }
 
     renderSummary(filtered, sumMount);
+    drawChart(filtered, $("trendsChart"));
     tableMount.hidden = false;
     TableModule.renderTable(tableMount, filtered, settings, t, fmtDate);
   }
@@ -699,6 +867,7 @@
   }
   bindRangeControls("trendsRange", function(r){
     trendsRangeDays = (r === "all") ? "all" : parseInt(r, 10);
+    resetChart();   // audyt UX: nowy zakres danych = wykres na pełnym widoku
     drawTrends();
   });
 
@@ -730,7 +899,7 @@
   var startX = null, startY = null, dx = 0, dy = 0, axis = null;
   var viewport = $("viewport");
   function allowed(t){
-    return !t.closest("#dock") && !t.closest(".sheet") && !t.closest(".wheel") &&
+    return !t.closest("#dock") && !t.closest(".sheet") &&
            !t.closest("button") && !t.closest("textarea") && !t.closest("input");
   }
   viewport.addEventListener("touchstart", function(e){
@@ -777,114 +946,34 @@
   var addOverlay = $("addOverlay");
   var editingId = null;
   var addSnapshot = null;   // audyt UX: stan formularza w chwili otwarcia (dirty-check)
-  var ROW = 40;
-  function makeWheel(elId, cfg){
-    var el = $(elId);
-    var rowEls = []; el.innerHTML = "";
-    el.setAttribute("role", "spinbutton"); el.tabIndex = 0;
-    el.setAttribute("aria-valuemin", cfg.min); el.setAttribute("aria-valuemax", cfg.max);
-    function spacer(){ var sp = document.createElement("div"); sp.className = "sp"; sp.innerHTML = "&nbsp;"; el.appendChild(sp); }
-    spacer();
-    var v = cfg.min;
-    while (v <= cfg.max + 1e-9){
-      var d = document.createElement("div");
-      d.textContent = (cfg.step && cfg.step < 1) ? v.toFixed(1) : Math.round(v);
-      d.dataset.val = v; el.appendChild(d); rowEls.push(d);
-      v = +(v + (cfg.step||1)).toFixed(1);
-    }
-    spacer();
-    function idxOf(){ var i = Math.round(el.scrollTop / ROW); return Math.min(Math.max(i, 0), rowEls.length - 1); }
-    var lastIdx = -1;
-    function paint(){
-      // Audyt wydajności: aktualizuj tylko dwa węzły zamiast wszystkich ~190
-      var idx = idxOf();
-      if (idx !== lastIdx) {
-        if (rowEls[lastIdx]) rowEls[lastIdx].className = "";
-        if (rowEls[idx]) rowEls[idx].className = "sel";
-        lastIdx = idx;
-      }
-      if (rowEls[idx]) el.setAttribute("aria-valuenow", rowEls[idx].dataset.val);
-    }
-    // Odczyt zawsze z pełnego wiersza: dosunięcie przerywa inercję (momentum scroll),
-    // więc "Zapisz" w trakcie toczenia koła nie złapie wartości z połowy przewijania.
-    var settledVal = cfg.min, settleT = null;
-    function commit(){
-      el.scrollTop = Math.round(el.scrollTop / ROW) * ROW;
-      paint();
-      var n = rowEls[idxOf()];
-      if (n) settledVal = +n.dataset.val;
-    }
-    el.addEventListener("scroll", function(){
-      paint();
-      if (settleT) clearTimeout(settleT);
-      settleT = setTimeout(commit, 160);   // fallback dla przeglądarek bez scrollend
-    });
-    el.addEventListener("scrollend", function(){ if (settleT) { clearTimeout(settleT); settleT = null; } commit(); });
-    el.addEventListener("click", function(e){
-      var item = e.target.closest("div[data-val]");
-      if(item) {
-        var val = +item.dataset.val;
-        var i = Math.round((clamp(val, cfg.min, cfg.max) - cfg.min) / (cfg.step||1));
-        el.scrollTop = i * ROW; commit();
-      }
-    });
-    el.addEventListener("keydown", function(ev){
-      var st = cfg.step || 1, cur = +rowEls[Math.min(Math.max(Math.round(el.scrollTop / ROW), 0), rowEls.length - 1)].dataset.val, nv = null;
-      switch (ev.key) {
-        case "ArrowUp": nv = cur + st; break;
-        case "ArrowDown": nv = cur - st; break;
-        case "PageUp": nv = cur + st * 10; break;
-        case "PageDown": nv = cur - st * 10; break;
-        case "Home": nv = cfg.min; break;
-        case "End": nv = cfg.max; break;
-      }
-      if (nv === null) return;
-      ev.preventDefault();
-      var i = Math.round((clamp(+nv.toFixed(1), cfg.min, cfg.max) - cfg.min) / st);
-      el.scrollTop = i * ROW; commit();
-    });
+  // Audyt UX: pola numeryczne zamiast bębnów (wheel). Zakresy pól są
+  // identyczne z LIMITS (koniec z rozjazdem zakresów bębenka i danych),
+  // pełna kontrola wartości z klawiatury numerycznej, mniej kodu.
+  function makeNumField(id, lo, hi){
+    var inp = $(id);
+    inp.min = lo; inp.max = hi;
     return {
-      set: function(val){
-        var i = Math.round((clamp(val, cfg.min, cfg.max) - cfg.min) / (cfg.step||1));
-        el.scrollTop = i * ROW; commit();
-      },
+      set: function(v){ inp.value = (v != null && isFinite(v)) ? v : ""; },
       get: function(){
-        // Zawsze zatrzymaj inercję i odczytaj pełny (dosunięty) wiersz.
-        commit();
-        return settledVal;
+        var raw = String(inp.value).replace(",", ".").trim();
+        if (raw === "") return null;
+        var v = parseFloat(raw);
+        return isFinite(v) ? clamp(v, lo, hi) : NaN;
       }
     };
   }
   function clamp(v,a,b){ return Math.min(b, Math.max(a, v)); }
-  function clampWheelVal(cfg, val){
-    if (val == null) return val;
-    return clamp(val, cfg.min, cfg.max);
-  }
   function makeId(){
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   }
 
-  var wheelDefs = {
-    wSys: {min:60, max:250, step:1}, wDia: {min:30, max:180, step:1}, wHr: {min:30, max:220, step:1}
-  };
-  var wheels = {};
-  Object.keys(wheelDefs).forEach(function(id){
-    try { wheels[id] = makeWheel(id, wheelDefs[id]); } catch(e){}
-  });
-
-  var WHEEL_UNITS = { wSys: " mmHg", wDia: " mmHg", wHr: " bpm" };
+  var sysField = makeNumField("wSys", LIMITS.sys[0], LIMITS.sys[1]);
+  var diaField = makeNumField("wDia", LIMITS.dia[0], LIMITS.dia[1]);
+  var hrField  = makeNumField("wHr",  LIMITS.hr[0],  LIMITS.hr[1]);
   var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
   var wgtInput = $("wWgt");
-  var weightField = {
-    set: function(v){ wgtInput.value = (v != null && isFinite(v)) ? (Math.round(v * 10) / 10).toFixed(1) : ""; },
-    get: function(){
-      var raw = String(wgtInput.value).replace(",", ".").trim();
-      if (raw === "") return null;
-      var v = parseFloat(raw);
-      return isFinite(v) ? Math.round(v * 10) / 10 : NaN;
-    }
-  };
+  var weightField = makeNumField("wWgt", WGT_MIN, WGT_MAX);
   // Audyt kodu: jedno miejsce sortowania malejąco po dacie
   function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
 
@@ -897,7 +986,7 @@
   function bumpWeight(d){
     var cur = weightField.get();
     if (cur === null || isNaN(cur)) cur = lastKnown("wgt", settings.defWgt);
-    weightField.set(clamp(cur + d, WGT_MIN, WGT_MAX));
+    weightField.set(Math.round(clamp(cur + d, WGT_MIN, WGT_MAX) * 10) / 10);
   }
   document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){
     var d = parseFloat(b.dataset.wstep), delay = null, iv = null;
@@ -913,14 +1002,9 @@
   function syncOptionalWheels(){
     [["boxWHr","wHr","btnClearWHr",hrActive,"Hr"],["boxWWgt","wWgt","btnClearWWgt",wgtActive,"Wgt"]].forEach(function(a){
       $(a[0]).classList.toggle("disabled", !a[3]);
-      var w = $(a[1]);
-      if (w.tagName === "INPUT") {
-        w.disabled = !a[3];
-        document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){ b.disabled = !a[3]; });
-      } else {
-        w.tabIndex = a[3] ? 0 : -1;
-        w.setAttribute("aria-disabled", a[3] ? "false" : "true");
-      }
+      // Audyt UX: wszystkie parametry to teraz pola input — jedno-disable wystarcza
+      $(a[1]).disabled = !a[3];
+      if (a[1] === "wWgt") document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){ b.disabled = !a[3]; });
       var b = $(a[2]);
       var lbl = t((a[3] ? "skip" : "add") + a[4]);
       b.setAttribute("aria-label", lbl); b.title = lbl;
@@ -928,12 +1012,7 @@
     });
   }
   function labelWheels(){
-    Object.keys(wheelDefs).forEach(function(id){
-      var w = $(id);
-      var lab = w.parentNode.querySelector("label");
-      if (lab) w.setAttribute("aria-label", lab.textContent + WHEEL_UNITS[id]);
-    });
-    wgtInput.setAttribute("aria-label", t("wgtLabel") + " (kg)");
+    // Audyt UX: bębny usunięte — zostają tylko etykiety przycisków wagi
     $("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
     $("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
   }
@@ -994,27 +1073,13 @@
     labelWheels();
     weightField.set(entry ? entry.wgt : (wgtActive ? defaultWgt : null));
 
-    // Ostrzeżenie: wpis ma wartość spoza zakresu bębenka – zapis zmieniłby ją po cichu
-    if (entry) {
-      var sClamped = clampWheelVal(wheelDefs.wSys, entry.sys);
-      var dClamped = clampWheelVal(wheelDefs.wDia, entry.dia);
-      var hClamped = clampWheelVal(wheelDefs.wHr, entry.hr);
-      if ((entry.sys != null && sClamped !== entry.sys) ||
-          (entry.dia != null && dClamped !== entry.dia) ||
-          (entry.hr != null && hClamped !== entry.hr)) {
-        toast("⚠ " + t("wheelClampWarn"));
-      }
-    }
-
     setModalState(addOverlay, true);
-    setTimeout(function(){
-      if (settings.trackSys) wheels.wSys.set(entry ? entry.sys : defaultSys);
-      if (settings.trackDia) wheels.wDia.set(entry ? entry.dia : defaultDia);
-      if (settings.trackHr) wheels.wHr.set(entry ? (entry.hr || defaultHr) : defaultHr);
-      // audyt UX: snapshot do dirty-check dopiero PO ustawieniu bębnów,
-      // żeby animacja dosunięcia nie liczyła się jako "zmiana".
-      addSnapshot = JSON.stringify(collectAddState());
-    }, 60);
+    // Audyt UX: pola numeryczne — bez wartości poza zakresem nie ma
+    // warninga o "przycięciu" (zakresy pól = LIMITS).
+    if (settings.trackSys) sysField.set(entry ? entry.sys : defaultSys);
+    if (settings.trackDia) diaField.set(entry ? entry.dia : defaultDia);
+    if (settings.trackHr) hrField.set(entry ? (entry.hr != null ? entry.hr : defaultHr) : defaultHr);
+    addSnapshot = JSON.stringify(collectAddState());
   }
 
   // --- Audyt UX: dirty-check arkusza edycji ---
@@ -1025,9 +1090,9 @@
       note: $("noteField").value,
       dt: $("dtField").value,
       hrActive: hrActive, wgtActive: wgtActive,
-      sys: settings.trackSys ? wheels.wSys.get() : null,
-      dia: settings.trackDia ? wheels.wDia.get() : null,
-      hr:  (settings.trackHr && hrActive) ? wheels.wHr.get() : null,
+      sys: settings.trackSys ? sysField.get() : null,
+      dia: settings.trackDia ? diaField.get() : null,
+      hr:  (settings.trackHr && hrActive) ? hrField.get() : null,
       wgt: (settings.trackWgt && wgtActive) ? weightField.get() : null
     };
   }
@@ -1052,11 +1117,20 @@
 
   $("btnSave").onclick = function(){
     var wgtVal = (settings.trackWgt && wgtActive) ? weightField.get() : null;
-    var hrVal = (settings.trackHr && hrActive) ? wheels.wHr.get() : null;
-    var sysVal = settings.trackSys ? wheels.wSys.get() : null;
-    var diaVal = settings.trackDia ? wheels.wDia.get() : null;
+    var hrVal = (settings.trackHr && hrActive) ? hrField.get() : null;
+    var sysVal = settings.trackSys ? sysField.get() : null;
+    var diaVal = settings.trackDia ? diaField.get() : null;
 
     var errEl = $("bpInlineError");
+    function badNum(v){ return v === null || isNaN(v); }
+    // Audyt UX: pusty obowiązkowy parametr = błąd (kiedyś bębenek gwarantował wartość)
+    if ((settings.trackSys && badNum(sysVal)) || (settings.trackDia && badNum(diaVal)) ||
+        (settings.trackHr && hrActive && badNum(hrVal))) {
+      errEl.textContent = t("numRequiredMsg");
+      errEl.hidden = false;
+      try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
+      return;
+    }
     if (settings.trackSys && settings.trackDia && sysVal <= diaVal) {
       errEl.textContent = t("bpErrorMsg");
       errEl.hidden = false;
@@ -1400,12 +1474,13 @@
   }
 
   document.addEventListener("keydown", function(e){
-    // Audyt UX: skróty klawiszowe dla desktopu — 1 = Pomiary, 2 = Trendy
-    // (tylko gdy fokus nie jest w polu tekstowym i żaden arkusz nie jest otwarty)
-    if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "1" || e.key === "2")) {
+    // Audyt UX: nawigacja klawiaturą — strzałki lewo/prawo przełączają ekrany
+    // (tylko gdy fokus nie jest w polu tekstowym i żaden arkusz nie jest otwarty;
+    // strzałki w polach numerycznych zostają przy inkrementacji wartości)
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       var ae = document.activeElement, tag = ae ? ae.tagName : "";
       var inField = tag === "INPUT" || tag === "TEXTAREA" || (ae && ae.isContentEditable);
-      if (!inField && !document.querySelector(".overlay.open")) go(e.key === "1" ? 0 : 1);
+      if (!inField && !document.querySelector(".overlay.open")) go(e.key === "ArrowRight" ? 1 : 0);
       return;
     }
     if (e.key === "Escape"){

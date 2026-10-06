@@ -40,6 +40,7 @@
           <button type="button" data-range="all" aria-pressed="false" data-i18n="rAll">Wszystkie</button>
         </div>
         <div id="trendsSummary"></div>
+        <div id="trendsChart"></div>
         <div id="trendsEmpty" class="trends-empty" hidden></div>
         <div id="trendsTableMount" hidden></div>
       </div>
@@ -50,7 +51,7 @@
 <!-- Primary Single-Row Navigation Dock -->
 <nav id="dock">
   <button id="btnTools" class="btn-secondary" title="Dane i eksport" aria-label="Dane i eksport" data-i18n-aria="ariaTools">
-    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3.5"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/></svg>
   </button>
   <button id="btnAdd" class="btn-main" title="Dodaj pomiar" aria-label="Dodaj pomiar" data-i18n-aria="ariaAdd">
     <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -167,15 +168,27 @@
       <input type="datetime-local" id="dtField">
     </div>
     <div class="wheels">
-      <div class="wheel-box" id="boxWSys"><label data-i18n="sysLabel">Skurczowe</label><div class="wheel" id="wSys"></div></div>
-      <div class="wheel-box" id="boxWDia"><label data-i18n="diaLabel">Rozkurczowe</label><div class="wheel" id="wDia"></div></div>
-      <div class="wheel-box" id="boxWHr">
-        <label data-i18n="hrLabel">Tętno</label>
+      <div class="wheel-box input-mode" id="boxWSys">
+        <label for="wSys" data-i18n="sysLabel">Skurczowe</label>
+        <div class="num-field">
+          <input type="number" id="wSys" inputmode="numeric" step="1" min="50" max="300" placeholder="120" autocomplete="off">
+        </div>
+      </div>
+      <div class="wheel-box input-mode" id="boxWDia">
+        <label for="wDia" data-i18n="diaLabel">Rozkurczowe</label>
+        <div class="num-field">
+          <input type="number" id="wDia" inputmode="numeric" step="1" min="30" max="200" placeholder="80" autocomplete="off">
+        </div>
+      </div>
+      <div class="wheel-box input-mode" id="boxWHr">
+        <label for="wHr" data-i18n="hrLabel">Tętno</label>
         <button type="button" class="clear-btn" id="btnClearWHr" title="Wyczyść tętno">✕</button>
-        <div class="wheel" id="wHr"></div>
+        <div class="num-field">
+          <input type="number" id="wHr" inputmode="numeric" step="1" min="20" max="250" placeholder="70" autocomplete="off">
+        </div>
       </div>
       <div class="wheel-box input-mode" id="boxWWgt">
-        <label data-i18n="wgtLabelKg">Waga [kg]</label>
+        <label for="wWgt" data-i18n="wgtLabelKg">Waga [kg]</label>
         <button type="button" class="clear-btn" id="btnClearWWgt" title="Wyczyść wagę">✕</button>
         <div class="num-field">
           <input type="number" id="wWgt" inputmode="decimal" step="0.1" min="20" max="300" placeholder="75.0" autocomplete="off">

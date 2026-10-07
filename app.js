@@ -147,6 +147,7 @@
         trendsLegendSys: "SYS — ciśnienie skurczowe", trendsLegendDia: "DIA — ciśnienie rozkurczowe",
         trendsLegendHr: "HR — tętno (uderzenia na minutę)", trendsNoData: "Brak pomiarów w wybranym okresie.",
         sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
+        medianLabel: "mediana",
         normsNote: "Zalecenia dotyczące interpretacji ciśnienia skurczowego i rozkurczowego mogą się zmieniać. Najświeższe wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
         wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
         navHistory: "Pomiary", navTrends: "Trendy", 
@@ -218,6 +219,7 @@
         trendsLegendSys: "SYS — systolic pressure", trendsLegendDia: "DIA — diastolic pressure",
         trendsLegendHr: "HR — heart rate (beats per minute)", trendsNoData: "No measurements in the selected period.",
         sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
+        medianLabel: "median",
         normsNote: "Guidelines for interpreting systolic and diastolic blood pressure may change over time. Check the latest recommendations on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, or of equivalent institutions in your country.",
         wipeDesc: "Deletes all measurements and settings from this device.",
         navHistory: "Readings", navTrends: "Trends", 
@@ -584,11 +586,20 @@
       if (v < mn) mn = v;
       if (v > mx) mx = v;
     });
-    return n ? { n: n, avg: sum / n, min: mn, max: mx } : null;
+    return n ? { n: n, avg: sum / n, min: mn, max: mx, key: key } : null;
   }
   function fmt1(v){ return (Math.round(v * 10) / 10).toFixed(1); }
   function rangeTxt(st, f){ var a = f(st.min), b = f(st.max); return a === b ? a : a + "–" + b; }
   function rnd(v){ return String(Math.round(v)); }
+  // Mediana — odporna na pojedyncze skoki; czysta logika (testowalna)
+  function medianOf(list, key){
+    var vals = list.map(function(e){ return e[key]; })
+      .filter(function(v){ return v != null && isFinite(v); })
+      .sort(function(a,b){ return a - b; });
+    if (!vals.length) return null;
+    var mid = Math.floor(vals.length / 2);
+    return vals.length % 2 ? vals[mid] : (vals[mid-1] + vals[mid]) / 2;
+  }
 
   function renderSummary(list, mount){
     mount.textContent = "";
@@ -600,24 +611,30 @@
     if (!s && !d && !h && !w) return;
 
     var grid = mkEl("div", "sum-grid");
-    function card(cls, label, avgText, unit, rangeText){
+    function card(cls, label, avgText, unit, rangeText, medianText){
       var c = mkEl("div", "sum-card " + cls);
       c.appendChild(mkEl("div", "sum-label", label));
       var a = mkEl("div", "sum-avg", avgText);
       a.appendChild(mkEl("small", null, unit));
       c.appendChild(a);
       c.appendChild(mkEl("div", "sum-range", t("minMax") + ": " + rangeText));
+      if (medianText != null) c.appendChild(mkEl("div", "sum-range", t("medianLabel") + ": " + medianText));
       grid.appendChild(c);
     }
     function cardFor(st, labelKey, unit, f){
       if (!st) return;
-      card("", t(labelKey), f(st.avg), unit, rangeTxt(st, f));
+      card("", t(labelKey), f(st.avg), unit, rangeTxt(st, f), medTxt(list, st.key, f));
+    }
+    function medTxt(list, key, f){
+      var m = medianOf(list, key);
+      return m == null ? null : f(m);
     }
     if (s || d) {
       var avg = [s ? rnd(s.avg) : "--", d ? rnd(d.avg) : "--"].join(" / ");
       var rng = [s ? "SYS " + rangeTxt(s, rnd) : "", d ? "DIA " + rangeTxt(d, rnd) : ""]
         .filter(Boolean).join(" · ");
-      card("wide", t("sumBp"), avg, "mmHg", rng);
+      var med = [s ? rnd(medianOf(list, "sys")) : "--", d ? rnd(medianOf(list, "dia")) : "--"].join(" / ");
+      card("wide", t("sumBp"), avg, "mmHg", rng, med);
     }
     cardFor(h, "sumHr", "bpm", rnd);
     cardFor(w, "sumWgt", "kg", fmt1);
@@ -674,6 +691,14 @@
     }
     var hasRight = !!R;
 
+    // Linie normy 140/90 — rysowane tylko, gdy mieszczą się w skali lewej osi (mmHg).
+    // Widoczne też w skali okna po przesunięciu (skala liczona z zapasem okna).
+    var normLines = [];
+    if (bpOk) {
+      if (showSys && 140 >= L[0] && 140 <= L[1]) normLines.push({ v: 140, label: "140 (SYS)" });
+      if (showDia && 90 >= L[0] && 90 <= L[1]) normLines.push({ v: 90, label: "90 (DIA)" });
+    }
+
     // Kolorowa legenda z pelnymi opisami — jedna linia na serie, nad wykresem
     var legendRows = [];
     if (showSys) legendRows.push({ cls: "lg-sys", text: t("trendsLegendSys") });
@@ -715,6 +740,13 @@
     // płynnie przy krawędziach okna.
     var iFrom = Math.max(0, Math.floor(chartStart));
     var iTo = Math.min(n - 1, Math.ceil(chartStart + visN - 1));
+
+    // Linie normy 140/90 (przerywane) + etykieta przy prawej krawędzi
+    normLines.forEach(function(nl){
+      var yN = n1(YL(nl.v));
+      svg += '<line x1="'+padL+'" y1="'+yN+'" x2="'+(W-padR)+'" y2="'+yN+'" class="norm-line"/>';
+      svg += '<text x="'+(W-padR-4)+'" y="'+n1(yN-4)+'" text-anchor="end" class="norm-label">'+nl.label+'</text>';
+    });
 
     // Daty pod punktami + liczba dni między punktami (w połowie odstępu)
     for (var k = iFrom; k <= iTo; k++) {

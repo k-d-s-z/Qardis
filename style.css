@@ -290,6 +290,9 @@
   #trendsChart .axis { font-size: 11px; fill: var(--muted); }
   #trendsChart .axis-gap { font-style: italic; }
   #trendsChart .grid { stroke: var(--line); stroke-width: 1; }
+  /* Linie normy 140/90 - przerywane, dyskretne, nad siatka pod seriami */
+  #trendsChart .norm-line { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; opacity: 0.55; }
+  #trendsChart .norm-label { fill: var(--muted); font-size: 10px; font-weight: 600; }
   /* Kolory serii - jawnie w CSS, niezalezne od dziedziczenia atrybutow */
   #trendsChart .dot-sys { fill: #e05252; }
   #trendsChart .dot-dia { fill: #4f83cc; }

@@ -6,7 +6,7 @@ aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj)
 ## 2026-10-07 — wykres tętna, wykres w PDF, porządki po audycie
 
 - **Wykres tętna** (ekran Trendy): seria HR z własną skalą na prawej osi (bpm);
-  gdy ciśnienie nie jest śledzone, tętno używa lewej osi. Legenda „● HR”.
+  gdy ciśnienie nie jest śledzone, tętno używa lewej osi. Legenda „● HR” (napis w kolorze linii serii).
 - **Wykres w PDF i wydruku**: pierwsza strona raportu to wykres przebiegu
   (SYS/DIA lewa oś mmHg, tętno prawa oś bpm) z całego zakresu raportu;
   okno „Drukuj” dostaje ten sam wykres jako inline SVG.
@@ -83,10 +83,11 @@ aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj)
 
 ## 2026-10-07 (piąta tura) — legenda pod wykresem, kolor wagi, odstępy kropek
 
-- **Objaśnienie skrótów w legendzie wykresu**: „SYS — ciśnienie skurczowe · DIA —
-  ciśnienie rozkurczowe · HR — tętno (uderzenia na minutę)" to teraz
-  komentarz wewnątrz wykresu, bezpośrednio pod kolorową legendą „● SYS ● DIA ● HR";
-  z tabeli trendów usunięty.
+- **Pełne opisy w legendzie wykresu**: kolorowa legenda nad wykresem pokazuje
+  pełne nazwy parametrów po jednej na linię — „● SYS — ciśnienie skurczowe”,
+  „● DIA — ciśnienie rozkurczowe”, „● HR — tętno (uderzenia na minutę)”
+  (tylko śledzone serie; obszar wykresu automatycznie schodzi niżej);
+  osobny opis pod wykresem i w tabeli trendów usunięty.
 - **Kolor wagi**: fioletowa kropka przy etykiecie „Waga [kg]" w arkuszu
   pomiaru i fioletowa ikona wagi na kartach pomiarów — spójnie z SYS/DIA/HR.
 - **Rozsunięte kropki na kartach**: wartości skurczowa i rozkurczowa

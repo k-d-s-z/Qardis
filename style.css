@@ -174,7 +174,6 @@
   .data-table .th-l, .data-table .th-u, .data-table .td-d, .data-table .td-t { display: block; overflow: hidden; text-overflow: ellipsis; }
 
   /* Legenda skrotow (SYS/DIA/HR) nad tabela trendow */
-  #trendsChart .lg-desc { fill: var(--muted); font-size: 10px; }
   .data-table .th-u { font-weight: 500; color: var(--muted); font-size: 0.6875rem; }
   .data-table .td-t { color: var(--muted); font-size: 0.75rem; }
   .data-table th:first-child { width: 32%; }   /* kolumna daty; pozostale kolumny dziela reszte po rowno (table-layout: fixed) */
@@ -298,11 +297,11 @@
   #trendsChart .ln-sys { stroke: #e05252; stroke-width: 2.5; stroke-linecap: round; }
   #trendsChart .ln-dia { stroke: #4f83cc; stroke-width: 2.5; stroke-linecap: round; }
   #trendsChart .ln-hr { stroke: #2aa05f; stroke-width: 2.5; stroke-linecap: round; }
-  #trendsChart .lg-sys { fill: #c53030; font-size: 11px; font-weight: 700; }
-  #trendsChart .lg-dia { fill: #2b6cb0; font-size: 11px; font-weight: 700; }
-  #trendsChart .lg-hr { fill: #15803d; font-size: 11px; font-weight: 700; }
-  #trendsChart .axis-hr { fill: #15803d; }
-  /* Kontrast tekstu legendy (min. 4,5:1) w obu motywach */
+  #trendsChart .lg-sys { fill: #e05252; font-size: 11px; font-weight: 700; }   /* dokladnie kolor linii SYS */
+  #trendsChart .lg-dia { fill: #4f83cc; font-size: 11px; font-weight: 700; }   /* dokladnie kolor linii DIA */
+  #trendsChart .lg-hr { fill: #2aa05f; font-size: 11px; font-weight: 700; }   /* dokladnie kolor linii HR */
+  #trendsChart .axis-hr { fill: #2aa05f; }   /* dokladnie kolor linii HR */
+  /* Napisy legendy w kolorach linii serii; w motywie ciemnym rozjasnione dla czytelnosci */
   html[data-theme="dark"] #trendsChart .lg-sys { fill: #f87171; }
   html[data-theme="dark"] #trendsChart .lg-dia { fill: #7fb0f0; }
   html[data-theme="dark"] #trendsChart .lg-hr { fill: #6ee7a0; }

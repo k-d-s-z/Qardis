@@ -674,17 +674,15 @@
     }
     var hasRight = !!R;
 
-    // Komentarz do kolorowych napisow legendy — rysowany w SVG bezposrednio pod nimi
-    var legendDesc = [];
-    if (showSys) legendDesc.push(t("trendsLegendSys"));
-    if (showDia) legendDesc.push(t("trendsLegendDia"));
-    if (showHr && hrOk) legendDesc.push(t("trendsLegendHr"));
-    var legendLines = [];
-    if (legendDesc.length > 2) { legendLines.push(legendDesc[0] + " · " + legendDesc[1]); legendLines.push(legendDesc.slice(2).join(" · ")); }
-    else if (legendDesc.length) legendLines.push(legendDesc.join(" · "));
+    // Kolorowa legenda z pelnymi opisami — jedna linia na serie, nad wykresem
+    var legendRows = [];
+    if (showSys) legendRows.push({ cls: "lg-sys", text: t("trendsLegendSys") });
+    if (showDia) legendRows.push({ cls: "lg-dia", text: t("trendsLegendDia") });
+    if (showHr && hrOk) legendRows.push({ cls: "lg-hr", text: t("trendsLegendHr") });
 
     var W = Math.max(mount.clientWidth || 320, 240), H = 250;
-    var padL = 40, padR = hasRight ? 44 : 12, padT = legendLines.length ? 44 : 26, padB = 34;
+    var padL = 40, padR = hasRight ? 44 : 12;
+    var padT = legendRows.length ? 26 + 14 * (legendRows.length - 1) : 26, padB = 34;
     var iw = W - padL - padR, ih = H - padT - padB;
 
     // Mapowanie ułamkowego indeksu -> X:
@@ -744,14 +742,8 @@
       return out;
     }
     var legend = "";
-    var lx = padL;
-    if (showSys) { legend += '<text x="'+lx+'" y="14" class="lg-sys">● SYS</text>'; lx += 58; }
-    if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">● DIA</text>'; lx += 58; }
-    if (showHr && hrOk) { legend += '<text x="'+lx+'" y="14" class="lg-hr">● HR</text>'; }
-    // opis skrotow — pod kolorowa legenda, wycentrowany (maks. 2 linie)
-    var cx = (W - padR + padL) / 2;
-    legendLines.forEach(function(txt, li){
-      legend += '<text x="'+n1(cx)+'" y="'+(27 + li*12)+'" text-anchor="middle" class="lg-desc">'+escapeHtml(txt)+'</text>';
+    legendRows.forEach(function(r, i){
+      legend += '<text x="'+padL+'" y="'+(14 + i*14)+'" class="'+r.cls+'">● '+escapeHtml(r.text)+'</text>';
     });
     var content = svg + series("sys", "sys", YL) + series("dia", "dia", YL) +
                   (showHr ? series("hr", "hr", hasRight ? YR : YL) : "") + legend;

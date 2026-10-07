@@ -1,50 +1,60 @@
-# Qardis - poprawki po audycie (2026-10-06)
+# CHANGELOG — Qardis
 
-## Integralnosc danych
-- Data wpisu walidowana (2000-2099) w formularzu i przy zapisie - wpis nie znika juz po odswiezeniu (app.js `btnSave`, core.js `validFormTs`).
-- Koniec cichego przycinania wartosci: SYS/DIA/tetno poza zakresem daja blad zamiast zapisu przycietej liczby (`makeNumField.get`).
-- Nowy wpis ma puste pola (zamiast podstawionego poprzedniego pomiaru).
-- "Zapisano" pokazuje sie dopiero po udanym zapisie; blad zapisu jest pilnym toastem.
-- Edycja wpisu usunietego w innej karcie tworzy nowy wpis zamiast po cichu nic nie zapisac.
-- Edycja starego wpisu z pustym (wczesniej niemonitorowanym) parametrem jest mozliwa.
-- Pierwsza kopia `.corrupt` nie jest nadpisywana; przycisk eksportu odswieza sie przy otwarciu menu.
-- Odswiezanie stanu po powrocie do karty (`visibilitychange`, `pageshow`, `focus`).
+Historia wydań przeniesiona z nagłówka `sw.js` (przy deploju `bump-sw.sh`
+aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj).
 
-## Wykres i gesty
-- Wykres otwiera sie na najnowszych pomiarach.
-- Przeciaganie wykresu nie przelacza juz ekranow.
-- Brak starego `chartCtx` po pustym zakresie.
-- Kontrast legendy (>= 4,5:1), osie 11 px.
+## 2026-10-07 — wykres tętna, wykres w PDF, porządki po audycie
 
-## Eksport / import
-- CSV: neutralizacja formul (`= + - @`), cytowanie `\r`, przecinek dziesietny w trybie PL.
-- PDF: kolumny zgodne z monitorowanymi parametrami, fallback dla Safari < 16.4 (CSSOM `insertRule`).
-- Import: duplikaty wykrywane tez po (ts + wartosci), liczby jako stringi akceptowane, wpisy archiwum kolidujace z lista pomijane.
+- **Wykres tętna** (ekran Trendy): seria HR z własną skalą na prawej osi (bpm);
+  gdy ciśnienie nie jest śledzone, tętno używa lewej osi. Legenda „● HR”.
+- **Wykres w PDF i wydruku**: pierwsza strona raportu to wykres przebiegu
+  (SYS/DIA lewa oś mmHg, tętno prawa oś bpm) z całego zakresu raportu;
+  okno „Drukuj” dostaje ten sam wykres jako inline SVG.
+- **PDF bez blokowania UI**: kodowanie stron przez `canvas.toBlob` z oddawaniem
+  sterowania między stronami (zamiast `toDataURL` + `atob`).
+- **Placeholdery 120/80/70/75.0 usunięte** — pola pomiaru są jawnie puste
+  (jasna cyfra z przykładu mogła wyglądać jak wypełnione pole).
+- **Autofokus** na pierwszym widocznym polu pomiaru po otwarciu arkusza
+  (bez auto-skoków między polami — SYS bywa dwucyfrowe).
+- **Prezentacja chronologiczna**: lista pomiarów, tabela trendów, CSV, PDF,
+  wydruk i podgląd archiwum posortowane od najstarszego (min/maks pozostają
+  w Trendach).
+- `gapLabel`: pomiary z tego samego dnia mają etykietę „ten sam dzień” /
+  „same day” (zamiast „0 d”).
+- **Uproszczenia kodu**: `showFormError` zamiast pięciu bloków błędów w
+  `btnSave`; `ValidationModule` i `TableModule` spłaszczone do funkcji;
+  `bindSegmented` dla języka i czcionki; klucze backupu wyprowadzone z
+  wartości domyślnych; helper `bpString`; `sanitizeSettings(s, false)` poprawione.
+- **Optymalizacje**: buforowane `Intl.DateTimeFormat` per locale; scalanie
+  importu wydzielone do `QardisCore.mergeImported` (testowane w tests.js).
+- **`csvEscape`**: prefiks `'` tylko dla wzorców wyglądających jak formuła
+  (`=`, `@`, `+`/`-` przed cyfrą/nawiasem) — notatka „- zmęczony” zostaje bez zmian.
+- **`sw.js`**: js/css cache-first z bieżącego cache (spójna wersja, brak
+  wyścigu 2 s na słabej sieci) + odświeżanie w tle.
+- Kosmetyka: `.wheels`/`.wheel-box`/`syncOptionalWheels` → `.fields`/
+  `.field-box`/`syncOptionalFields`; komentarze-changelog usunięte z kodu.
 
-## Service Worker i wdrozenie
-- Instalacja sprawdza wynik `cache.put` dla zasobow krytycznych.
-- `js`/`css` jak nawigacja: network-first z wyscigiem 2 s (koniec rozjazdu HTML <-> JS).
-- Odczyt najpierw z aktualnego `CACHE_NAME`.
-- `bump-sw.sh`: LF, bez `sed -i`, idempotentny (naglowek nie rosnie). `.gitattributes` pilnuje LF.
+## Wcześniejsze wydania (z nagłówka sw.js)
 
-## Dostepnosc
-- `role="dialog"`/`aria-modal` na `.sheet`; okno potwierdzenia blokuje arkusz pod spodem i zwraca fokus; ukryty `h1`; grupa "Monitorowane parametry" ma etykiete.
-
-## Raport: "Zapisz jako PDF" i "Drukuj" (osobne opcje)
-- Menu -> "Raport: zapisz PDF lub drukuj" -> wybor zakresu -> dwa przyciski.
-- **Zapisz jako PDF** tworzy plik `qardis-raport-RRRR-MM-DD.pdf` i pobiera go bez okna drukowania (A4 poziomo, naglowek tabeli na kazdej stronie, numeracja stron, kolumny zgodne z monitorowanymi parametrami). Generator jest wbudowany (core.js `buildPdf`), bez bibliotek i bez zmian w CSP. Strony sa obrazami JPEG, wiec tekst w pliku nie jest zaznaczalny.
-- **Drukuj** dziala jak dotad (okno wydruku, tekst zaznaczalny).
-- Testy: `wrapText`, `buildPdf` (struktura, offsety xref) - razem 50 przypadkow.
-
-## Testy
-- `tests.html` / `tests.js` (50 przypadkow): `node tests.js` lub otworz `tests.html`.
-
-## Znane ograniczenia (nie zmienione)
-- Scalanie miedzy kartami nadal jest suma zbiorow - pelne rozwiazanie wymaga znacznikow usuniecia (tombstones) i zmiany formatu danych.
-- Nie dostarczono manifest.webmanifest ani ikon - nie byly audytowane.
-- app.js sprawdzony skladniowo i testami logiki (core.js); pelny test w przegladarce nalezy wykonac recznie.
-
-## Zmiany po przegladadzie (2026-10-06)
-- Domyslny zakres Trendow i raportu PDF: "Wszystkie" zamiast 30 dni.
-- Sprzatanie: usuniete defSys/defDia/defHr, fromLoad, 3. parametr lastKnown, id=themeColorMeta, martwa regula CSS .wheel-box.input-mode::after, labelWheels wciagniete do syncOptionalWheels, scalony podwojny listener tetna, DAY_MS w reportEntries.
-- app.js dostarczony w czystym ASCII (polskie znaki jako \uXXXX) - odporny na uszkodzenie kodowania.
+1) Nazwa cache JAWNA: ustala ją instalacja i trzyma w CACHE_NAME.
+2) Krytyczne zasoby (index.html, app.js, style.css, manifest) wymagane do
+   instalacji; ikony opcjonalne.
+3) Odpowiedź HTTP z błędem (5xx) = fallback do cache zamiast strony błędu.
+4) Wyścig nawigacji skrócony do 2 s; bez awaryjnego hashowania.
+5) Worker po wznowieniu odzyskuje CACHE_NAME z caches.keys() (ensureCacheName).
+6) Zapis do cache w try/catch — błąd nie psuje udanej odpowiedzi sieci.
+7) Toasty w klasach CSS, zmienne z-index, CSP z img-src 'self'.
+8) Dirty-check arkusza edycji, eksport CSV, skróty strzałek, deduplikacja
+   helperów dat i filtrowania.
+9) „Pola zamiast bębnów”: numeryczne inputy dla SYS/DIA/HR, wykres trendów
+   (SVG) z przesuwaniem po osi czasu.
+10) Wykres w3: oś równa z przełącznikiem na oś czasu, okno do 4 pomiarów,
+    etykiety liczby dni, kolory serii/legendy w CSS.
+11) Wykres w3 poprawki: płynne przesuwanie (ułamkowy offset), aria-pressed.
+12) Fixy: martwy wheelClampWarn, resize z debounce, próg czytelności etykiet,
+    touch target 44px, myślniki w datach nazw plików.
+13) Bugfix: jednorazowa rejestracja listenera przełącznika osi.
+14) Podgląd archiwum, kopia v3 „wszystko w jednym”, core.js + tests.html,
+    bump-sw.sh.
+15) Instalacja sprawdza wynik cache.put; odczyt z cache najpierw z aktualnego
+    CACHE_NAME, potem globalnie.

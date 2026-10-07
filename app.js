@@ -3,8 +3,8 @@
 
   function $(id){ return document.getElementById(id); }
 
-  // Audyt(9): czysta logika (limity, sanityzacja, CSV, pluralizacja, interpolacja
-  // osi czasu, walidacja importu) wydzielona do core.js — jedna implementacja
+  // Czysta logika (limity, sanityzacja, CSV, pluralizacja, interpolacja osi czasu,
+  // walidacja i scalanie importu) lives in core.js — jedna implementacja
   // dla aplikacji i testów jednostkowych (tests.html).
   var LIMITS = QardisCore.LIMITS;
   var sanitizeEntry = QardisCore.sanitizeEntry;
@@ -51,7 +51,6 @@
     return {
       hadIssue: function(){ return issue; },
       corruptRaw: function(){
-        // Audyt(2): zachowana kopia uszkodzonych danych – eksportowana z menu.
         try { return localStorage.getItem(LS + ".corrupt"); } catch(e){ return null; }
       },
       loadArchive: function(){
@@ -126,10 +125,9 @@
         var s = null;
         try { var raw = localStorage.getItem(LS_SET); s = raw ? JSON.parse(raw) : null; } catch(e){ s = null; }
         if (!s) return buildDefaults();
-        var out = sanitizeSettings(s);
-        return out;
+        return sanitizeSettings(s);
       },
-      sanitizeSettings: function(s){ return sanitizeSettings(s, false); },
+      sanitizeSettings: function(s){ return sanitizeSettings(s); },
       saveSettings: function(settings){
         try { localStorage.setItem(LS_SET, JSON.stringify(settings)); return true; }
         catch(e){ return false; }
@@ -142,16 +140,12 @@
         try { return localStorage.getItem(LS) !== lastRaw; } catch(e){ return false; }
       },
       entriesKey: function(){ return LS; },
-      settingsKey: function(){ return LS_SET; }
+      settingsKey: function(){ return LS_SET; },
+      defaults: function(){ return buildDefaults(); }
     };
   })();
 
-  // --- MODUŁ 2: Validation --- (implementacja w core.js — audyt(9))
-  var ValidationModule = (function(){
-    return {
-      validateImport: function(j){ return QardisCore.validateImport(j); }
-    };
-  })();
+  // Walidacja importu: implementacja w core.js (QardisCore.validateImport).
 
   // --- MODUŁ 3: I18n ---
   var I18nModule = (function(){
@@ -301,12 +295,10 @@
     };
   })();
 
-  // --- MODUŁ 4: Table Renderer ---
-  var TableModule = (function(){
-    return {
-      // Audyt kodu: filtr zakresu wykonuje JEDEN raz wywołujący (drawTrends) —
-      // tabela dostaje już przefiltrowaną, posortowaną malejąco listę.
-      renderTable: function(tableMount, filtered, settings, tCb, fmtDateCb){
+  // --- Renderer tabeli trendów ---
+  // Filtr zakresu wykonuje JEDEN raz wywołujący (drawTrends) — tabela dostaje
+  // już przefiltrowaną, posortowaną (chronologicznie) listę.
+  function renderTrendsTable(tableMount, filtered, tCb, fmtDateCb){
         tableMount.innerHTML = "";
         if (!filtered.length){
           tableMount.innerHTML = '<div class="trends-empty">' + tCb("trendsNoData") + '</div>';
@@ -360,8 +352,6 @@
         table.appendChild(tbody);
         tableMount.appendChild(table);
       }
-    };
-  })();
 
   // --- MODUŁ 5: Main App Logic & UI Coordinator ---
   var entries = StorageModule.loadEntries();
@@ -376,29 +366,42 @@
 
   function t(key) { return I18nModule.t(key, settings.lang); }
 
-  // Audyt kodu: wspólne helpery dat w jednym miejscu (wcześniej zdefiniowane
-  // trzykrotnie w różnych miejscach pliku — pad2/fmtDate/toLocalInput/ymd).
+  // Formatery dat są buforowane per locale — Intl.DateTimeFormat tworzenie
+  // przy każdym wierszu listy/tabeli/CSV/PDF było głównym kosztem na słabszych
+  // telefonach. Wspólne helpery dat w jednym miejscu.
   function pad2(n){ return (n<10?"0":"")+n; }
+  var dateFmts = {};
+  function dateFmt(){
+    var locale = settings.lang === "en" ? "en-US" : "pl-PL";
+    if (!Object.prototype.hasOwnProperty.call(dateFmts, locale)) {
+      try {
+        dateFmts[locale] = {
+          d: new Intl.DateTimeFormat(locale, { year:"numeric", month:"2-digit", day:"2-digit" }),
+          t: new Intl.DateTimeFormat(locale, { hour:"2-digit", minute:"2-digit", hour12:false }),
+          s: new Intl.DateTimeFormat(locale, { month:"short", day:"numeric" })
+        };
+      } catch(e){ dateFmts[locale] = null; }
+    }
+    return dateFmts[locale];
+  }
   function fmtDate(ts){
     var d = new Date(ts);
-    var locale = settings.lang === "en" ? "en-US" : "pl-PL";
-    try {
-      return {
-        date: d.toLocaleDateString(locale, { year:"numeric", month:"2-digit", day:"2-digit" }),
-        time: d.toLocaleTimeString(locale, { hour:"2-digit", minute:"2-digit", hour12:false })
-      };
-    } catch(e) {
-      return { date: pad2(d.getDate())+"."+pad2(d.getMonth()+1)+"."+d.getFullYear(), time: pad2(d.getHours())+":"+pad2(d.getMinutes()) };
-    }
+    var f = dateFmt();
+    if (f) return { date: f.d.format(d), time: f.t.format(d) };
+    return { date: pad2(d.getDate())+"."+pad2(d.getMonth()+1)+"."+d.getFullYear(), time: pad2(d.getHours())+":"+pad2(d.getMinutes()) };
+  }
+  function shortDateStr(ts){
+    var d = new Date(ts);
+    var f = dateFmt();
+    if (f) return f.s.format(d);
+    return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1);
   }
   function toLocalInput(ts){
     var d = new Date(ts);
     return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())+"T"+pad2(d.getHours())+":"+pad2(d.getMinutes());
   }
-  function ymd(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }   // audyt(6): czytelna nazwa pliku backupu (2026-10-06)
+  function ymd(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
 
-  // Audyt i18n: poprawna pluralizacja (pl: wpis/wpisy/wpisów, en: entry/entries) —
-  // implementacja w core.js, tutaj tylko podpięcie języka.
   function pluralEntries(n){ return QardisCore.pluralEntries(n, settings.lang); }
 
   function applyLanguage() {
@@ -448,7 +451,6 @@
   }
 
   var entryList = $("entryList");
-  // Audyt kodu: delegacja zdarzeń na liście wpisów zamiast listenera per karta
   entryList.addEventListener("click", function(ev){
     var hit = ev.target.closest(".card-hit"); if (!hit) return;
     var en = entries.find(function(x){ return x.id === hit.dataset.id; });
@@ -470,7 +472,7 @@
       return;
     }
 
-    var arr = sortedDesc();
+    var arr = sortedAsc();
     var frag = document.createDocumentFragment();
 
     arr.forEach(function(e){
@@ -478,8 +480,8 @@
       card.className = "entry-card";
       card.setAttribute("role", "group");
       var f = fmtDate(e.ts);
-      
-      var bpText = escapeHtml(String(settings.trackSys && e.sys ? e.sys : '--') + ' / ' + String(settings.trackDia && e.dia ? e.dia : '--'));
+
+      var bpText = escapeHtml(bpString(e));
 
       var html = '<div class="card-top">'
         + '<div class="card-main">'
@@ -514,7 +516,6 @@
     drawTrends();
   }
 
-  // Audyt kodu: wspólne helpery zamiast powtórzonych bloków w trzech eksportach
   function downloadFile(name, text, mime){
     var blob = (typeof Blob !== "undefined" && text instanceof Blob) ? text : new Blob([text], {type: mime || "application/json"});
     var a = document.createElement("a");
@@ -604,7 +605,6 @@
       c.appendChild(mkEl("div", "sum-range", t("minMax") + ": " + rangeText));
       grid.appendChild(c);
     }
-    // Audyt kodu: generyczny helper zamiast trzech kopiowanych bloków kart
     function cardFor(st, labelKey, unit, f){
       if (!st) return;
       card("", t(labelKey), f(st.avg), unit, rangeTxt(st, f));
@@ -620,26 +620,19 @@
     mount.appendChild(grid);
   }
 
-  // --- Audyt UX (w3): wykres czytelny od pierwszego rzutu oka ---
-  // • Oś X domyślnie RÓWNA: każdy pomiar to kolejna pozycja, niezależnie od
-  //   upływu czasu (kilka pomiarów jednego dnia nie zlewa się w jeden punkt).
-  // • Przełącznik "oś czasowa": odstępy proporcjonalne do rzeczywistego czasu.
-  // • Okno do 4 pomiarów na ekran; przesuwanie przeciągnięciem (po jednym
-  //   kroku na pomiar). Brak trybu "pokaż wszystko" — skala jest zawsze czytelna.
-  // • Między punktami etykieta z liczbą dni (np. "3 dni"), pod punktami data.
   var VISIBLE_MAX = 4;
   var chartMode = "cat";     // "cat" = oś równa, "time" = oś rzeczywistego czasu
   var chartStart = Infinity; // indeks pierwszego widocznego pomiaru (float); Infinity = koniec osi (najnowsze), clamp w drawChart
   function resetChart(){ chartStart = Infinity; }
   function gapLabel(days){
-    if (days < 1) return "0 d";
+    if (days < 1) return settings.lang === "en" ? "same day" : "ten sam dzień";
     if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzień";
     return days + (settings.lang === "en" ? " days" : " dni");
   }
   function drawChart(list, mount){
-    var showSys = settings.trackSys, showDia = settings.trackDia;
-    var pts = (showSys || showDia) ? list.filter(function(e){
-      return (showSys && e.sys != null) || (showDia && e.dia != null);
+    var showSys = settings.trackSys, showDia = settings.trackDia, showHr = settings.trackHr;
+    var pts = (showSys || showDia || showHr) ? list.filter(function(e){
+      return (showSys && e.sys != null) || (showDia && e.dia != null) || (showHr && e.hr != null);
     }).sort(function(a,b){ return a.ts - b.ts; }) : [];
     if (pts.length < 2) { mount.textContent = ""; chartCtx = null; return; }   // wykres od 2 pomiarów
 
@@ -649,27 +642,41 @@
     // przesuwanie: punkty przesuwają się piksel po pikselu, nie skokami.
     chartStart = clamp(chartStart, 0, n - visN);
 
-    var W = Math.max(mount.clientWidth || 320, 240), H = 250;
-    var padL = 40, padR = 12, padT = 26, padB = 34;
-    var iw = W - padL - padR, ih = H - padT - padB;
-
-    var lo = Infinity, hi = -Infinity;
-    // Skala Y liczona po WSZYSTKICH punktach okna z zapasem (nie tylko
+    // Skale Y liczone po WSZYSTKICH punktach okna z zapasem (nie tylko
     // widocznych) — przesuwanie nie zmienia skali w trakcie panu.
+    // Tętno ma własną skalę (prawa oś, bpm), bo zakres tętna nie pokrywa się
+    // z zakresem ciśnienia (mmHg) — jedna wspólna skala spłaszczyłaby jedną z serii.
     var winA = Math.floor(chartStart), winB = Math.min(n - 1, Math.ceil(chartStart + visN - 1) + 1);
+    var bpLo = Infinity, bpHi = -Infinity, hrLo = Infinity, hrHi = -Infinity;
     for (var q = winA; q <= winB; q++) {
       var pe = pts[q];
-      if (showSys && pe.sys != null) { lo = Math.min(lo, pe.sys); hi = Math.max(hi, pe.sys); }
-      if (showDia && pe.dia != null) { lo = Math.min(lo, pe.dia); hi = Math.max(hi, pe.dia); }
+      if (showSys && pe.sys != null) { bpLo = Math.min(bpLo, pe.sys); bpHi = Math.max(bpHi, pe.sys); }
+      if (showDia && pe.dia != null) { bpLo = Math.min(bpLo, pe.dia); bpHi = Math.max(bpHi, pe.dia); }
+      if (showHr && pe.hr != null) { hrLo = Math.min(hrLo, pe.hr); hrHi = Math.max(hrHi, pe.hr); }
     }
-    var yPad = Math.max(Math.round((hi - lo) * 0.15), 5);
-    lo -= yPad; hi += yPad;
-    if (hi - lo < 10) { lo -= 5; hi += 5; }
+    var bpOk = isFinite(bpLo), hrOk = isFinite(hrLo);
+    function padScale(lo, hi){
+      var p = Math.max(Math.round((hi - lo) * 0.15), 5);
+      lo -= p; hi += p;
+      if (hi - lo < 10) { lo -= 5; hi += 5; }
+      return [lo, hi];
+    }
+    var L, R = null;   // L = skala lewej osi, R = skala prawej osi (tylko tętno)
+    if (bpOk) {
+      L = padScale(bpLo, bpHi);
+      if (hrOk) R = padScale(hrLo, hrHi);
+    } else {
+      L = padScale(hrLo, hrHi);   // samo tętno — jedna skala
+    }
+    var hasRight = !!R;
+
+    var W = Math.max(mount.clientWidth || 320, 240), H = 250;
+    var padL = 40, padR = hasRight ? 44 : 12, padT = 26, padB = 34;
+    var iw = W - padL - padR, ih = H - padT - padB;
 
     // Mapowanie ułamkowego indeksu -> X:
     //  • tryb "cat":  pozycja liniowa względem chartStart (równe odstępy)
     //  • tryb "time": interpolacja znacznika czasu między indeksami
-    // Audyt(9): interpolacja (lerpTs) w core.js — testowana jednostkowo.
     var tsArr = pts.map(function(p){ return p.ts; });
     function tsAt(f){ return QardisCore.lerpTs(tsArr, f); }
     var tA = tsAt(chartStart), tB = tsAt(chartStart + visN - 1);
@@ -678,20 +685,19 @@
       if (timeOk) return padL + ((tsAt(f) - tA) / (tB - tA)) * iw;
       return padL + ((f - chartStart) / (visN - 1)) * iw;
     }
-    function Y(v){ return padT + (1 - (v - lo) / (hi - lo)) * ih; }
+    function YL(v){ return padT + (1 - (v - L[0]) / (L[1] - L[0])) * ih; }
+    function YR(v){ return padT + (1 - (v - R[0]) / (R[1] - R[0])) * ih; }
     function n1(x){ return Math.round(x * 10) / 10; }
-    function shortDate(ts){
-      var d = new Date(ts);
-      var loc = settings.lang === "en" ? "en-US" : "pl-PL";
-      try { return d.toLocaleDateString(loc, { month: "short", day: "numeric" }); }
-      catch(e2) { return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1); }
-    }
 
     var svg = "";
     for (var i = 0; i <= 4; i++) {
-      var v = lo + (hi - lo) * i / 4, y = n1(Y(v));
+      var v = L[0] + (L[1] - L[0]) * i / 4, y = n1(YL(v));
       svg += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" class="grid"/>'
            + '<text x="'+(padL-6)+'" y="'+n1(y+3.5)+'" text-anchor="end" class="axis">'+Math.round(v)+'</text>';
+      if (hasRight) {
+        var hv = R[0] + (R[1] - R[0]) * i / 4;
+        svg += '<text x="'+(W-padR+6)+'" y="'+n1(y+3.5)+'" text-anchor="start" class="axis axis-hr">'+Math.round(hv)+'</text>';
+      }
     }
 
     // Zakres rysowanych indeksów z zapasem, żeby punkty wjeżdżały/wyjeżdżały
@@ -703,23 +709,21 @@
     for (var k = iFrom; k <= iTo; k++) {
       var xk = X(k);
       if (xk < padL - 4 || xk > W - padR + 4) continue;
-      svg += '<text x="'+n1(xk)+'" y="'+(H-8)+'" text-anchor="middle" class="axis axis-date">'+escapeHtml(shortDate(pts[k].ts))+'</text>';
+      svg += '<text x="'+n1(xk)+'" y="'+(H-8)+'" text-anchor="middle" class="axis axis-date">'+escapeHtml(shortDateStr(pts[k].ts))+'</text>';
       if (k > 0) {
         var xm = (xk + X(k-1)) / 2;
-        // Audyt(3): próg czytelności — etykieta "X dni" tylko wtedy, gdy
-        // odstęp na ekranie daje jej miejsce (min. 40 jednostek SVG).
         if (xm >= padL - 4 && xm <= W - padR + 4 && (xk - X(k-1)) >= 40) {
           var days = Math.max(0, Math.round((pts[k].ts - pts[k-1].ts) / DAY_MS));
           svg += '<text x="'+n1(xm)+'" y="'+(H-20)+'" text-anchor="middle" class="axis axis-gap">'+escapeHtml(gapLabel(days))+'</text>';
         }
       }
     }
-    function series(key, cls){
+    function series(key, cls, ymap){
       var out = "", prev = null;
       for (var m = iFrom; m <= iTo; m++) {
         var e = pts[m];
         if (e[key] == null) { prev = null; continue; }
-        var x = n1(X(m)), y = n1(Y(e[key]));
+        var x = n1(X(m)), y = n1(ymap(e[key]));
         if (prev !== null) out += '<line x1="'+prev[0]+'" y1="'+prev[1]+'" x2="'+x+'" y2="'+y+'" class="ln-'+cls+'"/>';
         out += '<circle cx="'+x+'" cy="'+y+'" r="4.5" class="dot-'+cls+'"/>';
         prev = [x, y];
@@ -729,14 +733,11 @@
     var legend = "";
     var lx = padL;
     if (showSys) { legend += '<text x="'+lx+'" y="14" class="lg-sys">● SYS</text>'; lx += 58; }
-    if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">● DIA</text>'; }
-    var content = svg + series("sys", "sys") + series("dia", "dia") + legend;
+    if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">● DIA</text>'; lx += 58; }
+    if (showHr && hrOk) { legend += '<text x="'+lx+'" y="14" class="lg-hr">● HR</text>'; }
+    var content = svg + series("sys", "sys", YL) + series("dia", "dia", YL) +
+                  (showHr ? series("hr", "hr", hasRight ? YR : YL) : "") + legend;
 
-    // Audyt bugfix: struktura (pasek + SVG + podpowiedź) tworzona RAZ i nigdy
-    // nie czyszczona w trakcie rysowania — wcześniejsze mount.textContent=""
-    // niszczyło SVG razem z listenerami przy każdym przeciągnięciu (drag się
-    // zacinał). Kontekst dla panu żyje w chartCtx, odświeżany przy każdym
-    // rysowaniu.
     var svgEl = mount.querySelector("svg");
     if (!svgEl) {
       mount.innerHTML = '<div class="chart-bar"><button type="button" id="btnAxisMode" class="chart-toggle" aria-pressed="false"></button></div>'
@@ -761,11 +762,6 @@
       svgEl.addEventListener("pointerup", endDrag);
       svgEl.addEventListener("pointercancel", endDrag);
     }
-    // Audyt bugfix: listener przełącznika osi na KONTENERZE, z flagą jednorazowej
-    // rejestracji. Kontener jest wieczny, a struktura wewnątrz (przycisk+SVG)
-    // jest niszczona przy <2 pomiarach i tworzona od nowa — wcześniejsze
-    // rejestrowanie listenera przy każdej rekreacji kumulkowało kopie
-    // (2+ listenerów = kliknięcie przełączało tryb parzyście = "martwy" przycisk).
     if (!mount.dataset.chartInit) {
       mount.dataset.chartInit = "1";
       mount.addEventListener("click", function(ev){
@@ -789,8 +785,6 @@
   }
   var chartCtx = null;   // {n, visN, slotPx, list} — żywy kontekst dla panu/toggle
 
-  // Audyt(2): po rotacji/zmianie szerokości okna wykres sam się przerysowuje
-  // (debounce 150 ms, tylko gdy ekran Trendy jest aktywny i istnieje kontekst).
   var chartResizeT = null;
   window.addEventListener("resize", function(){
     if (!chartCtx || screenIdx !== 1) return;
@@ -821,9 +815,9 @@
     }
 
     var cutoff = (trendsRangeDays === "all") ? -Infinity : Date.now() - trendsRangeDays * DAY_MS;
-    // Jedno filtrowanie i jedno sortowanie (malejąco) dla podsumowania i tabeli.
+    // Jedno filtrowanie i jedno sortowanie (chronologicznie) dla podsumowania i tabeli.
     var filtered = entries.filter(function(e){ return e.ts >= cutoff; })
-      .sort(function(a, b){ return b.ts - a.ts; });
+      .sort(function(a, b){ return a.ts - b.ts; });
 
     if (!filtered.length) {
       empty.textContent = t("trendsNoData");
@@ -834,10 +828,9 @@
     renderSummary(filtered, sumMount);
     drawChart(filtered, $("trendsChart"));
     tableMount.hidden = false;
-    TableModule.renderTable(tableMount, filtered, settings, t, fmtDate);
+    renderTrendsTable(tableMount, filtered, settings, t, fmtDate);
   }
 
-  // Audyt kodu: jeden wspólny handler przełączników zakresu (stan tylko w aria-pressed)
   function bindRangeControls(containerId, onChange){
     var root = $(containerId);
     root.addEventListener("click", function(e){
@@ -849,7 +842,7 @@
   }
   bindRangeControls("trendsRange", function(r){
     trendsRangeDays = (r === "all") ? "all" : parseInt(r, 10);
-    resetChart();   // audyt UX: nowy zakres danych = wykres na pełnym widoku
+    resetChart();
     drawTrends();
   });
 
@@ -908,8 +901,6 @@
   function endSwipe(){
     if (startX === null) return;
     track.classList.remove("dragging");
-    // Audyt(7): przebudowa ekranu (drawTrends) tylko po rzeczywistym geście
-    // poziomym; zwykłe dotknięcia i przewinięcia pionowe nie ruszają UI.
     if (axis === "x") {
       if (dx < -60 && screenIdx === 0) go(1);
       else if (dx > 60 && screenIdx === 1) go(0);
@@ -927,10 +918,7 @@
 
   var addOverlay = $("addOverlay");
   var editingId = null;
-  var addSnapshot = null;   // audyt UX: stan formularza w chwili otwarcia (dirty-check)
-  // Audyt UX: pola numeryczne zamiast bębnów (wheel). Zakresy pól są
-  // identyczne z LIMITS (koniec z rozjazdem zakresów bębenka i danych),
-  // pełna kontrola wartości z klawiatury numerycznej, mniej kodu.
+  var addSnapshot = null;
   function makeNumField(id, lo, hi){
     var inp = $(id);
     inp.min = lo; inp.max = hi;
@@ -956,8 +944,15 @@
   var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
   var wgtInput = $("wWgt");
   var weightField = makeNumField("wWgt", WGT_MIN, WGT_MAX);
-  // Audyt kodu: jedno miejsce sortowania malejąco po dacie
+  // Jedno miejsce porządkowania danych: prezentacja jest CHRONOLOGICZNA
+  // (od najstarszego), rosnąco po dacie; "najnowsze" widać na końcu, a min/maks
+  // w Trendach. Malejąco sortujemy tylko tam, gdzie szukamy ostatniej wartości.
+  function sortedAsc(){ return entries.slice().sort(function(a,b){ return a.ts - b.ts; }); }
   function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
+  function bpString(e){
+    return (settings.trackSys && e.sys != null ? e.sys : "--") + " / " +
+           (settings.trackDia && e.dia != null ? e.dia : "--");
+  }
 
   // ostatnia znana wartość (nie tylko z najnowszego wpisu, który mógł jej nie mieć)
   function lastKnown(key, fallback){
@@ -981,10 +976,9 @@
     b.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); bumpWeight(d); } });
   });
 
-  function syncOptionalWheels(){
+  function syncOptionalFields(){
     [["boxWHr","wHr","btnClearWHr",hrActive,"Hr"],["boxWWgt","wWgt","btnClearWWgt",wgtActive,"Wgt"]].forEach(function(a){
       $(a[0]).classList.toggle("disabled", !a[3]);
-      // Audyt UX: wszystkie parametry to teraz pola input — jedno-disable wystarcza
       $(a[1]).disabled = !a[3];
       if (a[1] === "wWgt") document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){ b.disabled = !a[3]; });
       var b = $(a[2]);
@@ -992,21 +986,20 @@
       b.setAttribute("aria-label", lbl); b.title = lbl;
       b.textContent = a[3] ? "✕" : "+";
     });
-    // Audyt UX: bębny usunięte — zostają tylko etykiety przycisków wagi
     $("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
     $("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
   }
   $("btnClearWHr").onclick = function(){
     hrActive = !hrActive;
     if (!editingId) { settings.incHr = hrActive; StorageModule.saveSettings(settings); }
-    syncOptionalWheels();
+    syncOptionalFields();
     // Włączenie tętna ustawia fokus na pustym polu (bez podstawiania starej wartości).
     if (hrActive) { try { $("wHr").focus(); } catch(e){} }
   };
   $("btnClearWWgt").onclick = function(){
     wgtActive = !wgtActive;
     if (!editingId) { settings.incWgt = wgtActive; StorageModule.saveSettings(settings); }
-    syncOptionalWheels();
+    syncOptionalFields();
     if (wgtActive) { try { wgtInput.focus(); } catch(e){} }
   };
 
@@ -1042,26 +1035,33 @@
     hrActive = entry ? (entry.hr != null) : !!settings.incHr;
     $("boxWHr").classList.toggle("disabled", !hrActive);
 
-    // Pola nowego wpisu są PUSTE (placeholder to tylko podpowiedź) — poprzedni pomiar
+    // Pola nowego wpisu są PUSTE (bez placeholderów z przykładowymi wartościami —
+    // jasna cyfra mogła wyglądać jak wypełnione pole) — poprzedni pomiar
     // nie może przypadkiem zostać zapisany jako nowy odczyt.
 
     wgtActive = entry ? (entry.wgt != null) : !!settings.incWgt;
     $("boxWWgt").classList.toggle("disabled", !wgtActive);
-    syncOptionalWheels();
+    syncOptionalFields();
     weightField.set(entry ? entry.wgt : null);
 
     setModalState(addOverlay, true);
-    // Audyt UX: pola numeryczne — bez wartości poza zakresem nie ma
-    // warninga o "przycięciu" (zakresy pól = LIMITS).
     if (settings.trackSys) sysField.set(entry ? entry.sys : null);
     if (settings.trackDia) diaField.set(entry ? entry.dia : null);
     if (settings.trackHr) hrField.set(entry ? entry.hr : null);
     addSnapshot = JSON.stringify(collectAddState());
+    // Autofokus na pierwsze WIDOCZNE, aktywne pole pomiaru (po fokusie arkusza
+    // z setModalState) — bez automatycznego skoku między polami: SYS bywa
+    // dwucyfrowe (50–99), więc auto-przejście po 3 cyfrach pomijałoby wartości.
+    setTimeout(function(){
+      var focusId = null;
+      if (settings.trackSys) focusId = "wSys";
+      else if (settings.trackDia) focusId = "wDia";
+      else if (settings.trackHr && hrActive) focusId = "wHr";
+      else if (settings.trackWgt && wgtActive) focusId = "wWgt";
+      if (focusId) { try { $(focusId).focus({preventScroll:true}); } catch(e){} }
+    }, 60);
   }
 
-  // --- Audyt UX: dirty-check arkusza edycji ---
-  // Klik w tło / Escape / "Anuluj" przy niezapisanych zmianach pytają
-  // o potwierdzenie, zamiast po cichu gubić dane użytkownika.
   function collectAddState(){
     return {
       note: $("noteField").value,
@@ -1104,32 +1104,26 @@
     var origEntry = editingId ? entries.find(function(x){ return x.id === editingId; }) : null;
     function missing(v, key){ return badNum(v) && !(origEntry && origEntry[key] == null && v === null); }
     function outOfRange(v, lim){ return v !== null && !isNaN(v) && (v < lim[0] || v > lim[1]); }
-    // Audyt UX: pusty obowiązkowy parametr = błąd (kiedyś bębenek gwarantował wartość)
-    if ((settings.trackSys && missing(sysVal, "sys")) || (settings.trackDia && missing(diaVal, "dia")) ||
-        (settings.trackHr && hrActive && missing(hrVal, "hr"))) {
-      errEl.textContent = t("numRequiredMsg");
+    function showFormError(key, focusEl){
+      errEl.textContent = t(key);
       errEl.hidden = false;
       try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
-      return;
+      if (focusEl) { try { focusEl.focus(); } catch(e){} }
+    }
+    // Pusty obowiązkowy parametr = błąd (pole zawsze zaczyna puste).
+    if ((settings.trackSys && missing(sysVal, "sys")) || (settings.trackDia && missing(diaVal, "dia")) ||
+        (settings.trackHr && hrActive && missing(hrVal, "hr"))) {
+      showFormError("numRequiredMsg"); return;
     }
     if ((settings.trackSys && outOfRange(sysVal, LIMITS.sys)) || (settings.trackDia && outOfRange(diaVal, LIMITS.dia)) ||
         (settings.trackHr && hrActive && outOfRange(hrVal, LIMITS.hr))) {
-      errEl.textContent = t("rangeMsg");
-      errEl.hidden = false;
-      try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
-      return;
+      showFormError("rangeMsg"); return;
     }
     if (settings.trackSys && settings.trackDia && sysVal !== null && diaVal !== null && sysVal <= diaVal) {
-      errEl.textContent = t("bpErrorMsg");
-      errEl.hidden = false;
-      try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
-      return;
+      showFormError("bpErrorMsg"); return;
     }
     if (wgtVal !== null && (isNaN(wgtVal) || wgtVal < WGT_MIN || wgtVal > WGT_MAX)) {
-      errEl.textContent = t("wgtErrorMsg");
-      errEl.hidden = false;
-      try { wgtInput.focus(); } catch(e){}
-      return;
+      showFormError("wgtErrorMsg", wgtInput); return;
     }
     errEl.hidden = true;
 
@@ -1138,15 +1132,8 @@
     var ts = dtVal ? new Date(dtVal).getTime() : Date.now();
     // Data poza zakresem akceptowanym przy ładowaniu = wpis zniknąłby po odświeżeniu.
     if (!QardisCore.validFormTs(ts)) {
-      errEl.textContent = t("dateRangeMsg");
-      errEl.hidden = false;
-      try { $("dtField").focus(); } catch(e){}
-      return;
+      showFormError("dateRangeMsg", $("dtField")); return;
     }
-    // Audyt: data z przyszłości — ostrzeż (kolejka, nie pilne), ale pozwól zapisać.
-    // Pilne zastąpiłoby toast "zapisano"; tak potwierdzenie pokazuje się pierwsze.
-    // Jeden komunikat zamiast dwóch: ostrzeżenie o dacie z przyszłości stałoby w kolejce
-    // przed potwierdzeniem zapisu i opóźniało je o kilka sekund.
     var okMsg = "✓ " + t(editingId ? "updatedMsg" : "savedMsg");
     var okMs = 2200;
     if (ts > Date.now() + 60000) { okMsg += ". ⚠ " + t("futureDateWarn"); okMs = 4500; }
@@ -1174,13 +1161,14 @@
   };
 
   $("btnBackup").onclick = function(){
-    // Audyt(8): kopia "wszystko w jednym" (v3) — wpisy + archiwum + ustawienia.
-    // Pełna migracja urządzenia to jeden plik, nie dwa.
     openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveInBackup"), ok: t("btnExport") }, function(proceed){
     if (!proceed) return;
     var exp = {};
-    ["theme","lang","fontSize","trackSys","trackDia","trackHr","trackWgt","incHr","incWgt"]
-      .forEach(function(k){ exp[k] = settings[k]; });
+    // Klucze wyprowadzone z wartości domyślnych (bez flag technicznych
+    // persistAsked/lastBackupAt i defWgt) — jedno źródło prawdy o kształcie ustawień.
+    Object.keys(StorageModule.defaults()).forEach(function(k){
+      if (k !== "persistAsked" && k !== "lastBackupAt" && k !== "defWgt") exp[k] = settings[k];
+    });
     var backupObj = {
       schemaVersion: 3,
       createdAt: new Date().toISOString(),
@@ -1190,7 +1178,7 @@
       archive: StorageModule.loadArchive()
     };
     downloadFile("qardis-kopia-"+ymd(new Date())+".json", JSON.stringify(backupObj, null, 2));
-    settings.lastBackupAt = Date.now();     // audyt(3): odmierzaj czas do przypominacza
+    settings.lastBackupAt = Date.now();
     StorageModule.saveSettings(settings);
     setModalState(toolsOverlay, false);
     toast("✓ " + t("backupDone"));
@@ -1222,43 +1210,34 @@
     r.onload = function(){
       try{
         var j = JSON.parse(r.result);
-        if (!ValidationModule.validateImport(j)) throw new Error("invalid schema or ranges");
-        // Audyt: wersja formatu. Odrzucamy tylko NOWSZE niż znane (v > 3), bo
+        if (!QardisCore.validateImport(j)) throw new Error("invalid schema or ranges");
+        // Wersja formatu: odrzucamy tylko NOWSZE niż znane (v > 3), bo
         // starsze potrafimy poprawnie wczytać: kopia v3/v2 (v3 = z archiwum),
         // starsze obiekty bez pola, plik archiwum (type: "qardis-archive", v1)
         // i surowa tablica.
         var v = (j && !Array.isArray(j)) ? j.schemaVersion : undefined;
         if (v !== undefined && !(v >= 1 && v <= 3)) throw new Error("unsupported schemaVersion");
         var list = j.entries || j;
-        var ids = Object.create(null), sigs = Object.create(null);
-        entries.forEach(function(e){ ids[e.id]=1; sigs[QardisCore.entrySig(e)]=1; });
-        var added = 0, skipped = 0;
-        list.forEach(function(e){
-          var item = sanitizeEntry(e);
-          // Rekordy bez ważnego ts pomijamy jawnie (koniec z cichym Date.now());
-          // rekordy z wartościami poza zakresem (np. waga < 20 kg) również —
-          // bez utraty danych i bez odrzucania całego pliku.
-          if (!item || item.ts === null || lossy(e, item)) { skipped++; return; }
-          if (item.sys != null && item.dia != null && item.sys <= item.dia) { skipped++; return; }
-          if (!item.id) item.id = makeId();
-          if (ids[item.id]) { skipped++; return; }   // duplikat id liczony jako pominięty
-          var sig = QardisCore.entrySig(item);
-          if (sigs[sig]) { skipped++; return; }     // ten sam odczyt z innego urządzenia (inne id)
-          entries.push(item); ids[item.id]=1; sigs[sig]=1; added++;
-        });
+        // Deduplikacja i sanityzacja importu w core.js (mergeImported) —
+        // testowana jednostkowo w tests.js.
+        var res = QardisCore.mergeImported(list, entries, sanitizeEntry, makeId);
+        res.added.forEach(function(e){ entries.push(e); });
+        var added = res.added.length, skipped = res.skipped;
         var saved = StorageModule.saveEntries(entries);
-        if (!saved) toast(t("importSavedWarning"), 9000, true);   // audyt(10): dane tylko w RAM do przeładowania
-        // Audyt(8): kopia v3 zawiera archiwum — scal po id z lokalnym archiwum.
+        if (!saved) toast(t("importSavedWarning"), 9000, true);   // dane tylko w RAM do przeładowania
+        // Kopia v3 zawiera archiwum — scal po id z lokalnym archiwum.
         if (j && !Array.isArray(j) && Array.isArray(j.archive)) {
           var arc = StorageModule.loadArchive();
           var arcIds = Object.create(null);
           arc.forEach(function(e){ arcIds[e.id] = 1; });
+          var knownIds = Object.create(null);
+          entries.forEach(function(e){ knownIds[e.id] = 1; });
           var arcAdded = 0;
           j.archive.forEach(function(e){
             var c = sanitizeEntry(e);
             if (!c || !c.ts || lossy(e, c)) return;
             if (!c.id) c.id = makeId();
-            if (arcIds[c.id] || ids[c.id]) return;   // już w archiwum albo na liście głównej
+            if (arcIds[c.id] || knownIds[c.id]) return;   // już w archiwum albo na liście głównej
             arc.push(c); arcIds[c.id] = 1; arcAdded++;
           });
           if (arcAdded && !StorageModule.saveArchive(arc)) toast(t("storageError"), 5000, true);
@@ -1271,7 +1250,7 @@
           var keepBackupAt = settings.lastBackupAt;
           settings = StorageModule.sanitizeSettings(j.settings);
           settings.persistAsked = keepAsked;
-          settings.lastBackupAt = keepBackupAt;   // audyt: plik nie przesuwa przypominacza o kopii
+          settings.lastBackupAt = keepBackupAt;
           if (!StorageModule.saveSettings(settings)) toast(t("storageError"));
             applyTheme(); applyLanguage(); applyFontSize(); render();
           });
@@ -1291,12 +1270,10 @@
     if (!entries.length){ toast(t("noEntriesPdf")); return; }
     setModalState(pdfOverlayEl, true);
   };
-  // Audyt UX: eksport CSV — otwieralny w Excelu/LibreOffice bez konwersji.
-  // (csvEscape w core.js — testowane jednostkowo.)
   $("btnCsv").onclick = function(){
     if (!entries.length) { toast(t("noEntriesPdf")); return; }
     var head = ["date","time","sys_mmhg","dia_mmhg","hr_bpm","weight_kg","note"].join(";");
-    var rows = sortedDesc().map(function(e){
+    var rows = sortedAsc().map(function(e){
       var f = fmtDate(e.ts);
       var comma = settings.lang !== "en";
       return [f.date, f.time, e.sys, e.dia, e.hr, e.wgt, e.note].map(function(v){ return QardisCore.csvEscape(v, comma); }).join(";");
@@ -1323,7 +1300,7 @@
   };
 
   function reportEntries(){
-    return sortedDesc().filter(function(e){
+    return sortedAsc().filter(function(e){
       if (pdfExportRange === "all") return true;
       return e.ts >= Date.now() - pdfExportRange * DAY_MS;
     });
@@ -1341,9 +1318,91 @@
   // Strony rysujemy na canvasie (A4 poziomo, 2x) i pakujemy jako JPEG do PDF
   // (QardisCore.buildPdf). Dzięki temu nie trzeba osadzać fontów (polskie znaki
   // działają od razu), a CSP nie blokuje niczego. Tekst w pliku nie jest zaznaczalny —
-  // do tego służy opcja „Drukuj”.
-  function renderReportPages(arr, cols){
-    var PW = 842, PH = 595, M = 34, S = 2, FONT = "Arial, Helvetica, sans-serif";
+  // do tego służy opcja „Drukuj”. Kodowanie przez canvas.toBlob (nie blokuje wątku
+  // UI jak toDataURL+atob), z oddaniem sterowania między stronami.
+  // Pierwsza strona raportu to WYKRES (przebieg dla lekarza), dalej tabela wyników.
+  var PDF_PW = 842, PDF_PH = 595, PDF_S = 2;
+  function canvasToJpegBytes(cv){
+    return new Promise(function(res, rej){
+      cv.toBlob(function(b){ b ? res(b.arrayBuffer()) : rej(new Error("canvas export failed")); }, "image/jpeg", 0.82);
+    }).then(function(buf){ return new Uint8Array(buf); });
+  }
+  // Rysuje wykres z całego zakresu raportu: SYS/DIA na lewej osi (mmHg),
+  // tętno na prawej osi (bpm) — skala tętna nie pokrywa się z ciśnieniem.
+  // Zwraca false, gdy danych jest za mało na wykres.
+  function drawPdfChartPage(ctx, arr, PW, PH, M){
+    var FONT = "Arial, Helvetica, sans-serif";
+    var showSys = settings.trackSys, showDia = settings.trackDia, showHr = settings.trackHr;
+    var pts = arr.filter(function(e){
+      return (showSys && e.sys != null) || (showDia && e.dia != null) || (showHr && e.hr != null);
+    }).sort(function(a,b){ return a.ts - b.ts; });
+    if (pts.length < 2) return false;
+    var bpLo = Infinity, bpHi = -Infinity, hrLo = Infinity, hrHi = -Infinity;
+    pts.forEach(function(p){
+      if (showSys && p.sys != null) { bpLo = Math.min(bpLo, p.sys); bpHi = Math.max(bpHi, p.sys); }
+      if (showDia && p.dia != null) { bpLo = Math.min(bpLo, p.dia); bpHi = Math.max(bpHi, p.dia); }
+      if (showHr && p.hr != null) { hrLo = Math.min(hrLo, p.hr); hrHi = Math.max(hrHi, p.hr); }
+    });
+    var bpOk = isFinite(bpLo), hrOk = isFinite(hrLo);
+    if (!bpOk && !hrOk) return false;
+    function pad(lo, hi){
+      var p = Math.max(Math.round((hi - lo) * 0.12), 4);
+      lo -= p; hi += p;
+      if (hi - lo < 10) { lo -= 5; hi += 5; }
+      return [lo, hi];
+    }
+    var L = bpOk ? pad(bpLo, bpHi) : pad(hrLo, hrHi);          // lewa oś
+    var R = (bpOk && hrOk) ? pad(hrLo, hrHi) : null;           // prawa oś (tylko tętno)
+    var T = M + 60, B = PH - M - 30;
+    var Lx = M + 44, Rx = PW - M - (R ? 44 : 10);
+    var iw = Rx - Lx, ih = B - T;
+    if (iw < 100 || ih < 60) return false;
+    function YL(v){ return T + (1 - (v - L[0]) / (L[1] - L[0])) * ih; }
+    function YR(v){ return T + (1 - (v - R[0]) / (R[1] - R[0])) * ih; }
+    function X(i){ return Lx + (i / (pts.length - 1)) * iw; }
+
+    ctx.textBaseline = "alphabetic";
+    for (var i = 0; i <= 4; i++) {
+      var v = L[0] + (L[1] - L[0]) * i / 4, y = YL(v);
+      ctx.strokeStyle = "#ddd"; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(Lx, y); ctx.lineTo(Rx, y); ctx.stroke();
+      ctx.fillStyle = "#555"; ctx.font = "9px " + FONT; ctx.textAlign = "right";
+      ctx.fillText(String(Math.round(v)), Lx - 5, y + 3);
+      if (R) {
+        var hv = R[0] + (R[1] - R[0]) * i / 4;
+        ctx.fillStyle = "#15803d"; ctx.textAlign = "left";
+        ctx.fillText(String(Math.round(hv)), Rx + 5, y + 3);
+      }
+    }
+    var step = Math.max(1, Math.ceil(pts.length / 8));   // podpróbkowane daty, żeby się nie nakładały
+    ctx.fillStyle = "#555"; ctx.font = "9px " + FONT; ctx.textAlign = "center";
+    for (var k = 0; k < pts.length; k += step) {
+      ctx.fillText(shortDateStr(pts[k].ts), X(k), B + 14);
+    }
+    function drawSeries(key, ymap, color){
+      var started = false;
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (var m = 0; m < pts.length; m++) {
+        var val = pts[m][key];
+        if (val == null) { started = false; continue; }
+        var x = X(m), yy = ymap(val);
+        if (!started) { ctx.moveTo(x, yy); started = true; } else ctx.lineTo(x, yy);
+        ctx.fillRect(x - 1.8, yy - 1.8, 3.6, 3.6);
+      }
+      ctx.stroke();
+    }
+    if (showSys) drawSeries("sys", YL, "#c53030");
+    if (showDia) drawSeries("dia", YL, "#2b6cb0");
+    if (showHr)  drawSeries("hr", R ? YR : YL, "#15803d");
+    var lx = Lx; ctx.textAlign = "left"; ctx.font = "bold 10px " + FONT;
+    if (showSys) { ctx.fillStyle = "#c53030"; ctx.fillText("● SYS (mmHg)", lx, M + 46); lx += 110; }
+    if (showDia) { ctx.fillStyle = "#2b6cb0"; ctx.fillText("● DIA (mmHg)", lx, M + 46); lx += 110; }
+    if (showHr)  { ctx.fillStyle = "#15803d"; ctx.fillText("● HR (bpm" + (R ? ", prawa oś" : "") + ")", lx, M + 46); }
+    return true;
+  }
+  async function renderReportPages(arr, cols){
+    var PW = PDF_PW, PH = PDF_PH, M = 34, S = PDF_S, FONT = "Arial, Helvetica, sans-serif";
     var DATE_W = 100, COL_W = 70, HEAD_H = 30, LINE = 13, PADY = 5, MINROW = 20;
     var noteW = PW - 2 * M - DATE_W - COL_W * cols.length;
     var loc = settings.lang === "en" ? "en-US" : "pl-PL";
@@ -1352,6 +1411,7 @@
     var ctx = cv.getContext("2d");
     ctx.font = "italic 11px " + FONT;
     function measure(s){ return ctx.measureText(s).width; }
+    var yieldUI = function(){ return new Promise(function(r){ setTimeout(r, 0); }); };
 
     var rows = arr.map(function(e){
       var f = fmtDate(e.ts);
@@ -1364,7 +1424,7 @@
       };
     });
 
-    // Paginacja: pierwsza strona ma blok tytułowy
+    // Paginacja tabeli: pierwsza strona tabeli ma blok tytułowy (gdy nie ma wykresu)
     var limit = PH - M - 8, pageRows = [], cur = [], y = M + 46 + HEAD_H;
     rows.forEach(function(r){
       if (cur.length && y + r.h > limit) { pageRows.push(cur); cur = []; y = M + HEAD_H; }
@@ -1376,13 +1436,31 @@
       .concat(cols.map(function(c){ return { w: COL_W, label: t(c.label), unit: c.unit }; }))
       .concat([{ w: noteW, label: t("pdfHeaderNotes"), unit: "" }]);
 
+    // Strona 1: wykres (oś czasu = chronologia pomiarów, pełny zakres raportu)
     var out = [];
-    pageRows.forEach(function(list, pi){
+    var chartFirst = false;
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, PW, PH);
+    ctx.textAlign = "left"; ctx.fillStyle = "#000"; ctx.font = "bold 18px " + FONT;
+    ctx.fillText(t("pdfTitle"), M, M + 16);
+    ctx.font = "11px " + FONT; ctx.fillStyle = "#555";
+    ctx.fillText(t("pdfGen") + new Date().toLocaleString(loc), M, M + 34);
+    chartFirst = drawPdfChartPage(ctx, arr, PW, PH, M);
+    if (chartFirst) {
+      ctx.font = "9px " + FONT; ctx.fillStyle = "#777";
+      ctx.textAlign = "left"; ctx.fillText("Qardis", M, PH - 16);
+      ctx.textAlign = "right"; ctx.fillText("1 / " + (pageRows.length + 1), PW - M, PH - 16);
+      out.push({ data: await canvasToJpegBytes(cv), w: cv.width, h: cv.height });
+      await yieldUI();
+    }
+
+    for (var pi = 0; pi < pageRows.length; pi++) {
+      var list = pageRows[pi];
       ctx.setTransform(S, 0, 0, S, 0, 0);
       ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, PW, PH);
       ctx.textBaseline = "alphabetic"; ctx.lineWidth = 0.5; ctx.strokeStyle = "#999";
       var y = M;
-      if (pi === 0) {
+      if (pi === 0 && !chartFirst) {
         ctx.textAlign = "left"; ctx.fillStyle = "#000"; ctx.font = "bold 18px " + FONT;
         ctx.fillText(t("pdfTitle"), M, y + 16);
         ctx.font = "11px " + FONT; ctx.fillStyle = "#555";
@@ -1418,30 +1496,88 @@
       });
       ctx.font = "9px " + FONT; ctx.fillStyle = "#777";
       ctx.textAlign = "left"; ctx.fillText("Qardis", M, PH - 16);
-      ctx.textAlign = "right"; ctx.fillText((pi + 1) + " / " + pageRows.length, PW - M, PH - 16);
+      ctx.textAlign = "right"; ctx.fillText((pi + 1 + (chartFirst ? 1 : 0)) + " / " + (pageRows.length + (chartFirst ? 1 : 0)), PW - M, PH - 16);
 
-      var b64 = cv.toDataURL("image/jpeg", 0.82).split(",")[1];
-      if (!b64) throw new Error("canvas export failed");
-      var bin = atob(b64), data = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) data[i] = bin.charCodeAt(i);
-      out.push({ data: data, w: cv.width, h: cv.height });
-    });
+      out.push({ data: await canvasToJpegBytes(cv), w: cv.width, h: cv.height });
+      await yieldUI();
+    }
     return out;
   }
   function savePdf(){
     var arr = reportEntries();
     if (!arr.length){ toast(t("trendsNoData")); return; }
     setTimeout(function(){   // krótka zwłoka: arkusz zdąży się zamknąć przed ciężką pracą
-      try {
-        var pages = renderReportPages(arr, reportCols());
-        var bytes = QardisCore.buildPdf(pages, 842, 595, t("pdfTitle"));
-        downloadFile("qardis-raport-" + ymd(new Date()) + ".pdf", new Blob([bytes], { type: "application/pdf" }));
-        toast("✓ " + t("pdfSaved"));
-      } catch (err) { toast(t("pdfSaveError"), 5000, true); }
+      renderReportPages(arr, reportCols())
+        .then(function(pages){
+          var bytes = QardisCore.buildPdf(pages, PDF_PW, PDF_PH, t("pdfTitle"));
+          downloadFile("qardis-raport-" + ymd(new Date()) + ".pdf", new Blob([bytes], { type: "application/pdf" }));
+          toast("✓ " + t("pdfSaved"));
+        })
+        .catch(function(){ toast(t("pdfSaveError"), 5000, true); });
     }, 40);
   }
 
   // --- Drukuj (okno wydruku przeglądarki) ---
+  // Statyczny SVG wykresu dla okna wydruku (ta sama geometria co strona wykresu
+  // w PDF: SYS/DIA lewa oś, tętno prawa oś, pełny zakres raportu).
+  function buildPrintChartSvg(arr, W, H){
+    var showSys = settings.trackSys, showDia = settings.trackDia, showHr = settings.trackHr;
+    var pts = arr.filter(function(e){
+      return (showSys && e.sys != null) || (showDia && e.dia != null) || (showHr && e.hr != null);
+    }).sort(function(a,b){ return a.ts - b.ts; });
+    if (pts.length < 2) return "";
+    var bpLo = Infinity, bpHi = -Infinity, hrLo = Infinity, hrHi = -Infinity;
+    pts.forEach(function(p){
+      if (showSys && p.sys != null) { bpLo = Math.min(bpLo, p.sys); bpHi = Math.max(bpHi, p.sys); }
+      if (showDia && p.dia != null) { bpLo = Math.min(bpLo, p.dia); bpHi = Math.max(bpHi, p.dia); }
+      if (showHr && p.hr != null) { hrLo = Math.min(hrLo, p.hr); hrHi = Math.max(hrHi, p.hr); }
+    });
+    var bpOk = isFinite(bpLo), hrOk = isFinite(hrLo);
+    if (!bpOk && !hrOk) return "";
+    function pad(lo, hi){
+      var p = Math.max(Math.round((hi - lo) * 0.12), 4);
+      lo -= p; hi += p;
+      if (hi - lo < 10) { lo -= 5; hi += 5; }
+      return [lo, hi];
+    }
+    var L = bpOk ? pad(bpLo, bpHi) : pad(hrLo, hrHi);
+    var R = (bpOk && hrOk) ? pad(hrLo, hrHi) : null;
+    var padL = 44, padR = R ? 44 : 10, padT = 8, padB = 22;
+    var iw = W - padL - padR, ih = H - padT - padB;
+    function YL(v){ return padT + (1 - (v - L[0]) / (L[1] - L[0])) * ih; }
+    function YR(v){ return padT + (1 - (v - R[0]) / (R[1] - R[0])) * ih; }
+    function X(i){ return padL + (i / (pts.length - 1)) * iw; }
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;margin:0 0 12px;">';
+    for (var i = 0; i <= 4; i++) {
+      var v = L[0] + (L[1] - L[0]) * i / 4, y = YL(v);
+      s += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#ddd" stroke-width="1"/>'
+         + '<text x="'+(padL-5)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="#555">'+Math.round(v)+'</text>';
+      if (R) {
+        var hv = R[0] + (R[1] - R[0]) * i / 4;
+        s += '<text x="'+(W-padR+5)+'" y="'+(y+3)+'" font-size="9" fill="#15803d">'+Math.round(hv)+'</text>';
+      }
+    }
+    var step = Math.max(1, Math.ceil(pts.length / 8));
+    for (var k = 0; k < pts.length; k += step) {
+      s += '<text x="'+X(k)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="#555">'+escapeHtml(shortDateStr(pts[k].ts))+'</text>';
+    }
+    function series(key, ymap, color){
+      var out = "", prev = null;
+      for (var m = 0; m < pts.length; m++) {
+        var val = pts[m][key];
+        if (val == null) { prev = null; continue; }
+        var x = X(m), yy = ymap(val);
+        if (prev) out += '<line x1="'+prev[0]+'" y1="'+prev[1]+'" x2="'+x+'" y2="'+yy+'" stroke="'+color+'" stroke-width="2"/>';
+        out += '<rect x="'+(x-2)+'" y="'+(yy-2)+'" width="4" height="4" fill="'+color+'"/>';
+        prev = [x, yy];
+      }
+      return out;
+    }
+    if (showSys) s += series("sys", YL, "#c53030");
+    if (showDia) s += series("dia", YL, "#2b6cb0");
+    if (showHr)  s += series("hr", R ? YR : YL, "#15803d");
+    return s + '</svg>';
+  }
   function printReport(){
     var arr = reportEntries();
     if (!arr.length){ toast(t("trendsNoData")); return; }
@@ -1472,18 +1608,18 @@
       'td:last-child{text-align:left;font-style:italic;}',
       'thead{display:table-header-group;}',
       'tr{page-break-inside:avoid;}',
+      'svg{page-break-inside:avoid;}',
       '@media print{p.hint{display:none;}}'
     ];
+    var chartSvg = buildPrintChartSvg(arr, 740, 240);
     var html = '<!doctype html><html lang="'+escapeHtml(settings.lang)+'"><head><meta charset="utf-8"><title>'+escapeHtml(t("pdfTitle"))+'</title></head><body>'
       +'<h1>'+escapeHtml(t("pdfTitle"))+'</h1>'
       +'<p class="sub">'+escapeHtml(t("pdfGen")+new Date().toLocaleString(loc))+'</p>'
       +'<p class="hint">'+escapeHtml(t("pdfHint"))+'</p>'
+      +chartSvg
       +'<table><thead><tr><th>'+escapeHtml(t("pdfHeaderDt"))+'</th>'+pdfCols.map(function(c){ return '<th>'+escapeHtml(t(c[0]))+'</th>'; }).join('')+'<th>'+escapeHtml(t("pdfHeaderNotes"))+'</th></tr></thead>'
       +'<tbody>'+rows+'</tbody></table></body></html>';
 
-    // Audyt CSP: zamiast ukrytego iframe.srcdoc (dziedziczy CSP rodzica i
-    // wymuszał 'unsafe-inline' w style-src) — osobne okno wydruku window.open.
-    // Wywołanie z gestu użytkownika, więc blokady pop-upów nie przeszkadzają.
     var w = window.open("", "_blank");
     if (!w) { toast(t("pdfError")); return; }   // blokada pop-upów lub tryb prywatny
     try {
@@ -1537,20 +1673,17 @@
     renderMonitoredButtons();
   });
 
-  $("langSwitch").addEventListener("click", function(e){
-    var btn = e.target.closest("button"); if (!btn) return;
-    if(!settingsDraft) return;
-    settingsDraft.lang = btn.dataset.val;
-    settings.lang = settingsDraft.lang; 
-    applyLanguage();
-  });
-
-  $("fontSizeSwitch").addEventListener("click", function(e){
-    var btn = e.target.closest("button"); if (!btn) return;
-    if(!settingsDraft) return;
-    settingsDraft.fontSize = btn.dataset.val;
-    settings.fontSize = settingsDraft.fontSize; applyFontSize();
-  });
+  // Wspólny handler segmentów ustawień (jak bindRangeControls dla zakresów)
+  function bindSegmented(id, key, apply){
+    $(id).addEventListener("click", function(e){
+      var btn = e.target.closest("button"); if (!btn || !settingsDraft) return;
+      settingsDraft[key] = btn.dataset.val;
+      settings[key] = settingsDraft[key];
+      apply();
+    });
+  }
+  bindSegmented("langSwitch", "lang", applyLanguage);
+  bindSegmented("fontSizeSwitch", "fontSize", applyFontSize);
 
   settingsOverlay.addEventListener("click", function(e){ if (e.target === settingsOverlay) cancelSettings(); });
   function saveSettings(){
@@ -1615,7 +1748,6 @@
     }
   }
 
-  // Audyt(1): arkusz potwierdzeń w stylu aplikacji zamiast systemowych okien
   var dialogEl = $("dialogOverlay");
   var dialogCb = null;
   function openDialog(opts, cb){
@@ -1639,9 +1771,6 @@
   }
 
   document.addEventListener("keydown", function(e){
-    // Audyt UX: nawigacja klawiaturą — strzałki lewo/prawo przełączają ekrany
-    // (tylko gdy fokus nie jest w polu tekstowym i żaden arkusz nie jest otwarty;
-    // strzałki w polach numerycznych zostają przy inkrementacji wartości)
     if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       var ae = document.activeElement, tag = ae ? ae.tagName : "";
       var inField = tag === "INPUT" || tag === "TEXTAREA" || (ae && ae.isContentEditable);
@@ -1671,9 +1800,6 @@
     if (toastEl) { toastEl.remove(); toastEl = null; }
   }
 
-  // Audyt: toasty już się nie nadpisują. Pilne (np. uszkodzone dane) zastępują
-  // bieżący toast natychmiast; zwykłe czekają w kolejce (max 3) i są puszczane
-  // w skróconej wersji po zakończeniu bieżącego.
   function showToast(el, msg, ms, urgent){
     if (urgent) {
       toastTimers.forEach(clearTimeout); toastTimers = [];
@@ -1725,8 +1851,6 @@
     el.appendChild(undoBtn);
 
     el.className = "toast toast-undo";
-    // Audyt(1): pilny — toast z cofnięciem NIE może trafić do kolejki, bo
-    // pendingDeletes żyją krócej niż toast skrócony przez kolejkę (utrata danych).
     showToast(el, msg + " " + t("btnUndo"), UNDO_MS, true);
   }
 
@@ -1737,7 +1861,6 @@
   render();
   if (StorageModule.hadIssue()) toast(t("storageCorrupt"), 9000, true);
 
-  // Audyt(2): przycisk eksportu zachowanej kopii uszkodzonych danych w menu
   function refreshCorruptBtn(){
     var btn = $("btnCorrupt"); if (!btn) return;
     var data = StorageModule.corruptRaw();
@@ -1767,7 +1890,6 @@
     var mn = Infinity, mx = -Infinity;
     archive.forEach(function(e){ if (e.ts < mn) mn = e.ts; if (e.ts > mx) mx = e.ts; });
     el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " – " + fmtDate(mx).date + ")";
-    // Audyt(7): podgląd zawartości archiwum — zwijana lista wpisów.
     if (peek) {
       peek.hidden = false;
       peek.textContent = list && !list.hidden && list.childNodes.length ? t("archiveHide") : t("archiveShow");
@@ -1776,8 +1898,8 @@
   function renderArchiveList(){
     var list = $("archiveList");
     var archive = StorageModule.loadArchive()
-      .sort(function(a,b){ return b.ts - a.ts; })
-      .slice(0, 50);   // limit czytelności; pełne dane w eksporcie
+      .sort(function(a,b){ return a.ts - b.ts; })   // chronologicznie
+      .slice(-50);   // limit czytelności (ostatnie 50); pełne dane w eksporcie
     list.textContent = "";
     archive.forEach(function(e){
       var f = fmtDate(e.ts);
@@ -1814,9 +1936,6 @@
     var ids = Object.create(null);
     archive.forEach(function(e){ ids[e.id] = 1; });
     toMove.forEach(function(e){ if (!ids[e.id]) { archive.push(e); ids[e.id] = 1; } });
-    // Audyt(2): najpierw trwały zapis archiwum — przy porażce (limit pamięci)
-    // przerywamy, zanim wpisy znikną z listy. Ewentualne duplikaty przy wznowieniu
-    // operacji są odfiltrowywane po id, ale nic nie przepada.
     if (!StorageModule.saveArchive(archive)) { toast(t("storageError"), 5000, true); return; }
     entries = entries.filter(function(e){ return e.ts >= cutoff; });
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"), 5000, true);
@@ -1832,8 +1951,6 @@
     entries.forEach(function(e){ ids[e.id] = 1; });
     var added = 0;
     archive.forEach(function(e){ if (!ids[e.id]) { entries.push(e); ids[e.id] = 1; added++; } });
-    // Audyt(3): nie czyścić archiwum, gdy zapis wpisów się nie powiódł —
-    // duplikaty przy ponownej próbie są odfiltrowywane po id.
     if (!StorageModule.saveEntries(entries)) { toast(t("storageError"), 5000, true); return; }
     if (!StorageModule.saveArchive([])) toast(t("storageError"), 5000, true);
     resetArchivePeek();
@@ -1861,7 +1978,6 @@
     $("btnArchiveExport").onclick = exportArchive;
   }
 
-  // Audyt(3): przypominacz o kopii zapasowej (30 dni)
   (function backupReminder(){
     if (!entries.length) return;
     var MONTH = 30 * 24 * 60 * 60 * 1000;
@@ -1900,8 +2016,6 @@
   window.addEventListener("pageshow", function(ev){ if (ev.persisted) refreshIfStale(); });
   window.addEventListener("focus", refreshIfStale);
 
-  // Audyt P1: obsługę ?action=add przeniesiono z inline <script> do app.js,
-  // żeby CSP mogło być czystym script-src 'self' (koniec z utrzymywaniem hasha).
   if (new URLSearchParams(window.location.search).get("action") === "add") {
     try { history.replaceState(null, "", location.pathname); } catch(e){}
     setTimeout(function(){ var b = $("btnAdd"); if (b) b.click(); }, 80);

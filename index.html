@@ -170,31 +170,31 @@
       <label for="dtField" data-i18n="dtLabel">Data i godzina pomiaru</label>
       <input type="datetime-local" id="dtField">
     </div>
-    <div class="wheels">
-      <div class="wheel-box input-mode" id="boxWSys">
+    <div class="fields">
+      <div class="field-box" id="boxWSys">
         <label for="wSys" data-i18n="sysLabel">Skurczowe</label>
         <div class="num-field">
-          <input type="number" id="wSys" inputmode="numeric" step="1" min="50" max="300" placeholder="120" autocomplete="off">
+          <input type="number" id="wSys" inputmode="numeric" step="1" min="50" max="300" autocomplete="off">
         </div>
       </div>
-      <div class="wheel-box input-mode" id="boxWDia">
+      <div class="field-box" id="boxWDia">
         <label for="wDia" data-i18n="diaLabel">Rozkurczowe</label>
         <div class="num-field">
-          <input type="number" id="wDia" inputmode="numeric" step="1" min="30" max="200" placeholder="80" autocomplete="off">
+          <input type="number" id="wDia" inputmode="numeric" step="1" min="30" max="200" autocomplete="off">
         </div>
       </div>
-      <div class="wheel-box input-mode" id="boxWHr">
+      <div class="field-box" id="boxWHr">
         <label for="wHr" data-i18n="hrLabel">T&#281;tno</label>
         <button type="button" class="clear-btn" id="btnClearWHr" title="Wyczy&#347;&#263; t&#281;tno">&#10005;</button>
         <div class="num-field">
-          <input type="number" id="wHr" inputmode="numeric" step="1" min="20" max="250" placeholder="70" autocomplete="off">
+          <input type="number" id="wHr" inputmode="numeric" step="1" min="20" max="250" autocomplete="off">
         </div>
       </div>
-      <div class="wheel-box input-mode" id="boxWWgt">
+      <div class="field-box" id="boxWWgt">
         <label for="wWgt" data-i18n="wgtLabelKg">Waga [kg]</label>
         <button type="button" class="clear-btn" id="btnClearWWgt" title="Wyczy&#347;&#263; wag&#281;">&#10005;</button>
         <div class="num-field">
-          <input type="number" id="wWgt" inputmode="decimal" step="0.1" min="20" max="300" placeholder="75.0" autocomplete="off">
+          <input type="number" id="wWgt" inputmode="decimal" step="0.1" min="20" max="300" autocomplete="off">
           <div class="num-btns">
             <button type="button" id="btnWgtDec" data-wstep="-0.1">&#8722;</button>
             <button type="button" id="btnWgtInc" data-wstep="0.1">+</button>

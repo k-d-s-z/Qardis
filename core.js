@@ -36,8 +36,9 @@ window.QardisCore = (function(){
 
   // Escapowanie pola CSV zgodne z RFC 4180 (separator: ';').
   // decimalComma: liczby z przecinkiem dziesiętnym (polski Excel czyta "75.5" jako tekst).
-  // Teksty zaczynające się od = + - @ (lub tab/CR) dostają prefiks ', żeby arkusz
-  // nie wykonał ich jako formuły (CSV injection przez notatki z importowanego pliku).
+  // Teksty wyglądające jak formuła arkusza (= , @ , +-/cyfra lub nawias, tab/CR)
+  // dostają prefiks ', żeby arkusz ich nie wykonał; zwykłe notatki ("- zmęczony")
+  // pozostają bez zmian.
   function csvEscape(v, decimalComma){
     if (v == null) return "";
     var s;
@@ -46,7 +47,10 @@ window.QardisCore = (function(){
       if (decimalComma) s = s.replace(".", ",");
     } else {
       s = String(v);
-      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      // Ochrona przed formułami arkusza, ale TYLKO dla wzorców wyglądających
+      // jak formuła: "=...", "@...", tab/CR oraz liczba lub nawias po "-"/"+".
+      // Zwykła notatka "- zmęczony" nie jest modyfikowana.
+      if (/^[=@\t\r]/.test(s) || /^[+\-][0-9.(`]/.test(s)) s = "'" + s;
     }
     return /[";\n\r,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
@@ -93,6 +97,27 @@ window.QardisCore = (function(){
     return true;
   }
 
+
+  // Scalanie importu z istniejącymi wpisami: deduplikacja po id i po sygnaturze
+  // odczytu, jawne pomijanie rekordów niepełnych lub poza zakresem (bez cichego
+  // Date.now() i bez odrzucania całego pliku). Czysta logika — testowana w tests.js.
+  // sanitize: sanitizeEntry; makeId: generator id dla rekordów bez id.
+  function mergeImported(list, existing, sanitize, makeId){
+    var ids = Object.create(null), sigs = Object.create(null);
+    existing.forEach(function(e){ ids[e.id] = 1; sigs[entrySig(e)] = 1; });
+    var added = [], skipped = 0;
+    list.forEach(function(e){
+      var item = sanitize(e);
+      if (!item || item.ts === null || lossy(e, item)) { skipped++; return; }
+      if (item.sys != null && item.dia != null && item.sys <= item.dia) { skipped++; return; }
+      if (!item.id) item.id = makeId();
+      if (ids[item.id]) { skipped++; return; }        // duplikat id
+      var sig = entrySig(item);
+      if (sigs[sig]) { skipped++; return; }           // ten sam odczyt, inne id (inne urządzenie)
+      added.push(item); ids[item.id] = 1; sigs[sig] = 1;
+    });
+    return { added: added, skipped: skipped };
+  }
 
   // Zawijanie tekstu do szerokości maxW; measure(str) -> szerokość. Zbyt długie słowa
   // są łamane znak po znaku. maxLines (opcjonalnie) ucina z wielokropkiem.
@@ -176,6 +201,7 @@ window.QardisCore = (function(){
     csvEscape: csvEscape,
     pluralEntries: pluralEntries,
     lerpTs: lerpTs,
-    validateImport: validateImport
+    validateImport: validateImport,
+    mergeImported: mergeImported
   };
 })();

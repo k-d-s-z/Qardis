@@ -221,9 +221,9 @@
   .btn-text-danger { background: none; border: none; color: var(--red-text); font-weight: 700; font-size: 0.9375rem; cursor: pointer; padding: 10px 14px; min-height: 44px; margin: -8px -8px -8px 0; border-radius: 10px; }
   .btn-text-danger:hover { background: rgba(220, 38, 38, 0.1); }
 
-  .wheels{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .wheel-box{border:1px solid var(--line);border-radius:12px;padding:8px 6px;background:var(--input);position:relative;}
-  .wheel-box label{display:block;text-align:center;font-size:0.875rem;color:var(--muted);font-weight:600;margin-bottom:4px;}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .field-box{border:1px solid var(--line);border-radius:12px;padding:8px 6px;background:var(--input);position:relative;}
+  .field-box label{display:block;text-align:center;font-size:0.875rem;color:var(--muted);font-weight:600;margin-bottom:4px;}
 
   textarea#noteField{
     width:100%;margin-top:12px;min-height:64px;border:1px solid var(--line);border-radius:12px;
@@ -267,13 +267,19 @@
   /* Kolory serii - jawnie w CSS, niezalezne od dziedziczenia atrybutow */
   #trendsChart .dot-sys { fill: #e05252; }
   #trendsChart .dot-dia { fill: #4f83cc; }
+  #trendsChart .dot-hr { fill: #2aa05f; }
   #trendsChart .ln-sys { stroke: #e05252; stroke-width: 2.5; stroke-linecap: round; }
   #trendsChart .ln-dia { stroke: #4f83cc; stroke-width: 2.5; stroke-linecap: round; }
+  #trendsChart .ln-hr { stroke: #2aa05f; stroke-width: 2.5; stroke-linecap: round; }
   #trendsChart .lg-sys { fill: #c53030; font-size: 11px; font-weight: 700; }
   #trendsChart .lg-dia { fill: #2b6cb0; font-size: 11px; font-weight: 700; }
+  #trendsChart .lg-hr { fill: #15803d; font-size: 11px; font-weight: 700; }
+  #trendsChart .axis-hr { fill: #15803d; }
   /* Kontrast tekstu legendy (min. 4,5:1) w obu motywach */
   html[data-theme="dark"] #trendsChart .lg-sys { fill: #f87171; }
   html[data-theme="dark"] #trendsChart .lg-dia { fill: #7fb0f0; }
+  html[data-theme="dark"] #trendsChart .lg-hr { fill: #6ee7a0; }
+  html[data-theme="dark"] #trendsChart .axis-hr { fill: #6ee7a0; }
   .chart-hint { font-size: .6875rem; color: var(--muted); text-align: center; margin-top: 2px; }
 
   /* Settings Sliders UI */
@@ -315,7 +321,7 @@
   .num-btns button:active { background: var(--input); }
   html[data-theme="dark"] .num-btns button { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
   html[data-theme="dark"] .num-btns button:active { background: color-mix(in srgb, var(--accent) 80%, #000); }
-  .wheel-box.disabled .num-field { opacity: .25; pointer-events: none; }
+  .field-box.disabled .num-field { opacity: .25; pointer-events: none; }
   .clear-btn::after { content: ""; position: absolute; inset: -6px; } /* pole dotyku 44x44 px */
 
   /* Touch targets, danger item */

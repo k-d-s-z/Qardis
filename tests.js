@@ -32,6 +32,8 @@
   eq("csv formuła =", C.csvEscape("=1+1"), "'=1+1");
   eq("csv formuła @", C.csvEscape("@SUM(A1)"), "'@SUM(A1)");
   eq("csv formuła -", C.csvEscape("-2+3"), "'-2+3");
+  eq("csv notka z myślnikiem bez zmian", C.csvEscape("- zmęczony"), "- zmęczony");
+  eq("csv liczba ujemna pozostaje liczbą", C.csvEscape(-2.5), "-2.5");
   eq("csv liczba kropka", C.csvEscape(75.5), "75.5");
   eq("csv liczba przecinek (PL)", C.csvEscape(75.5, true), '"75,5"');
   eq("csv null", C.csvEscape(null), "");
@@ -57,6 +59,27 @@
   eq("validateImport obiekt", C.validateImport({ entries: [] }), true);
   eq("validateImport pusty obiekt", C.validateImport({}), false);
   eq("validateImport zły element", C.validateImport([1]), false);
+
+  // scalanie importu (mergeImported)
+  var mkId = function(){ return "id-" + Math.random().toString(36).slice(2); };
+  var exA = { id: "a", ts: 5, sys: 120, dia: 80, hr: null, wgt: null };
+  var exB = { id: "b", ts: 6, sys: 121, dia: 81, hr: null, wgt: null };
+  var existing = [exA, exB];
+  var imp1 = C.mergeImported([
+    { id: "a", ts: 5, sys: 120, dia: 80 },                       // duplikat id
+    { id: "z", ts: 5, sys: 120, dia: 80 },                       // ten sam odczyt, inne id
+    { id: "y", ts: 7, sys: 119, dia: 79, hr: 65 }                // nowy
+  ], existing, C.sanitizeEntry, mkId);
+  eq("merge: dodane", imp1.added.length, 1);
+  eq("merge: pominięte (dup id + dup sygnatura)", imp1.skipped, 2);
+  eq("merge: zachowana wartość nowego", imp1.added[0].hr, 65);
+  var imp2 = C.mergeImported([
+    { ts: 8, wgt: 15 },                                           // poza zakresem -> pominięty
+    { ts: 9, sys: 70, dia: 90 },                                  // sys <= dia -> pominięty
+    { ts: 10, sys: 120, dia: 80 }                                 // poprawny, dostaje id
+  ], existing, C.sanitizeEntry, mkId);
+  eq("merge: odrzuca poza zakresem i sys<=dia", imp2.skipped, 2);
+  eq("merge: nadaje id brakującemu", typeof imp2.added[0].id, "string");
 
   // sygnatura duplikatów
   var a = { id: "x", ts: 5, sys: 120, dia: 80, hr: null, wgt: null };

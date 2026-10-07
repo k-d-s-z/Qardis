@@ -1,52 +1,15 @@
-/* Qardis Service Worker
+/* Qardis Service Worker — pełna historia zmian: CHANGELOG.md.
 
    Wersjonowanie: nazwa cache powstaje z hasza SHA-256 zawartości zasobów,
-   policzonego przy instalacji — ręczne podbijanie VERSION nie istnieje.
-   Uwaga operacyjna: przeglądarka sprawdza sw.js bajt po bajcie przy nawigacji,
-   więc przy deploju musi zmienić się także sam plik sw.js (choćby komentarz).
-   Świeżość danych zapewniają strategie: nawigacja network-first z wyścigiem
-   2 s, app.js/ikony stale-while-revalidate.
+   policzonego przy instalacji. Uwaga operacyjna: przeglądarka sprawdza sw.js
+   bajt po bajcie przy nawigacji, więc przy deployu musi zmienić się także sam
+   plik sw.js — bump-sw.sh aktualizuje linię „Build:”.
 
-   Audyt — refaktoryzacja po audytach:
-   1) Nazwa cache jest JAWNA: ustala ją instalacja i trzyma w CACHE_NAME.
-      Koniec ze zgadywaniem "najnowszego" cache po sortowaniu nazw —
-      fetch może najwyżej pominąć cache, dopóki instalacja trwa.
-   2) Krytyczne zasoby (index.html, app.js, style.css, manifest) są
-      wymagane do instalacji; ikony są opcjonalne.
-   3) Odpowiedź HTTP z błędem (5xx itp.) jest traktowana jak brak sieci
-      i następuje fallback do cache — użytkownik nie widzi strony
-      błędu hotelowego Wi-Fi, skoro w cache jest działająca wersja.
-   4) Wyścig nawigacji skrócony do 2 s; usunięto fallback hashowania
-      awaryjnego (crypto.subtle dostępne wszędzie, gdzie działa SW).
-   5) Worker po wznowieniu odzyskuje CACHE_NAME z caches.keys()
-      (ensureCacheName) — uśpiony worker nie ma w pamięci nazwy cache.
-   6) Zapis do cache jest w try/catch: błąd (limit pamięci, wyczyszczony
-      storage) nie zamienia udanej odpowiedzi sieci w błąd dla użytkownika.
-   7) Wydanie porządkowe: toasty przeniesione do klas CSS, zmienne z-index,
-      CSP z img-src 'self'. Zmiana tego pliku wymusza przebudowę cache.
-   8) Wydanie audytu UX/kodu: dirty-check arkusza edycji, eksport CSV,
-      skróty klawiszowe strzałek, deduplikacja helperów dat i filtrowania.
-   9) Wydanie "pola zamiast bębnów": numeryczne inputy dla SYS/DIA/HR,
-      nowa ikona menu, wykres trendów (SVG) z przesuwaniem po osi czasu.
-  10) Wykres w3: oś równa (kategoryczna) z przełącznikiem na oś czasu,
-      okno do 4 pomiarów, etykiety liczby dni między pomiarami,
-      kolory serii/legendy wymuszone klasami CSS.
-  11) Wykres w3 poprawki: płynne przesuwanie (ułamkowy offset okna,
-      przelicznik px SVG), przełącznik osi z aria-pressed.
-  12) Szybkie fixy po audycie: usunięty martwy wheelClampWarn (i18n),
-      resize wykresu z debounce, próg czytelności etykiet "X dni",
-      touch target 44px dla przełącznika osi, wyrównanie pól numerycznych,
-      myślniki w datach nazw plików (backup/CSV/archiwum).
-  13) Bugfix: listener przełącznika osi z flagą jednorazowej rejestracji
-      (kumulacja listenerów na kontenerze czyniła przycisk "martwym").
-  14) Audyt 7-10: podgląd archiwum, kopia v3 "wszystko w jednym"
-      (wpisy+archiwum+ustawienia), core.js z czystą logiką + tests.html,
-      bump-sw.sh do automatyzacji wersjonowania przy deploju.
-  15) Audyt 2026-10: instalacja sprawdza wynik cache.put dla zasobów
-      krytycznych (niepełny cache = błąd instalacji, nie ciche "działa");
-      skrypty i style (js/css) używają tej samej strategii co nawigacja
-      (network-first z wyścigiem 2 s) — koniec rozjazdu nowy HTML + stary JS;
-      odczyt z cache najpierw z aktualnego CACHE_NAME, dopiero potem globalnie.
+   Strategie: nawigacja network-first z wyścigiem 2 s; skrypty i style
+   cache-first z bieżącego cache + odświeżanie w tle (cache jest nazwany
+   hashem CAŁEGO zestawu, więc trafienie jest zawsze spójne z wersją HTML,
+   a słaba sieć nie dodaje oczekiwania przy starcie); ikony i manifest
+   stale-while-revalidate.
 
    Build: 2026-10-06T07:11:12Z
 */
@@ -177,6 +140,32 @@ async function networkFirst(e, key) {
   return m || (await net) || Response.error();
 }
 
+// Cache-first dla js/css z odświeżaniem w tle. Cache jest nazwany hashem
+// CAŁEGO zestawu zasobów, więc trafienie z bieżącego CACHE_NAME jest zawsze
+// spójne z wersją aplikacji; nowa wersja dochodzi po zmianie sw.js
+// (bump-sw.sh) i nowej instalacji. Na słabej sieci start nie czeka na
+// wyścig network-first — HTML i JS zawsze z tej samej "świeżości".
+async function cacheFirstWithRevalidate(e) {
+  await ensureCacheName();
+  const cached = await matchCurrent(e.request);
+  const update = fetch(e.request, { cache: "no-cache" })
+    .then(async (res) => {
+      if (!res.ok) return null;   // błąd HTTP nie zastępuje cache
+      if (CACHE_NAME) {
+        const copy = res.clone();
+        try {
+          const c = await caches.open(CACHE_NAME);
+          await c.put(e.request, copy);
+        } catch (_) { /* cache opcjonalny (limit pamięci) */ }
+      }
+      return res;
+    })
+    .catch(() => null);
+  e.waitUntil(update);
+  if (cached) return cached;
+  return (await update) || Response.error();
+}
+
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
@@ -187,7 +176,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   if (e.request.destination === "script" || e.request.destination === "style") {
-    e.respondWith(networkFirst(e, e.request));
+    e.respondWith(cacheFirstWithRevalidate(e));
     return;
   }
 

@@ -1,6 +1,11 @@
 (function(){
   "use strict";
 
+  // GitHub Pages nie pozwala ustawiać nagłówków HTTP (frame-ancestors,
+  // X-Content-Type-Options), a meta-CSP ich nie obsługuje — stąd mitigacja
+  // clickjackingu w JS: wyrwij aplikację z obcej ramki.
+  try { if (window.top && window.top !== window.self) window.top.location = window.self.location; } catch(e) {}
+
   function $(id){ return document.getElementById(id); }
 
   // Czysta logika (limity, sanityzacja, CSV, pluralizacja, interpolacja osi czasu,
@@ -32,21 +37,8 @@
       };
     }
     function sanitizeSettings(s){
-      var def = buildDefaults();
-      if (!s || typeof s !== "object" || Array.isArray(s)) return def;
-      var out = Object.assign({}, def);
-      Object.keys(def).forEach(function(k){
-        if (Object.prototype.hasOwnProperty.call(s, k) && typeof s[k] === typeof def[k] &&
-            (typeof s[k] !== "number" || isFinite(s[k]))) out[k] = s[k];
-      });
-      if (["dark","light"].indexOf(out.theme) < 0) out.theme = def.theme;
-      if (["pl","en"].indexOf(out.lang) < 0) out.lang = "pl";
-      if (["small","medium","large"].indexOf(out.fontSize) < 0) out.fontSize = "medium";
-      // Co najmniej jeden monitorowany parametr — inaczej formularz i lista są puste.
-      if (!out.trackSys && !out.trackDia && !out.trackHr && !out.trackWgt) {
-        out.trackSys = out.trackDia = out.trackHr = out.trackWgt = true;
-      }
-      return out;
+      // Czysta implementacja w core.js (QardisCore.sanitizeSettings) — testowana w tests.js.
+      return QardisCore.sanitizeSettings(s, buildDefaults());
     }
     return {
       hadIssue: function(){ return issue; },
@@ -151,7 +143,9 @@
   var I18nModule = (function(){
     var translations = {
       pl: {
-        trendsTitle: "Qardis – Trendy pomiarów", trendsDesc: "Średnie i zakresy wartości w wybranym okresie.", trendsNoData: "Brak pomiarów w wybranym okresie.",
+        trendsTitle: "Qardis – Trendy pomiarów", trendsDesc: "Średnie i zakresy wartości w wybranym okresie.",
+        trendsLegendSys: "SYS — ciśnienie skurczowe", trendsLegendDia: "DIA — ciśnienie rozkurczowe",
+        trendsLegendHr: "HR — tętno (uderzenia na minutę)", trendsNoData: "Brak pomiarów w wybranym okresie.",
         sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
         normsNote: "Zalecenia dotyczące interpretacji ciśnienia skurczowego i rozkurczowego mogą się zmieniać. Najświeższe wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
         wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
@@ -192,6 +186,7 @@
         storageCorrupt: "Wykryto uszkodzone dane. Kopię zachowano w pamięci przeglądarki, nie zostały nadpisane.",
         
         btnClose: "Zamknij", 
+        btnToTop: "Na początek listy", 
         ariaTools: "Dane i eksport", ariaAdd: "Dodaj pomiar", ariaSettings: "Ustawienia", ariaView: "Widok",
         
         addHr: "Dodaj tętno", addWgt: "Dodaj wagę",
@@ -219,7 +214,9 @@
         importSavedWarning: "Nie udało się zapisać danych (może limit pamięci lub tryb prywatny?). Zaimportowane wpisy są widoczne, ale znikną po odświeżeniu strony."
       },
       en: {
-        trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.", trendsNoData: "No measurements in the selected period.",
+        trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.",
+        trendsLegendSys: "SYS — systolic pressure", trendsLegendDia: "DIA — diastolic pressure",
+        trendsLegendHr: "HR — heart rate (beats per minute)", trendsNoData: "No measurements in the selected period.",
         sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
         normsNote: "Guidelines for interpreting systolic and diastolic blood pressure may change over time. Check the latest recommendations on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, or of equivalent institutions in your country.",
         wipeDesc: "Deletes all measurements and settings from this device.",
@@ -260,6 +257,7 @@
         storageCorrupt: "Corrupted data detected. A copy was kept in browser storage and not overwritten.",
         
         btnClose: "Close", 
+        btnToTop: "Back to top of list", 
         ariaTools: "Data and export", ariaAdd: "Add measurement", ariaSettings: "Settings", ariaView: "View",
         
         addHr: "Add pulse", addWgt: "Add weight",
@@ -297,7 +295,7 @@
 
   // --- Renderer tabeli trendów ---
   // Filtr zakresu wykonuje JEDEN raz wywołujący (drawTrends) — tabela dostaje
-  // już przefiltrowaną, posortowaną (chronologicznie) listę.
+  // już przefiltrowaną, posortowaną (od najnowszych) listę.
   function renderTrendsTable(tableMount, filtered, tCb, fmtDateCb){
         tableMount.innerHTML = "";
         if (!filtered.length){
@@ -459,6 +457,8 @@
 
   function render(){
     resetChart();   // po zmianie danych wykres pokazuje najnowsze pomiary
+    var arr = sortedDesc();   // jedno sortowanie dla scrubbera i listy
+    buildScrubber(arr);
     entryList.innerHTML = "";
 
     if (!entries.length){
@@ -472,7 +472,7 @@
       return;
     }
 
-    var arr = sortedAsc();
+    var arr = sortedDesc();
     var frag = document.createDocumentFragment();
 
     arr.forEach(function(e){
@@ -480,20 +480,24 @@
       card.className = "entry-card";
       card.setAttribute("role", "group");
       var f = fmtDate(e.ts);
+      var dte = new Date(e.ts);
+      card.dataset.ym = dte.getFullYear() + "-" + pad2(dte.getMonth());   // scrubber miesięcy
 
-      var bpText = escapeHtml(bpString(e));
+      // Kropki w kolorach serii z wykresu (SYS czerwony, DIA niebieski)
+      var sysTxt = settings.trackSys && e.sys != null ? escapeHtml(String(e.sys)) : "--";
+      var diaTxt = settings.trackDia && e.dia != null ? escapeHtml(String(e.dia)) : "--";
 
       var html = '<div class="card-top">'
         + '<div class="card-main">'
-        +   '<span class="card-sysdia">' + bpText + '</span>'
+        +   '<span class="card-sysdia"><span class="sd sd-sys" aria-hidden="true"></span>' + sysTxt + '<span class="sd sd-dia" aria-hidden="true"></span>' + diaTxt + '</span>'
         +   '<span class="card-unit">mmHg</span>'
         + '</div>'
         + '<div class="card-date">' + escapeHtml(f.date) + '<small>' + escapeHtml(f.time) + '</small></div>'
         + '</div>';
 
       var subItems = [];
-      if (settings.trackHr && e.hr) subItems.push('<span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + escapeHtml(String(e.hr)) + ' bpm</span>');
-      if (settings.trackWgt && e.wgt) subItems.push('<span><svg viewBox="0 0 24 24"><path d="M5 19h14l-1.6-8.2a2 2 0 0 0-2-1.6H8.6a2 2 0 0 0-2 1.6z"/><path d="M12 9V7"/><circle cx="12" cy="6" r="1.6"/></svg>' + escapeHtml(String(e.wgt)) + ' kg</span>');
+      if (settings.trackHr && e.hr) subItems.push('<span class="sub-hr"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + escapeHtml(String(e.hr)) + ' bpm</span>');
+      if (settings.trackWgt && e.wgt) subItems.push('<span class="sub-wgt"><svg viewBox="0 0 24 24"><path d="M5 19h14l-1.6-8.2a2 2 0 0 0-2-1.6H8.6a2 2 0 0 0-2 1.6z"/><path d="M12 9V7"/><circle cx="12" cy="6" r="1.6"/></svg>' + escapeHtml(String(e.wgt)) + ' kg</span>');
 
       if (subItems.length) {
         html += '<div class="card-sub">' + subItems.join('') + '</div>';
@@ -670,8 +674,17 @@
     }
     var hasRight = !!R;
 
+    // Komentarz do kolorowych napisow legendy — rysowany w SVG bezposrednio pod nimi
+    var legendDesc = [];
+    if (showSys) legendDesc.push(t("trendsLegendSys"));
+    if (showDia) legendDesc.push(t("trendsLegendDia"));
+    if (showHr && hrOk) legendDesc.push(t("trendsLegendHr"));
+    var legendLines = [];
+    if (legendDesc.length > 2) { legendLines.push(legendDesc[0] + " · " + legendDesc[1]); legendLines.push(legendDesc.slice(2).join(" · ")); }
+    else if (legendDesc.length) legendLines.push(legendDesc.join(" · "));
+
     var W = Math.max(mount.clientWidth || 320, 240), H = 250;
-    var padL = 40, padR = hasRight ? 44 : 12, padT = 26, padB = 34;
+    var padL = 40, padR = hasRight ? 44 : 12, padT = legendLines.length ? 44 : 26, padB = 34;
     var iw = W - padL - padR, ih = H - padT - padB;
 
     // Mapowanie ułamkowego indeksu -> X:
@@ -722,7 +735,7 @@
       var out = "", prev = null;
       for (var m = iFrom; m <= iTo; m++) {
         var e = pts[m];
-        if (e[key] == null) { prev = null; continue; }
+        if (e[key] == null) continue;   // brak wartości (np. tętno) — linia łączy sąsiednie punkty, bez dziur
         var x = n1(X(m)), y = n1(ymap(e[key]));
         if (prev !== null) out += '<line x1="'+prev[0]+'" y1="'+prev[1]+'" x2="'+x+'" y2="'+y+'" class="ln-'+cls+'"/>';
         out += '<circle cx="'+x+'" cy="'+y+'" r="4.5" class="dot-'+cls+'"/>';
@@ -735,6 +748,11 @@
     if (showSys) { legend += '<text x="'+lx+'" y="14" class="lg-sys">● SYS</text>'; lx += 58; }
     if (showDia) { legend += '<text x="'+lx+'" y="14" class="lg-dia">● DIA</text>'; lx += 58; }
     if (showHr && hrOk) { legend += '<text x="'+lx+'" y="14" class="lg-hr">● HR</text>'; }
+    // opis skrotow — pod kolorowa legenda, wycentrowany (maks. 2 linie)
+    var cx = (W - padR + padL) / 2;
+    legendLines.forEach(function(txt, li){
+      legend += '<text x="'+n1(cx)+'" y="'+(27 + li*12)+'" text-anchor="middle" class="lg-desc">'+escapeHtml(txt)+'</text>';
+    });
     var content = svg + series("sys", "sys", YL) + series("dia", "dia", YL) +
                   (showHr ? series("hr", "hr", hasRight ? YR : YL) : "") + legend;
 
@@ -815,9 +833,9 @@
     }
 
     var cutoff = (trendsRangeDays === "all") ? -Infinity : Date.now() - trendsRangeDays * DAY_MS;
-    // Jedno filtrowanie i jedno sortowanie (chronologicznie) dla podsumowania i tabeli.
+    // Jedno filtrowanie i jedno sortowanie (od najnowszych) dla podsumowania i tabeli.
     var filtered = entries.filter(function(e){ return e.ts >= cutoff; })
-      .sort(function(a, b){ return a.ts - b.ts; });
+      .sort(function(a, b){ return b.ts - a.ts; });
 
     if (!filtered.length) {
       empty.textContent = t("trendsNoData");
@@ -828,7 +846,7 @@
     renderSummary(filtered, sumMount);
     drawChart(filtered, $("trendsChart"));
     tableMount.hidden = false;
-    renderTrendsTable(tableMount, filtered, settings, t, fmtDate);
+    renderTrendsTable(tableMount, filtered, t, fmtDate);
   }
 
   function bindRangeControls(containerId, onChange){
@@ -866,6 +884,8 @@
       homeSc.setAttribute("inert", "");
       drawTrends(true);
     }
+    buildScrubber();
+    if (btnTop) btnTop.hidden = true;   // po zmianie ekranu przycisk wraca dopiero po przewinięciu
   }
 
   $("navHistory").onclick = function(){ go(0); };
@@ -944,10 +964,8 @@
   var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
   var wgtInput = $("wWgt");
   var weightField = makeNumField("wWgt", WGT_MIN, WGT_MAX);
-  // Jedno miejsce porządkowania danych: prezentacja jest CHRONOLOGICZNA
-  // (od najstarszego), rosnąco po dacie; "najnowsze" widać na końcu, a min/maks
-  // w Trendach. Malejąco sortujemy tylko tam, gdzie szukamy ostatniej wartości.
-  function sortedAsc(){ return entries.slice().sort(function(a,b){ return a.ts - b.ts; }); }
+  // Jedno miejsce sortowania malejąco po dacie — najnowsze na górze listy,
+  // CSV, raportu i podglądu archiwum. Bez opcji zmiany kierunku (świadoma decyzja).
   function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
   function bpString(e){
     return (settings.trackSys && e.sys != null ? e.sys : "--") + " / " +
@@ -1092,6 +1110,25 @@
   $("btnCancelEntry").onclick = requestCloseAdd;
   $("btnDeleteEntryHeader").onclick = function(){ if(editingId) deleteEntryWithUndo(editingId); };
 
+  // Enter przeskakuje do następnego AKTYWNEGO pola pomiaru
+  // (data → SYS → DIA → tętno → waga). Bez auto-skoków przy wpisywaniu cyfr —
+  // to jawnie decyzja użytkownika. Uwagi (textarea) zachowują Enter jako nową linię.
+  addOverlay.addEventListener("keydown", function(e){
+    if (e.key !== "Enter" || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+    var order = ["dtField", "wSys", "wDia", "wHr", "wWgt"];
+    var idx = order.indexOf(e.target && e.target.id);
+    if (idx < 0) return;
+    e.preventDefault();
+    for (var i = idx + 1; i < order.length; i++) {
+      var el = $(order[i]);
+      var box = el.closest(".field-box");
+      if (box && box.style.display === "none") continue;   // parametr nieśledzony
+      if (el.disabled) continue;                            // tętno/waga wyłączone w tym wpisie
+      try { el.focus(); if (el.select) el.select(); } catch(err){}
+      return;
+    }
+  });
+
   $("btnSave").onclick = function(){
     var wgtVal = (settings.trackWgt && wgtActive) ? weightField.get() : null;
     var hrVal = (settings.trackHr && hrActive) ? hrField.get() : null;
@@ -1225,22 +1262,15 @@
         var added = res.added.length, skipped = res.skipped;
         var saved = StorageModule.saveEntries(entries);
         if (!saved) toast(t("importSavedWarning"), 9000, true);   // dane tylko w RAM do przeładowania
-        // Kopia v3 zawiera archiwum — scal po id z lokalnym archiwum.
+        // Kopia v3 zawiera archiwum — scal po id z lokalnym archiwum
+        // (QardisCore.mergeArchive, testowane w tests.js).
         if (j && !Array.isArray(j) && Array.isArray(j.archive)) {
           var arc = StorageModule.loadArchive();
-          var arcIds = Object.create(null);
-          arc.forEach(function(e){ arcIds[e.id] = 1; });
-          var knownIds = Object.create(null);
-          entries.forEach(function(e){ knownIds[e.id] = 1; });
-          var arcAdded = 0;
-          j.archive.forEach(function(e){
-            var c = sanitizeEntry(e);
-            if (!c || !c.ts || lossy(e, c)) return;
-            if (!c.id) c.id = makeId();
-            if (arcIds[c.id] || knownIds[c.id]) return;   // już w archiwum albo na liście głównej
-            arc.push(c); arcIds[c.id] = 1; arcAdded++;
-          });
-          if (arcAdded && !StorageModule.saveArchive(arc)) toast(t("storageError"), 5000, true);
+          var arcNew = QardisCore.mergeArchive(j.archive, arc, entries, sanitizeEntry, makeId);
+          if (arcNew.length) {
+            arc = arc.concat(arcNew);
+            if (!StorageModule.saveArchive(arc)) toast(t("storageError"), 5000, true);
+          }
         }
         render();
         if (j && !Array.isArray(j) && j.settings && typeof j.settings === "object") {
@@ -1273,7 +1303,7 @@
   $("btnCsv").onclick = function(){
     if (!entries.length) { toast(t("noEntriesPdf")); return; }
     var head = ["date","time","sys_mmhg","dia_mmhg","hr_bpm","weight_kg","note"].join(";");
-    var rows = sortedAsc().map(function(e){
+    var rows = sortedDesc().map(function(e){
       var f = fmtDate(e.ts);
       var comma = settings.lang !== "en";
       return [f.date, f.time, e.sys, e.dia, e.hr, e.wgt, e.note].map(function(v){ return QardisCore.csvEscape(v, comma); }).join(";");
@@ -1300,7 +1330,7 @@
   };
 
   function reportEntries(){
-    return sortedAsc().filter(function(e){
+    return sortedDesc().filter(function(e){
       if (pdfExportRange === "all") return true;
       return e.ts >= Date.now() - pdfExportRange * DAY_MS;
     });
@@ -1682,7 +1712,7 @@
       apply();
     });
   }
-  bindSegmented("langSwitch", "lang", applyLanguage);
+  bindSegmented("langSwitch", "lang", function(){ applyLanguage(); drawTrends(true); });   // legenda wykresu nie jest data-i18n — trzeba ją przerysować
   bindSegmented("fontSizeSwitch", "fontSize", applyFontSize);
 
   settingsOverlay.addEventListener("click", function(e){ if (e.target === settingsOverlay) cancelSettings(); });
@@ -1854,6 +1884,80 @@
     showToast(el, msg + " " + t("btnUndo"), UNDO_MS, true);
   }
 
+  // --- Nawigacja po długiej liście: scrubber miesięcy + przycisk „na początek" ---
+  // Lista jest zawsze od najnowszych na górze, więc góra railsa = najnowszy miesiąc.
+  // Scrubber pokazuje się przy danych z co najmniej 2 miesięcy; przeciągnięcie
+  // po prawej krawędzi przewija do pierwszego pomiaru wybranego miesiąca.
+  var homeScEl = $("homeScreen");
+  var btnTop = $("btnTop");
+  var scrubEl = $("listScrubber");
+  var scrubMonths = [];   // [{ym, label}] — najnowsze pierwsze
+  var scrubDrag = false;
+
+  function monthLabel(ts){
+    var d = new Date(ts);
+    var loc = settings.lang === "en" ? "en-US" : "pl-PL";
+    try { return d.toLocaleDateString(loc, { month: "short", year: "numeric" }); }
+    catch(e){ return pad2(d.getMonth() + 1) + "." + d.getFullYear(); }
+  }
+  function buildScrubber(arr){
+    if (!scrubEl) return;
+    scrubMonths = [];
+    var seen = Object.create(null);
+    (arr || sortedDesc()).forEach(function(e){
+      var d = new Date(e.ts);
+      var ym = d.getFullYear() + "-" + pad2(d.getMonth());
+      if (!seen[ym]) { seen[ym] = 1; scrubMonths.push({ ym: ym, label: monthLabel(e.ts) }); }
+    });
+    scrubEl.hidden = !(screenIdx === 0 && scrubMonths.length >= 2);
+    updateScrubberThumb();
+  }
+  function updateScrubberThumb(){
+    if (!scrubEl || scrubEl.hidden || !scrubMonths.length) return;
+    var f = 0, max = homeScEl.scrollHeight - homeScEl.clientHeight;
+    if (max > 0) f = clamp(homeScEl.scrollTop / max, 0, 1);
+    var mi = Math.min(scrubMonths.length - 1, Math.round(f * (scrubMonths.length - 1)));
+    var thumb = scrubEl.querySelector(".scrubber-thumb");
+    var label = scrubEl.querySelector(".scrubber-label");
+    thumb.style.top = (f * 100) + "%";
+    label.style.top = (f * 100) + "%";
+    label.textContent = scrubMonths[mi].label;
+  }
+  function scrubTo(clientY){
+    if (!scrubMonths.length) return;
+    var rect = scrubEl.getBoundingClientRect();
+    var f = clamp((clientY - rect.top) / Math.max(rect.height, 1), 0, 1);
+    var mi = Math.min(scrubMonths.length - 1, Math.round(f * (scrubMonths.length - 1)));
+    var card = entryList.querySelector('[data-ym="' + scrubMonths[mi].ym + '"]');
+    if (card) homeScEl.scrollTo({ top: Math.max(0, card.offsetTop - 12) });
+    updateScrubberThumb();
+  }
+  if (scrubEl) {
+    scrubEl.addEventListener("pointerdown", function(e){
+      scrubDrag = true;
+      try { scrubEl.setPointerCapture(e.pointerId); } catch(err){}
+      scrubTo(e.clientY);
+      e.preventDefault();
+    });
+    scrubEl.addEventListener("pointermove", function(e){ if (scrubDrag) scrubTo(e.clientY); });
+    ["pointerup", "pointercancel"].forEach(function(ev){
+      scrubEl.addEventListener(ev, function(){ scrubDrag = false; });
+    });
+  }
+  var navScrollPending = false;
+  homeScEl.addEventListener("scroll", function(){
+    if (navScrollPending) return;
+    navScrollPending = true;
+    requestAnimationFrame(function(){
+      navScrollPending = false;
+      if (btnTop) btnTop.hidden = !(screenIdx === 0 && homeScEl.scrollTop > 400);
+      updateScrubberThumb();
+    });
+  }, { passive: true });
+  if (btnTop) btnTop.onclick = function(){
+    try { homeScEl.scrollTo({ top: 0, behavior: "smooth" }); } catch(e){ homeScEl.scrollTop = 0; }
+  };
+
   applyTheme();
   applyLanguage();
   applyFontSize();
@@ -1898,8 +2002,8 @@
   function renderArchiveList(){
     var list = $("archiveList");
     var archive = StorageModule.loadArchive()
-      .sort(function(a,b){ return a.ts - b.ts; })   // chronologicznie
-      .slice(-50);   // limit czytelności (ostatnie 50); pełne dane w eksporcie
+      .sort(function(a,b){ return b.ts - a.ts; })   // od najnowszych
+      .slice(0, 50);   // limit czytelności; pełne dane w eksporcie
     list.textContent = "";
     archive.forEach(function(e){
       var f = fmtDate(e.ts);

@@ -16,9 +16,10 @@ aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj)
   (jasna cyfra z przykładu mogła wyglądać jak wypełnione pole).
 - **Autofokus** na pierwszym widocznym polu pomiaru po otwarciu arkusza
   (bez auto-skoków między polami — SYS bywa dwucyfrowe).
-- **Prezentacja chronologiczna**: lista pomiarów, tabela trendów, CSV, PDF,
-  wydruk i podgląd archiwum posortowane od najstarszego (min/maks pozostają
-  w Trendach).
+- **Kolejność domyślna: od najnowszych**: lista pomiarów, tabela trendów, CSV,
+  PDF, wydruk i podgląd archiwum prezentują wpisy od najnowszego na górze
+  (bez opcji sortowania — min/maks pozostają w Trendach).
+
 - `gapLabel`: pomiary z tego samego dnia mają etykietę „ten sam dzień” /
   „same day” (zamiast „0 d”).
 - **Uproszczenia kodu**: `showFormError` zamiast pięciu bloków błędów w
@@ -33,6 +34,75 @@ aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj)
   wyścigu 2 s na słabej sieci) + odświeżanie w tle.
 - Kosmetyka: `.wheels`/`.wheel-box`/`syncOptionalWheels` → `.fields`/
   `.field-box`/`syncOptionalFields`; komentarze-changelog usunięte z kodu.
+
+## 2026-10-07 (druga tura) — nawigacja po liście, touch-targety, testy
+
+- **Scrubber miesięcy**: pasek po prawej krawędzi ekranu pomiarów —
+  przeciągnięcie przenosi do wybranego miesiąca (widoczny, gdy pomiary
+  obejmują co najmniej 2 miesiące).
+- **Przycisk „Na początek listy”**: pojawia się po przewinięciu w dół,
+  płynnie wraca na szczyt listy.
+- **Touch-targety 44 px**: przyciski zakresów (7/30/90/Wszystkie) i
+  przełączników segmentowych (PL/EN, S/M/L, parametry) mają rozszerzoną
+  hit-area (`::after { inset: -6px }`) bez zmiany rozmiarów wizualnych.
+- **Kontrast zielonego `+` w trybie ciemnym**: przyciemnione tło docka
+  (`--dock: #101214ee`) — akcent bez zmian, kontrast komponentu ≥ 3:1.
+- **Enter przeskakuje między polami formularza** (data → SYS → DIA → tętno →
+  waga; pomija pola ukryte, textarea nietknięta).
+- **Frame-busting dla GitHub Pages**: GH Pages nie pozwala ustawiać nagłówków
+  (`frame-ancestors`, `X-Content-Type-Options`), więc aplikacja sama
+  wychodzi z obcej ramki (`self !== top`).
+- **Testy**: `sanitizeSettings` i scalanie archiwum (`mergeArchive`)
+  przeniesione do core.js i pokryte testami (71/71).
+
+## 2026-10-07 (trzecia tura) — bugfixy nawigacji i tabeli trendów
+
+- **Naprawiona tabela trendów**: wywołanie rendererowi tabeli przekazywało
+  o jeden argument za dużo (`settings` w miejscu callbacku tłumaczeń), przez
+  co rysowanie wyrzucało wyjątek i tabela w ogóle się nie pojawiała.
+- **Scrubber/przycisk „na początek" tylko na ekranie Pomiarów**: reguła
+  `display: flex` przycisku nadpisywała atrybut `hidden` — dodane globalne
+  `[hidden] { display: none !important }`; oba elementy znikają na Trendach.
+- **Legenda skrótów nad tabelą trendów**: widoczny opis „SYS — ciśnienie
+  skurczowe · DIA — ciśnienie rozkurczowe · HR — tętno (uderzenia na
+  minutę)" (tylko śledzone parametry, PL/EN).
+
+## 2026-10-07 (czwarta tura) — ciągłość tętna na wykresie, kolory serii na kartach
+
+- **Brakujące tętno nie przerywa linii**: pomiar bez tętna robił na serii HR
+  dziurę — teraz sąsiednie punkty z tętnem łączy jedna linia (punkty bez
+  wartości po prostu nie są rysowane). To samo dotyczy serii SYS/DIA przy
+  ewentualnych brakach.
+- **Kolory serii z wykresu na kartach pomiarów**: przed wartością skurczową
+  czerwona kropka (SYS), przed rozkurczową niebieska (DIA), ikona serca przy
+  tętnie zielona (HR) — spójnie z legendą wykresu i motywem jasnym/ciemnym.
+- **Kolory przy polach formularza**: etykiety pól Skurczowe/Rozkurczowe/Tętno
+  w arkuszu dodawania/edycji dostają kropki w kolorach serii.
+- Kolory serii wyznaczone zmiennymi CSS (`--c-sys/--c-dia/--c-hr`) w obu
+  motywach.
+
+## 2026-10-07 (piąta tura) — legenda pod wykresem, kolor wagi, odstępy kropek
+
+- **Objaśnienie skrótów w legendzie wykresu**: „SYS — ciśnienie skurczowe · DIA —
+  ciśnienie rozkurczowe · HR — tętno (uderzenia na minutę)" to teraz
+  komentarz wewnątrz wykresu, bezpośrednio pod kolorową legendą „● SYS ● DIA ● HR";
+  z tabeli trendów usunięty.
+- **Kolor wagi**: fioletowa kropka przy etykiecie „Waga [kg]" w arkuszu
+  pomiaru i fioletowa ikona wagi na kartach pomiarów — spójnie z SYS/DIA/HR.
+- **Rozsunięte kropki na kartach**: wartości skurczowa i rozkurczowa
+  dostają wyraźny odstęp od swoich kropek (flex + gap 10 px zamiast
+  marginesów) — nie zlewają się w jeden ciąg.
+
+## 2026-10-07 (szósta tura) — audyt: bugfix języka legendy, optymalizacja renderu
+
+- **Legenda wykresu po zmianie języka**: opis „SYS — …” pod wykresem nie był
+  przerysowany przy przełączeniu PL/EN w ustawieniach — teraz zmiana języka
+  odświeża też wykres (drawTrends z wymuszeniem).
+- **Render listy**: jedno sortowanie na przebieg render() (scrubber miesięcy
+  dostaje już posortowaną tablicę zamiast sortować drugi raz).
+- Audyt bez znalezisk krytycznych: testy 71/71, słowniki PL/EN kompletne,
+  brak martwego kodu po refaktorach, escapowanie HTML w kartach/archiwum
+  poprawne, service worker spójny z listą zasobów.
 
 ## Wcześniejsze wydania (z nagłówka sw.js)
 

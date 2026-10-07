@@ -81,6 +81,40 @@
   eq("merge: odrzuca poza zakresem i sys<=dia", imp2.skipped, 2);
   eq("merge: nadaje id brakującemu", typeof imp2.added[0].id, "string");
 
+  // scalanie archiwum (mergeArchive)
+  var archA = { id: "a1", ts: 5, sys: 120, dia: 80, hr: null, wgt: null };
+  var arc1 = C.mergeArchive([
+    { id: "a1", ts: 5, sys: 120, dia: 80 },      // duplikat id w archiwum
+    { id: "a", ts: 5, sys: 120, dia: 80 },       // duplikat id na liście głównej
+    { ts: 11, sys: 125, dia: 82 },               // nowy, dostanie id
+    { ts: 12, wgt: 999 }                         // poza zakresem -> pominięty
+  ], [archA], [exA, exB], C.sanitizeEntry, mkId);
+  eq("archive merge: dodane", arc1.length, 1);
+  eq("archive merge: nadane id", typeof arc1[0].id, "string");
+  eq("archive merge: zachowana wartość", arc1[0].dia, 82);
+  eq("archive merge: pusta lista", C.mergeArchive([], [], [], C.sanitizeEntry, mkId), []);
+
+  // sanitizeSettings
+  var defS = { defWgt: 75, theme: "light", lang: "pl", fontSize: "medium",
+               trackSys: true, trackDia: true, trackHr: true, trackWgt: true,
+               incHr: false, incWgt: false, persistAsked: false, lastBackupAt: 0 };
+  eq("settings: null -> domyślne", C.sanitizeSettings(null, defS), defS);
+  eq("settings: tablica -> domyślne", C.sanitizeSettings([1,2], defS), defS);
+  eq("settings: przepisanie poprawnych kluczy",
+     C.sanitizeSettings({ theme: "dark", lang: "en", fontSize: "large", defWgt: 80, lastBackupAt: 123 }, defS),
+     Object.assign({}, defS, { theme: "dark", lang: "en", fontSize: "large", defWgt: 80, lastBackupAt: 123 }));
+  eq("settings: obcy klucz odrzucony",
+     C.sanitizeSettings({ junk: "x", theme: "dark" }, defS).junk, undefined);
+  eq("settings: zły typu -> default", C.sanitizeSettings({ theme: 5 }, defS).theme, "light");
+  eq("settings: NaN -> default", C.sanitizeSettings({ defWgt: NaN }, defS).defWgt, 75);
+  eq("settings: Infinity -> default", C.sanitizeSettings({ lastBackupAt: Infinity }, defS).lastBackupAt, 0);
+  var noTrack = { trackSys: false, trackDia: false, trackHr: false, trackWgt: false };
+  var outNoTrack = C.sanitizeSettings(noTrack, defS);
+  eq("settings: wszystkie wyłączone -> wszystkie włączone",
+     outNoTrack.trackSys && outNoTrack.trackDia && outNoTrack.trackHr && outNoTrack.trackWgt, true);
+  eq("settings: zły lang -> pl", C.sanitizeSettings({ lang: "de" }, defS).lang, "pl");
+  eq("settings: zły fontSize -> medium", C.sanitizeSettings({ fontSize: "xl" }, defS).fontSize, "medium");
+
   // sygnatura duplikatów
   var a = { id: "x", ts: 5, sys: 120, dia: 80, hr: null, wgt: null };
   var b = { id: "y", ts: 5, sys: 120, dia: 80, hr: null, wgt: null };

@@ -6,6 +6,8 @@
     --card: #ffffff; --text: #111827; --muted: #4b5563;
     --line: #d1d5db; --accent: #277a3b; --on-accent: #ffffff; --red-text: #dc2626; --red: #dc2626;
     --accent-fg: #277a3b; --focus: #277a3b;
+    /* Kolory serii zgodne z legenda wykresu trendow */
+    --c-sys: #c53030; --c-dia: #2b6cb0; --c-hr: #15803d; --c-wgt: #7c3aed;
     --dock: #ffffffee; --dock-shadow: 0 10px 32px rgba(20,30,60,.15);
     --input: #f3f4f6;
     /* Skala warstw: dock < nakladka < arkusz = toast < okno potwierdzenia */
@@ -19,7 +21,8 @@
     --card: #26292d; --text: #f3f4f6; --muted: #b4bac3;
     --line: #444950; --accent: #277a3b; --on-accent: #ffffff; --red-text: #f87171;
     --accent-fg: #f3f4f6; --focus: #e5e7eb;
-    --dock: #26292dee; --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
+    --c-sys: #f87171; --c-dia: #7fb0f0; --c-hr: #6ee7a0; --c-wgt: #c4b5fd;
+    --dock: #101214ee;   /* ciemniejsze tlo docka: kontrast zielonego "+" >= 3:1 (akcent bez zmian) */ --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
     --input: #202327;
     color-scheme: dark;
   }
@@ -33,7 +36,8 @@
       --card: #26292d; --text: #f3f4f6; --muted: #b4bac3;
       --line: #444950; --red-text: #f87171;
       --accent-fg: #f3f4f6; --focus: #e5e7eb;
-      --dock: #26292dee; --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
+      --c-sys: #f87171; --c-dia: #7fb0f0; --c-hr: #6ee7a0; --c-wgt: #c4b5fd;
+      --dock: #101214ee;   /* ciemniejsze tlo docka: kontrast zielonego "+" >= 3:1 (akcent bez zmian) */ --dock-shadow: 0 10px 32px rgba(0,0,0,.6);
       --input: #202327;
       color-scheme: dark;
     }
@@ -85,6 +89,26 @@
   .card-sub { display: flex; gap: 16px; font-size: 0.875rem; font-weight: 600; color: var(--muted); }
   .card-sub span { display: flex; align-items: center; gap: 4px; }
   .card-sub svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .card-sub .sub-hr svg { stroke: var(--c-hr); }   /* tetno w kolorze serii z wykresu */
+  .card-sub .sub-wgt svg { stroke: var(--c-wgt); } /* waga w swoim kolorze */
+
+  /* Kropki kolorow serii (zgodne z legenda wykresu trendow) */
+  .sd { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  /* Rozsuniencie kropki SYS/DIA od wartosci: flex z gap zamiast marginesow */
+  .card-sysdia { display: inline-flex; align-items: center; gap: 10px; }
+  .sd-sys { background: var(--c-sys); }
+  .sd-dia { background: var(--c-dia); }
+  .sd-hr  { background: var(--c-hr); }
+
+  /* Kropki przy etykietach pol w arkuszu dodawania/edycji pomiaru */
+  #boxWSys label::before, #boxWDia label::before, #boxWHr label::before, #boxWWgt label::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 7px; vertical-align: baseline;
+  }
+  #boxWSys label::before { background: var(--c-sys); }
+  #boxWDia label::before { background: var(--c-dia); }
+  #boxWHr  label::before { background: var(--c-hr); }
+  #boxWWgt label::before { background: var(--c-wgt); }
   .card-date { font-size: 0.8125rem; font-variant-numeric:tabular-nums; color: var(--muted); text-align: right; }
   .card-date small { display: block; font-size: 0.75rem; opacity: 0.9; }
   .card-note { font-size: 0.875rem; line-height:1.4; color: var(--muted); font-style: italic; background: rgba(0,0,0,0.03); padding: 6px 10px; border-radius: 8px; }
@@ -148,9 +172,12 @@
   .data-table th, .data-table td { border: 1px solid var(--line); padding: 8px 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
   .data-table th { background: var(--input); font-weight: 700; color: var(--text); font-size: 0.75rem; }
   .data-table .th-l, .data-table .th-u, .data-table .td-d, .data-table .td-t { display: block; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Legenda skrotow (SYS/DIA/HR) nad tabela trendow */
+  #trendsChart .lg-desc { fill: var(--muted); font-size: 10px; }
   .data-table .th-u { font-weight: 500; color: var(--muted); font-size: 0.6875rem; }
   .data-table .td-t { color: var(--muted); font-size: 0.75rem; }
-  .data-table th:first-child { width: 32%; }   /* kolumna daty; pozostałe dzielą resztę po równo (table-layout: fixed) */
+  .data-table th:first-child { width: 32%; }   /* kolumna daty; pozostale kolumny dziela reszte po rowno (table-layout: fixed) */
   .data-table td:first-child { text-align: left; }
 
 
@@ -366,6 +393,47 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   }
+
+  /* [hidden] musi wygrywac z autorskimi regulami display (np. .btn-top { display: flex })
+     - inaczej przyciski i scrubber przenosza sie na niewlasciwy ekran */
+  [hidden] { display: none !important; }
+
+  /* Nawigacja po dlugiej liscie: scrubber miesiecy (prawa krawedz) */
+  .scrubber {
+    position: fixed; right: 0; top: 14%; height: 72%; width: 28px; z-index: 40;
+    touch-action: none; cursor: pointer;
+  }
+  .scrubber-rail {
+    position: absolute; left: 50%; top: 8px; bottom: 8px; width: 4px; margin-left: -2px;
+    border-radius: 2px; background: color-mix(in srgb, var(--line) 70%, transparent);
+  }
+  .scrubber-thumb {
+    position: absolute; left: 50%; top: 0; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--card);
+    transform: translate(-50%, -50%); box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  .scrubber-label {
+    position: absolute; right: 24px; top: 0; transform: translateY(-50%);
+    font-size: .6875rem; font-weight: 700; color: var(--text); white-space: nowrap;
+    background: var(--dock); border: 1px solid var(--line); border-radius: 8px;
+    padding: 2px 8px; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+
+  /* Przycisk "na poczatek listy" (pojawia sie po przewinieciu) */
+  .btn-top {
+    position: fixed; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--dock); color: var(--text); cursor: pointer; z-index: 40;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--dock-shadow); backdrop-filter: blur(12px);
+  }
+  .btn-top:active { transform: scale(0.92); }
+  .btn-top svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-top:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  /* Rozszerzone pola dotyku (44px) bez zmiany rozmiaru wizualnego, jak .clear-btn */
+  .range-controls button, .segmented-control button { position: relative; }
+  .range-controls button::after, .segmented-control button::after { content: ""; position: absolute; inset: -6px; }
 
 /* Okno potwierdzenia nad innymi arkuszami (selektor #id wygrywa z .overlay bez !important) */
 #dialogOverlay {

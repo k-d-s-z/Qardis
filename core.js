@@ -119,6 +119,44 @@ window.QardisCore = (function(){
     return { added: added, skipped: skipped };
   }
 
+  // Scalanie importu z archiwum: sanityzacja rekordów, deduplikacja po id względem
+  // istniejącego archiwum i listy głównej, nadawanie id brakującym. Zwraca listę
+  // NOWYCH wpisów do dopisania do archiwum (czysta logika — testowana w tests.js).
+  function mergeArchive(list, archive, known, sanitize, makeId){
+    var arcIds = Object.create(null), knownIds = Object.create(null);
+    archive.forEach(function(e){ arcIds[e.id] = 1; });
+    known.forEach(function(e){ knownIds[e.id] = 1; });
+    var out = [];
+    list.forEach(function(e){
+      var c = sanitize(e);
+      if (!c || !c.ts || lossy(e, c)) return;
+      if (!c.id) c.id = makeId();
+      if (arcIds[c.id] || knownIds[c.id]) return;   // już w archiwum albo na liście głównej
+      out.push(c); arcIds[c.id] = 1;
+    });
+    return out;
+  }
+
+  // Sanityzacja ustawień względem wartości domyślnych: przepisujemy tylko klucze
+  // o poprawnym typie (liczby muszą być skończone), walidujemy enumeracje
+  // (theme/lang/fontSize) i pilnujemy, by co najmniej jeden monitorowany parametr
+  // pozostał włączony. Nieprawidłowy obiekt zwraca defaults bez zmian.
+  function sanitizeSettings(s, def){
+    if (!s || typeof s !== "object" || Array.isArray(s)) return def;
+    var out = Object.assign({}, def);
+    Object.keys(def).forEach(function(k){
+      if (Object.prototype.hasOwnProperty.call(s, k) && typeof s[k] === typeof def[k] &&
+          (typeof s[k] !== "number" || isFinite(s[k]))) out[k] = s[k];
+    });
+    if (["dark","light"].indexOf(out.theme) < 0) out.theme = def.theme;
+    if (["pl","en"].indexOf(out.lang) < 0) out.lang = "pl";
+    if (["small","medium","large"].indexOf(out.fontSize) < 0) out.fontSize = "medium";
+    if (!out.trackSys && !out.trackDia && !out.trackHr && !out.trackWgt) {
+      out.trackSys = out.trackDia = out.trackHr = out.trackWgt = true;
+    }
+    return out;
+  }
+
   // Zawijanie tekstu do szerokości maxW; measure(str) -> szerokość. Zbyt długie słowa
   // są łamane znak po znaku. maxLines (opcjonalnie) ucina z wielokropkiem.
   function wrapText(text, maxW, measure, maxLines){
@@ -202,6 +240,8 @@ window.QardisCore = (function(){
     pluralEntries: pluralEntries,
     lerpTs: lerpTs,
     validateImport: validateImport,
-    mergeImported: mergeImported
+    mergeImported: mergeImported,
+    mergeArchive: mergeArchive,
+    sanitizeSettings: sanitizeSettings
   };
 })();

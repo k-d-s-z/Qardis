@@ -228,6 +228,10 @@
   }
   .menu-item:active { background: var(--input); }
   .menu-item svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  /* Audyt UX (testy z uÅ¼ytkownikami): pozycja menu ma dwie linie â nazwa + opis
+     prostym jÄzykiem, Å¼eby mniej cyfrowo zorientowany uÅ¼ytkownik wiedziaÅ, co robi. */
+  .menu-item-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .menu-item-desc { font-size: .75rem; font-weight: 400; color: var(--muted); line-height: 1.35; text-align: left; }
 
   /* Overlay & Sheets */
   .overlay{
@@ -367,6 +371,15 @@
   #btnCorrupt { display: none; }
   #btnDeleteEntryHeader { display: none; }
 
+  /* Audyt UX (testy z uÅ¼ytkownikami): przycisk âUsuÅâ w arkuszu edycji wpisu ma byÄ
+     wyraÅºnie widoczny â czerwona obwÃ³dka jak przy âUsuÅ wszystkie daneâ w ustawieniach.
+     Selektor #id nadpisuje klasÄ .btn-text-danger; widocznoÅÄ (display) ustawia app.js. */
+  #btnDeleteEntryHeader {
+    border: 1px solid var(--red-text); background: transparent; color: var(--red-text);
+    padding: 0 16px; min-height: 44px; border-radius: 12px; font-size: .9375rem;
+  }
+  #btnDeleteEntryHeader:active { background: color-mix(in srgb, var(--red-text) 14%, transparent); }
+
   /* Audyt(7): podglad zawartosci archiwum */
   .archive-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; padding: 4px 10px; margin: 6px 0; }
   .archive-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: .8125rem; font-variant-numeric: tabular-nums; }
@@ -384,10 +397,19 @@
     z-index: var(--z-toast); box-shadow: 0 8px 24px rgba(0,0,0,0.2);
     backdrop-filter: blur(8px); transition: opacity .4s;
   }
-  .toast-undo { padding: 2px 10px 2px 16px; display: flex; align-items: center; }
+  /* Audyt UX (testy z uÅ¼ytkownikami): toast usuwania wpisu z âCofnijâ to krytyczny
+     komunikat â wyrazisty czerwony pasek z biaÅym tekstem zamiast szarego toasta na
+     szarym tle. Kontrast bieli na #b91c1c ~ 6.5:1 (WCAG AA), identyczny w obu motywach. */
+  .toast-undo {
+    background: #b91c1c; color: #ffffff; border-color: #7f1d1d;
+    padding: 6px 12px 6px 16px; font-size: .9375rem;
+    display: flex; align-items: center;
+    box-shadow: 0 12px 32px rgba(0,0,0,.35);
+  }
   .toast-undo button {
-    background: transparent; border: none; color: var(--accent-fg); font-weight: 700;
-    font-size: .8125rem; cursor: pointer; margin-left: 12px; padding: 10px 8px; min-height: 44px;
+    background: transparent; border: none; color: #ffffff; font-weight: 800;
+    font-size: .9375rem; text-decoration: underline;
+    cursor: pointer; margin-left: 12px; padding: 10px 8px; min-height: 44px;
   }
   .toast-hide { opacity: 0; }
 
@@ -445,6 +467,7 @@
 #toolsOverlay,
 #settingsOverlay,
 #addOverlay,
-#pdfRangeOverlay {
+#pdfRangeOverlay,
+#backupOverlay {
   z-index: var(--z-sheet);
 }

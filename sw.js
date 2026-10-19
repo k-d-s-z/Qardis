@@ -1,17 +1,17 @@
-/* Qardis Service Worker — pełna historia zmian: CHANGELOG.md.
+/* Qardis Service Worker â peÅna historia zmian: CHANGELOG.md.
 
-   Wersjonowanie: nazwa cache powstaje z hasza SHA-256 zawartości zasobów,
-   policzonego przy instalacji. Uwaga operacyjna: przeglądarka sprawdza sw.js
-   bajt po bajcie przy nawigacji, więc przy deployu musi zmienić się także sam
-   plik sw.js — bump-sw.sh aktualizuje linię „Build:”.
+   Wersjonowanie: nazwa cache powstaje z hasza SHA-256 zawartoÅci zasobÃ³w,
+   policzonego przy instalacji. Uwaga operacyjna: przeglÄdarka sprawdza sw.js
+   bajt po bajcie przy nawigacji, wiÄc przy deployu musi zmieniÄ siÄ takÅ¼e sam
+   plik sw.js â bump-sw.sh aktualizuje liniÄ âBuild:â.
 
-   Strategie: nawigacja network-first z wyścigiem 2 s; skrypty i style
-   cache-first z bieżącego cache + odświeżanie w tle (cache jest nazwany
-   hashem CAŁEGO zestawu, więc trafienie jest zawsze spójne z wersją HTML,
-   a słaba sieć nie dodaje oczekiwania przy starcie); ikony i manifest
+   Strategie: nawigacja network-first z wyÅcigiem 2 s; skrypty i style
+   cache-first z bieÅ¼Äcego cache + odÅwieÅ¼anie w tle (cache jest nazwany
+   hashem CAÅEGO zestawu, wiÄc trafienie jest zawsze spÃ³jne z wersjÄ HTML,
+   a sÅaba sieÄ nie dodaje oczekiwania przy starcie); ikony i manifest
    stale-while-revalidate.
 
-   Build: 2026-10-07T11:22:18Z
+   Build: 2026-10-19T07:42:22Z
 */
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;
@@ -31,16 +31,16 @@ const REQUIRED = ["./index.html", "./core.js", "./app.js", "./style.css", "./man
 
 let CACHE_NAME = null;
 
-// Audyt: przeglądarka usypia workera (już po ~30 s bezczynności), a po wznowieniu
-// install się NIE odpala ponownie — CACHE_NAME zostaje null i wszystkie
-// if (CACHE_NAME) milczą, a activate skasowałby jedyny istniejący cache.
-// Dlatego po wznowieniu przejmujemy istniejący cache qardis-* z caches.keys().
+// Audyt: przeglÄdarka usypia workera (juÅ¼ po ~30 s bezczynnoÅci), a po wznowieniu
+// install siÄ NIE odpala ponownie â CACHE_NAME zostaje null i wszystkie
+// if (CACHE_NAME) milczÄ, a activate skasowaÅby jedyny istniejÄcy cache.
+// Dlatego po wznowieniu przejmujemy istniejÄcy cache qardis-* z caches.keys().
 async function ensureCacheName() {
   if (CACHE_NAME) return CACHE_NAME;
   const keys = await caches.keys();
-  // Ostatni klucz z listy = najpóźniej utworzony cache (kolejność tworzenia).
-  // Teoretyczny scenariusz: uśpienie między install a activate zostawiłoby
-  // dwa cache — bierzemy nowszy, żeby activate nie skasował właściciela danych.
+  // Ostatni klucz z listy = najpÃ³Åºniej utworzony cache (kolejnoÅÄ tworzenia).
+  // Teoretyczny scenariusz: uÅpienie miÄdzy install a activate zostawiÅoby
+  // dwa cache â bierzemy nowszy, Å¼eby activate nie skasowaÅ wÅaÅciciela danych.
   const found = keys.filter((k) => k.startsWith(PREFIX)).pop();
   if (found) CACHE_NAME = found;
   return CACHE_NAME;
@@ -53,7 +53,7 @@ async function hashBuffer(buf) {
     .join("");
 }
 
-// Pobiera zasoby (tolerując braki niekrytycznych), liczy hash i zapełnia cache.
+// Pobiera zasoby (tolerujÄc braki niekrytycznych), liczy hash i zapeÅnia cache.
 async function installAndVersion() {
   const results = await Promise.allSettled(
     ASSETS.map((a) => fetch(a, { cache: "no-store" }))
@@ -83,7 +83,7 @@ async function installAndVersion() {
     if (!existed) { try { await caches.delete(name); } catch (_) {} }
     throw new Error("cache write failed: " + failed.map((p) => p[0]).join(", "));
   }
-  CACHE_NAME = name;   // jedyna prawda o aktualnym cache — ustalana tutaj
+  CACHE_NAME = name;   // jedyna prawda o aktualnym cache â ustalana tutaj
   return name;
 }
 
@@ -102,7 +102,7 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// Odczyt: najpierw aktualny cache (CACHE_NAME), dopiero potem wszystkie —
+// Odczyt: najpierw aktualny cache (CACHE_NAME), dopiero potem wszystkie â
 // caches.match bez wskazania zwraca trafienie z NAJSTARSZEGO cache.
 async function matchCurrent(key) {
   if (CACHE_NAME) {
@@ -110,29 +110,29 @@ async function matchCurrent(key) {
       const c = await caches.open(CACHE_NAME);
       const m = await c.match(key);
       if (m) return m;
-    } catch (_) { /* przejdź do globalnego match */ }
+    } catch (_) { /* przejdÅº do globalnego match */ }
   }
   return caches.match(key);
 }
 
-// Network-first z wyścigiem NAV_TIMEOUT_MS i fallbackiem do cache.
-// Używane dla nawigacji ORAZ js/css — HTML i skrypty zawsze z tej samej "świeżości".
+// Network-first z wyÅcigiem NAV_TIMEOUT_MS i fallbackiem do cache.
+// UÅ¼ywane dla nawigacji ORAZ js/css â HTML i skrypty zawsze z tej samej "ÅwieÅ¼oÅci".
 async function networkFirst(e, key) {
   await ensureCacheName();
   const net = fetch(e.request, { cache: "no-store" })
     .then(async (res) => {
-      if (!res.ok) return null;   // błąd HTTP = brak sieci -> fallback do cache
+      if (!res.ok) return null;   // bÅÄd HTTP = brak sieci -> fallback do cache
       if (CACHE_NAME) {
-        const copy = res.clone();   // klon synchronicznie, zanim ciało przeczyta strona
+        const copy = res.clone();   // klon synchronicznie, zanim ciaÅo przeczyta strona
         try {
           const c = await caches.open(CACHE_NAME);
           await c.put(key, copy);
-        } catch (_) { /* cache opcjonalny (limit pamięci) — odpowiedź sieci i tak zwracamy */ }
+        } catch (_) { /* cache opcjonalny (limit pamiÄci) â odpowiedÅº sieci i tak zwracamy */ }
       }
       return res;
     })
     .catch(() => null);
-  e.waitUntil(net);   // respondWith przedłuża życie zdarzenia, więc waitUntil po await jest dozwolone
+  e.waitUntil(net);   // respondWith przedÅuÅ¼a Å¼ycie zdarzenia, wiÄc waitUntil po await jest dozwolone
   const timer = new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT_MS));
   const res = await Promise.race([net, timer]);
   if (res) return res;
@@ -140,23 +140,23 @@ async function networkFirst(e, key) {
   return m || (await net) || Response.error();
 }
 
-// Cache-first dla js/css z odświeżaniem w tle. Cache jest nazwany hashem
-// CAŁEGO zestawu zasobów, więc trafienie z bieżącego CACHE_NAME jest zawsze
-// spójne z wersją aplikacji; nowa wersja dochodzi po zmianie sw.js
-// (bump-sw.sh) i nowej instalacji. Na słabej sieci start nie czeka na
-// wyścig network-first — HTML i JS zawsze z tej samej "świeżości".
+// Cache-first dla js/css z odÅwieÅ¼aniem w tle. Cache jest nazwany hashem
+// CAÅEGO zestawu zasobÃ³w, wiÄc trafienie z bieÅ¼Äcego CACHE_NAME jest zawsze
+// spÃ³jne z wersjÄ aplikacji; nowa wersja dochodzi po zmianie sw.js
+// (bump-sw.sh) i nowej instalacji. Na sÅabej sieci start nie czeka na
+// wyÅcig network-first â HTML i JS zawsze z tej samej "ÅwieÅ¼oÅci".
 async function cacheFirstWithRevalidate(e) {
   await ensureCacheName();
   const cached = await matchCurrent(e.request);
   const update = fetch(e.request, { cache: "no-cache" })
     .then(async (res) => {
-      if (!res.ok) return null;   // błąd HTTP nie zastępuje cache
+      if (!res.ok) return null;   // bÅÄd HTTP nie zastÄpuje cache
       if (CACHE_NAME) {
         const copy = res.clone();
         try {
           const c = await caches.open(CACHE_NAME);
           await c.put(e.request, copy);
-        } catch (_) { /* cache opcjonalny (limit pamięci) */ }
+        } catch (_) { /* cache opcjonalny (limit pamiÄci) */ }
       }
       return res;
     })
@@ -180,19 +180,19 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Pozostałe zasoby (ikony, manifest): stale-while-revalidate
+  // PozostaÅe zasoby (ikony, manifest): stale-while-revalidate
   e.respondWith((async () => {
     await ensureCacheName();
     const cached = await matchCurrent(e.request);
     const update = fetch(e.request, { cache: "no-cache" })
       .then(async (res) => {
-        if (!res.ok) return null;   // błąd HTTP nie zastępuje cache
+        if (!res.ok) return null;   // bÅÄd HTTP nie zastÄpuje cache
         if (CACHE_NAME) {
           const copy = res.clone();
           try {
             const c = await caches.open(CACHE_NAME);
             await c.put(e.request, copy);
-          } catch (_) { /* błąd zapisu nie może zamienić udanej odpowiedzi sieci w błąd */ }
+          } catch (_) { /* bÅÄd zapisu nie moÅ¼e zamieniÄ udanej odpowiedzi sieci w bÅÄd */ }
         }
         return res;
       })

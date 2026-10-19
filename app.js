@@ -1,29 +1,29 @@
 (function(){
   "use strict";
 
-  // GitHub Pages nie pozwala ustawiać nagłówków HTTP (frame-ancestors,
-  // X-Content-Type-Options), a meta-CSP ich nie obsługuje — stąd mitigacja
-  // clickjackingu w JS: wyrwij aplikację z obcej ramki.
+  // GitHub Pages nie pozwala ustawiaÄ nagÅÃ³wkÃ³w HTTP (frame-ancestors,
+  // X-Content-Type-Options), a meta-CSP ich nie obsÅuguje â stÄd mitigacja
+  // clickjackingu w JS: wyrwij aplikacjÄ z obcej ramki.
   try { if (window.top && window.top !== window.self) window.top.location = window.self.location; } catch(e) {}
 
   function $(id){ return document.getElementById(id); }
 
   // Czysta logika (limity, sanityzacja, CSV, pluralizacja, interpolacja osi czasu,
-  // walidacja i scalanie importu) lives in core.js — jedna implementacja
-  // dla aplikacji i testów jednostkowych (tests.html).
+  // walidacja i scalanie importu) lives in core.js â jedna implementacja
+  // dla aplikacji i testÃ³w jednostkowych (tests.html).
   var LIMITS = QardisCore.LIMITS;
   var sanitizeEntry = QardisCore.sanitizeEntry;
   var lossy = QardisCore.lossy;
 
-  // --- MODUŁ 1: Storage & State ---
+  // --- MODUÅ 1: Storage & State ---
   var StorageModule = (function(){
     var LS = "qardis.entries.v1", LS_SET = "qardis.settings.v1", LS_ARC = "qardis.archive.v1";
     var issue = false;
-    var lastRaw = null;   // ostatni stan localStorage znany tej karcie (wykrywanie zapisów z innych kart)
+    var lastRaw = null;   // ostatni stan localStorage znany tej karcie (wykrywanie zapisÃ³w z innych kart)
     function stash(raw){
       issue = true;
-      // Zachowujemy PIERWSZĄ kopię — kolejne wykrycia nie nadpisują oryginału
-      // i nie dublują całego zbioru w limicie localStorage.
+      // Zachowujemy PIERWSZÄ kopiÄ â kolejne wykrycia nie nadpisujÄ oryginaÅu
+      // i nie dublujÄ caÅego zbioru w limicie localStorage.
       try { if (!localStorage.getItem(LS + ".corrupt")) localStorage.setItem(LS + ".corrupt", raw); } catch(e){}
     }
     function buildDefaults(){
@@ -31,13 +31,14 @@
       return {
         defWgt:75, theme:autoTheme, lang:"pl", fontSize:"medium",
         trackSys:true, trackDia:true, trackHr:true, trackWgt:true,
-        incHr: false, incWgt: false,      // czy nowy wpis domyślnie zawiera tętno / wagę (pamiętane)
+        incHr: false, incWgt: false,      // czy nowy wpis domyÅlnie zawiera tÄtno / wagÄ (pamiÄtane)
         persistAsked: false,
-        lastBackupAt: 0                   // czas ostatniej kopii zapasowej (przypominacz ~30 dni)
+        lastBackupAt: 0,                  // czas ostatniej kopii zapasowej (przypominacz ~30 dni)
+        entriesSinceBackup: 0             // nowe wpisy od ostatniej kopii (przypominacz co 20)
       };
     }
     function sanitizeSettings(s){
-      // Czysta implementacja w core.js (QardisCore.sanitizeSettings) — testowana w tests.js.
+      // Czysta implementacja w core.js (QardisCore.sanitizeSettings) â testowana w tests.js.
       return QardisCore.sanitizeSettings(s, buildDefaults());
     }
     return {
@@ -46,7 +47,7 @@
         try { return localStorage.getItem(LS + ".corrupt"); } catch(e){ return null; }
       },
       loadArchive: function(){
-        // Archiwum: wpisy starsze niż 9 mies., przeniesione ręcznie z menu — osobny magazyn.
+        // Archiwum: wpisy starsze niÅ¼ 9 mies., przeniesione rÄcznie z menu â osobny magazyn.
         var raw = null;
         try { raw = localStorage.getItem(LS_ARC); } catch(e){ return []; }
         if (!raw) return [];
@@ -88,9 +89,9 @@
       },
       saveEntries: function(entries){
         try {
-          // Scalanie zapisów między kartami: jeśli inna karta/PWA zapisała dane
+          // Scalanie zapisÃ³w miÄdzy kartami: jeÅli inna karta/PWA zapisaÅa dane
           // od naszego ostatniego odczytu, dopnij jej wpisy (po id) przed zapisem,
-          // żeby nie skasować ich nadpisaniem całej tablicy.
+          // Å¼eby nie skasowaÄ ich nadpisaniem caÅej tablicy.
           var cur = null;
           try { cur = localStorage.getItem(LS); } catch(e){}
           if (cur && cur !== lastRaw) {
@@ -102,7 +103,7 @@
                 remote.forEach(function(re){
                   var c = sanitizeEntry(re);
                   if (!c || !c.id || byId[c.id]) return;
-                  entries.push(c); byId[c.id] = c;   // mutujemy przekazaną tablicę (global `entries`)
+                  entries.push(c); byId[c.id] = c;   // mutujemy przekazanÄ tablicÄ (global `entries`)
                 });
               }
             } catch(e){}
@@ -139,86 +140,91 @@
 
   // Walidacja importu: implementacja w core.js (QardisCore.validateImport).
 
-  // --- MODUŁ 3: I18n ---
+  // --- MODUÅ 3: I18n ---
   var I18nModule = (function(){
     var translations = {
       pl: {
-        trendsTitle: "Qardis – Trendy pomiarów", trendsDesc: "Średnie i zakresy wartości w wybranym okresie.",
-        trendsLegendSys: "SYS — ciśnienie skurczowe", trendsLegendDia: "DIA — ciśnienie rozkurczowe",
-        trendsLegendHr: "HR — tętno (uderzenia na minutę)", trendsNoData: "Brak pomiarów w wybranym okresie.",
-        sumCount: "Pomiarów: {n}", sumBp: "Ciśnienie – średnia", sumHr: "Tętno – średnia", sumWgt: "Waga – średnia", minMax: "min–maks",
+        trendsTitle: "Qardis \u2013 Trendy pomiar\u00f3w", trendsDesc: "\u015arednie i zakresy warto\u015bci w wybranym okresie.",
+        trendsLegendSys: "SYS \u2014 ci\u015bnienie skurczowe", trendsLegendDia: "DIA \u2014 ci\u015bnienie rozkurczowe",
+        trendsLegendHr: "HR \u2014 t\u0119tno (uderzenia na minut\u0119)", trendsNoData: "Brak pomiar\u00f3w w wybranym okresie.",
+        sumCount: "Pomiar\u00f3w: {n}", sumBp: "Ci\u015bnienie \u2013 \u015brednia", sumHr: "T\u0119tno \u2013 \u015brednia", sumWgt: "Waga \u2013 \u015brednia", minMax: "min\u2013maks",
         medianLabel: "mediana",
-        normsNote: "Zalecenia dotyczące interpretacji ciśnienia skurczowego i rozkurczowego mogą się zmieniać. Najświeższe wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadciśnienia Tętniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
-        wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urządzenia.",
+        normsNote: "Zalecenia dotycz\u0105ce interpretacji ci\u015bnienia skurczowego i rozkurczowego mog\u0105 si\u0119 zmienia\u0107. Naj\u015bwie\u017csze wytyczne znajdziesz na stronach Polskiego Towarzystwa Nadci\u015bnienia T\u0119tniczego i Polskiego Towarzystwa Kardiologicznego oraz analogicznych instytucji w innych krajach.",
+        wipeDesc: "Usuwa wszystkie pomiary i ustawienia z tego urz\u0105dzenia.",
         navHistory: "Pomiary", navTrends: "Trendy", 
-        sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "Tętno", wgtLabel: "Waga",
-        emptyTitle: "Brak pomiarów", emptyDesc: "Dodaj pierwszy pomiar ciśnienia, aby rozpocząć śledzenie wyników.", btnAddFirst: "+ Dodaj pierwszy pomiar",
+        sysLabel: "Skurczowe", diaLabel: "Rozkurczowe", hrLabel: "T\u0119tno", wgtLabel: "Waga",
+        emptyTitle: "Brak pomiar\u00f3w", emptyDesc: "Dodaj pierwszy pomiar ci\u015bnienia, aby rozpocz\u0105\u0107 \u015bledzenie wynik\u00f3w.", btnAddFirst: "+ Dodaj pierwszy pomiar",
         addTitleNew: "Nowy wpis", addTitleEdit: "Edytuj wpis", dtLabel: "Data i godzina pomiaru",
-        notePlaceholder: "Dodatkowe informacje... (np. przeziębienie, złe samopoczucie)",
-        btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usuń", btnUndo: "Cofnij", btnProceed: "Kontynuuj",
+        notePlaceholder: "Dodatkowe informacje... (np. przezi\u0119bienie, z\u0142e samopoczucie)",
+        btnCancel: "Anuluj", btnSave: "Zapisz", btnDelete: "Usu\u0144", btnUndo: "Cofnij", btnProceed: "Kontynuuj",
         toolsTitle: "Dane i eksport", settingsTitle: "Ustawienia", monitoredTitle: "Monitorowane parametry", 
         
-        langLabel: "Język", fontSizeLabel: "Wielkość czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
-        titleBtnBackup: "Utwórz kopię zapasową", titleBtnImport: "Importuj dane z pliku", titleBtnPdf: "Raport: zapisz PDF lub drukuj",
+        langLabel: "J\u0119zyk", fontSizeLabel: "Wielko\u015b\u0107 czcionki", darkMode: "Tryb ciemny", darkModeDesc: "Jasny / ciemny motyw",
+        titleBtnBackup: "Utw\u00f3rz kopi\u0119 zapasow\u0105", titleBtnImport: "Przywr\u00f3\u0107 kopi\u0119 zapasow\u0105", titleBtnPdf: "Raport: zapisz PDF lub drukuj",
+        descBtnBackup: "Zapisuje na urz\u0105dzeniu histori\u0119 pomiar\u00f3w",
+        descBtnImport: "Przywraca utworzon\u0105 wcze\u015bniej kopi\u0119 zapasow\u0105",
+        descBtnCsv: "Tabela pomiar\u00f3w do otworzenia w Excelu",
+        descBtnArchive: "Starsze pomiary (ponad 9 mies.), kt\u00f3re znikaj\u0105 z listy, ale nie s\u0105 usuwane",
         titleBtnCsv: "Eksportuj dane (CSV)", csvDone: "Pobrano plik CSV",
-        discardTitle: "Niezapisane zmiany", discardConfirm: "Arkusz edycji zawiera niezapisane zmiany. Porzucić je?", btnDiscard: "Porzuć",
-        titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopię danych uszkodzonych",
-        backupReminder: "Minęło ponad 30 dni od ostatniej kopii zapasowej – rozważ jej utworzenie (menu „Dane i eksport”).",
-        importedMsg: "Zaimportowano ", importError: "Nieprawidłowy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utwórz nową kopię zapasową w aplikacji.",
-        noEntriesPdf: "Brak wpisów do wydruku.", pdfError: "Nie udało się otworzyć okna wydruku.", pdfTitle: "Qardis – historia pomiarów", pdfGen: "Wygenerowano: ", pdfHint: "Użyj Ctrl+P / ⌘+P i wybierz „Zapisz jako PDF”.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Raport pomiarów", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj", btnSavePdf: "Zapisz jako PDF", btnPrint: "Drukuj", pdfSaved: "Raport PDF zapisany", pdfSaveError: "Nie udało się utworzyć pliku PDF.",
-        savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", futureDateWarn: "Data pomiaru przypada w przyszłości — upewnij się, że to zamierzone.", deletedMsg: "Wpis został usunięty", importConfirm: "Dane z kopii zostaną połączone z istniejącymi wpisami. Kontynuować?",
+        discardTitle: "Niezapisane zmiany", discardConfirm: "Arkusz edycji zawiera niezapisane zmiany. Porzuci\u0107 je?", btnDiscard: "Porzu\u0107",
+        titleBtnCorrupt: "Eksportuj dane uszkodzone (kopia zabezpieczona)", corruptExported: "Pobrano kopi\u0119 danych uszkodzonych",
+        backupReminderTitle: "Kopia zapasowa", backupReminderText: "Dane s\u0105 przechowywane tylko na tym urz\u0105dzeniu. Zalecamy utworzenie kopii zapasowej pomiar\u00f3w.",
+        backupNow: "Utw\u00f3rz kopi\u0119 zapasow\u0105 teraz", btnBackupLater: "Nie teraz",
+        importedMsg: "Zaimportowano ", importError: "Nieprawid\u0142owy plik kopii zapasowej.", importVersionError: "Nieznana wersja formatu kopii (schemaVersion). Utw\u00f3rz now\u0105 kopi\u0119 zapasow\u0105 w aplikacji.",
+        noEntriesPdf: "Brak wpis\u00f3w do wydruku.", pdfError: "Nie uda\u0142o si\u0119 otworzy\u0107 okna wydruku.", pdfTitle: "Qardis \u2013 historia pomiar\u00f3w", pdfGen: "Wygenerowano: ", pdfHint: "U\u017cyj Ctrl+P / \u2318+P i wybierz \u201eZapisz jako PDF\u201d.", pdfHeaderDt: "Data i godzina", pdfHeaderNotes: "Uwagi", pdfExportTitle: "Raport pomiar\u00f3w", pdfRangeTitle: "Zakres danych", btnExport: "Eksportuj", btnSavePdf: "Zapisz jako PDF", btnPrint: "Drukuj", pdfSaved: "Raport PDF zapisany", pdfSaveError: "Nie uda\u0142o si\u0119 utworzy\u0107 pliku PDF.",
+        savedMsg: "Pomiar zapisany", updatedMsg: "Pomiar zaktualizowany", futureDateWarn: "Data pomiaru przypada w przysz\u0142o\u015bci \u2014 upewnij si\u0119, \u017ce to zamierzone.", deletedMsg: "Wpis zosta\u0142 usuni\u0119ty", importConfirm: "Dane z kopii zostan\u0105 po\u0142\u0105czone z istniej\u0105cymi wpisami. Kontynuowa\u0107?",
         r7:"7 dni", r30:"30 dni", r90:"3 mies.", rAll:"Wszystkie",
         
-        bpErrorMsg: "Wartość skurczowa (SYS) musi być wyższa niż rozkurczowa (DIA).",
-        numRequiredMsg: "Podaj wartości liczbowe w polach pomiaru.",
-        rangeMsg: "Wartość poza zakresem: SYS 50–300, DIA 30–200, tętno 20–250.",
-        dateRangeMsg: "Podaj poprawną datę (lata 2000–2099).",
-        chartPanHint: "Przeciągnij wykres w bok, aby przeglądać kolejne pomiary (do 4 na ekran). Przełącznik zmienia oś na rzeczywisty upływ czasu.",
-        axisCatSwitch: "Oś: równa", axisTimeSwitch: "Oś: czasowa",
-        minParamWarn: "Co najmniej jeden parametr musi pozostać włączony.",
-        privacyAlert: "Uwaga: Ten plik zawiera wrażliwe dane dotyczące zdrowia. Przechowuj go w bezpiecznym miejscu i nie udostępniaj osobom nieupoważnionym.",
-        storageError: "Nie udało się zapisać danych (może tryb prywatny?).",
+        bpErrorMsg: "Warto\u015b\u0107 skurczowa (SYS) musi by\u0107 wy\u017csza ni\u017c rozkurczowa (DIA).",
+        numRequiredMsg: "Podaj warto\u015bci liczbowe w polach pomiaru.",
+        rangeMsg: "Warto\u015b\u0107 poza zakresem: SYS 50\u2013300, DIA 30\u2013200, t\u0119tno 20\u2013250.",
+        dateRangeMsg: "Podaj poprawn\u0105 dat\u0119 (lata 2000\u20132099).",
+        chartPanHint: "Przeci\u0105gnij wykres w bok, aby przegl\u0105da\u0107 kolejne pomiary (do 4 na ekran). Prze\u0142\u0105cznik zmienia o\u015b na rzeczywisty up\u0142yw czasu.",
+        axisCatSwitch: "O\u015b: r\u00f3wna", axisTimeSwitch: "O\u015b: czasowa",
+        minParamWarn: "Co najmniej jeden parametr musi pozosta\u0107 w\u0142\u0105czony.",
+        privacyAlert: "Uwaga: Ten plik zawiera wra\u017cliwe dane dotycz\u0105ce zdrowia. Przechowuj go w bezpiecznym miejscu i nie udost\u0119pniaj osobom nieupowa\u017cnionym.",
+        storageError: "Nie uda\u0142o si\u0119 zapisa\u0107 danych (mo\u017ce tryb prywatny?).",
         backupDone: "Kopia zapasowa pobrana",
         settingsSaved: "Ustawienia zapisane",
         
-        deletedMsgN: "Usunięto wpisów: {n}",
-        importSkipped: " Pominięto: ",
-        skipHr: "Pomiń tętno", skipWgt: "Pomiń wagę",
-        storageCorrupt: "Wykryto uszkodzone dane. Kopię zachowano w pamięci przeglądarki, nie zostały nadpisane.",
+        deletedMsgN: "Usuni\u0119to wpis\u00f3w: {n}",
+        importSkipped: " Pomini\u0119to: ",
+        skipHr: "Pomi\u0144 t\u0119tno", skipWgt: "Pomi\u0144 wag\u0119",
+        storageCorrupt: "Wykryto uszkodzone dane. Kopi\u0119 zachowano w pami\u0119ci przegl\u0105darki, nie zosta\u0142y nadpisane.",
         
         btnClose: "Zamknij", 
-        btnToTop: "Na początek listy", 
+        btnToTop: "Na pocz\u0105tek listy", 
         ariaTools: "Dane i eksport", ariaAdd: "Dodaj pomiar", ariaSettings: "Ustawienia", ariaView: "Widok",
         
-        addHr: "Dodaj tętno", addWgt: "Dodaj wagę",
-        wgtDec: "Zmniejsz wagę o 0,1 kg", wgtInc: "Zwiększ wagę o 0,1 kg", wgtLabelKg: "Waga [kg]",
-        wgtErrorMsg: "Podaj wagę w zakresie 20–300 kg (np. 75,5).",
-        titleBtnWipe: "Usuń wszystkie dane",
-        wipeConfirm: "Usunąć WSZYSTKIE pomiary, archiwum i ustawienia z tego urządzenia? Tej operacji nie można cofnąć. Jeśli chcesz zachować dane, najpierw utwórz kopię zapasową (zawiera również archiwum).",
-        wipeDone: "Wszystkie dane zostały usunięte",
-        privacyNote: "Dane są przechowywane wyłącznie na tym urządzeniu.",
-        importSettingsConfirm: "Plik zawiera też ustawienia (język, monitorowane parametry). Zastąpić nimi bieżące ustawienia?",
-        archiveTitle: "Archiwum pomiarów",
-        archiveDesc: "Wpisy starsze niż 9 mies. można przenieść do archiwum — znikają z listy i Trendów, ale zostają na urządzeniu i można je przywrócić lub wyeksportować.",
+        addHr: "Dodaj t\u0119tno", addWgt: "Dodaj wag\u0119",
+        wgtDec: "Zmniejsz wag\u0119 o 0,1 kg", wgtInc: "Zwi\u0119ksz wag\u0119 o 0,1 kg", wgtLabelKg: "Waga [kg]",
+        wgtErrorMsg: "Podaj wag\u0119 w zakresie 20\u2013300 kg (np. 75,5).",
+        titleBtnWipe: "Usu\u0144 wszystkie dane",
+        wipeConfirm: "Usun\u0105\u0107 WSZYSTKIE pomiary, archiwum i ustawienia z tego urz\u0105dzenia? Tej operacji nie mo\u017cna cofn\u0105\u0107. Je\u015bli chcesz zachowa\u0107 dane, najpierw utw\u00f3rz kopi\u0119 zapasow\u0105 (zawiera r\u00f3wnie\u017c archiwum).",
+        wipeDone: "Wszystkie dane zosta\u0142y usuni\u0119te",
+        privacyNote: "Dane s\u0105 przechowywane wy\u0142\u0105cznie na tym urz\u0105dzeniu.",
+        importSettingsConfirm: "Plik zawiera te\u017c ustawienia (j\u0119zyk, monitorowane parametry). Zast\u0105pi\u0107 nimi bie\u017c\u0105ce ustawienia?",
+        archiveTitle: "Archiwum pomiar\u00f3w",
+        archiveDesc: "Wpisy starsze ni\u017c 9 mies. mo\u017cna przenie\u015b\u0107 do archiwum \u2014 znikaj\u0105 z listy i Trend\u00f3w, ale zostaj\u0105 na urz\u0105dzeniu i mo\u017cna je przywr\u00f3ci\u0107 lub wyeksportowa\u0107.",
         btnArchiveOpen: "Archiwum",
-        archiveEmpty: "Brak zarchiwizowanych wpisów.",
+        archiveEmpty: "Brak zarchiwizowanych wpis\u00f3w.",
         archiveCount: "W archiwum: {n}",
-        btnArchiveMove: "Archiwizuj wpisy starsze niż 9 mies.",
-        archiveShow: "Pokaż wpisy", archiveHide: "Ukryj wpisy",
-        btnArchiveRestore: "Przywróć wszystkie",
+        btnArchiveMove: "Archiwizuj wpisy starsze ni\u017c 9 mies.",
+        archiveShow: "Poka\u017c wpisy", archiveHide: "Ukryj wpisy",
+        btnArchiveRestore: "Przywr\u00f3\u0107 wszystkie",
         btnArchiveExport: "Eksportuj archiwum",
         archivedMsg: "Zarchiwizowano ",
-        archiveRestoredMsg: "Przywrócono ",
+        archiveRestoredMsg: "Przywr\u00f3cono ",
         archiveExportedMsg: "Pobrano archiwum",
-        nothingToArchiveMsg: "Brak wpisów starszych niż 9 mies.",
-        archiveInBackup: "Kopia zawiera pomiary, archiwum i ustawienia — pełna migracja urządzenia w jednym pliku.",
-        importSavedWarning: "Nie udało się zapisać danych (może limit pamięci lub tryb prywatny?). Zaimportowane wpisy są widoczne, ale znikną po odświeżeniu strony."
+        nothingToArchiveMsg: "Brak wpis\u00f3w starszych ni\u017c 9 mies.",
+        archiveInBackup: "Kopia zawiera pomiary, archiwum i ustawienia \u2014 pe\u0142na migracja urz\u0105dzenia w jednym pliku.",
+        importSavedWarning: "Nie uda\u0142o si\u0119 zapisa\u0107 danych (mo\u017ce limit pami\u0119ci lub tryb prywatny?). Zaimportowane wpisy s\u0105 widoczne, ale znikn\u0105 po od\u015bwie\u017ceniu strony."
       },
       en: {
-        trendsTitle: "Qardis – Measurement trends", trendsDesc: "Averages and value ranges for the selected period.",
-        trendsLegendSys: "SYS — systolic pressure", trendsLegendDia: "DIA — diastolic pressure",
-        trendsLegendHr: "HR — heart rate (beats per minute)", trendsNoData: "No measurements in the selected period.",
-        sumCount: "Measurements: {n}", sumBp: "Blood pressure – average", sumHr: "Pulse – average", sumWgt: "Weight – average", minMax: "min–max",
+        trendsTitle: "Qardis \u2013 Measurement trends", trendsDesc: "Averages and value ranges for the selected period.",
+        trendsLegendSys: "SYS \u2014 systolic pressure", trendsLegendDia: "DIA \u2014 diastolic pressure",
+        trendsLegendHr: "HR \u2014 heart rate (beats per minute)", trendsNoData: "No measurements in the selected period.",
+        sumCount: "Measurements: {n}", sumBp: "Blood pressure \u2013 average", sumHr: "Pulse \u2013 average", sumWgt: "Weight \u2013 average", minMax: "min\u2013max",
         medianLabel: "median",
         normsNote: "Guidelines for interpreting systolic and diastolic blood pressure may change over time. Check the latest recommendations on the websites of the Polish Society of Hypertension and the Polish Cardiac Society, or of equivalent institutions in your country.",
         wipeDesc: "Deletes all measurements and settings from this device.",
@@ -231,20 +237,25 @@
         toolsTitle: "Data & Export", settingsTitle: "Settings", monitoredTitle: "Monitored parameters", 
         
         langLabel: "Language", fontSizeLabel: "Font size", darkMode: "Dark mode", darkModeDesc: "Light / dark theme",
-        titleBtnBackup: "Backup data", titleBtnImport: "Import data from file", titleBtnPdf: "Report: save PDF or print",
+        titleBtnBackup: "Backup data", titleBtnImport: "Restore backup", titleBtnPdf: "Report: save PDF or print",
+        descBtnBackup: "Saves the history of measurements to a file on this device",
+        descBtnImport: "Restores a backup created earlier",
+        descBtnCsv: "A table of measurements to open in Excel",
+        descBtnArchive: "Older measurements (over 9 months) that disappear from the list but are not deleted",
         titleBtnCsv: "Export data (CSV)", csvDone: "CSV file downloaded",
         discardTitle: "Unsaved changes", discardConfirm: "The edit form contains unsaved changes. Discard them?", btnDiscard: "Discard",
         titleBtnCorrupt: "Export corrupted data (safety copy)", corruptExported: "Corrupted data copy downloaded",
-        backupReminder: "More than 30 days since your last backup – consider creating one (Data & Export menu).",
+        backupReminderTitle: "Backup", backupReminderText: "Your data is stored only on this device. We recommend creating a backup of your measurements.",
+        backupNow: "Back up now", btnBackupLater: "Not now",
         importedMsg: "Imported ", importError: "Invalid backup file.", importVersionError: "Unknown backup format version (schemaVersion). Create a new backup in the app.",
-        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis – measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / ⌘+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Measurement report", pdfRangeTitle: "Data range", btnExport: "Export", btnSavePdf: "Save as PDF", btnPrint: "Print", pdfSaved: "PDF report saved", pdfSaveError: "Failed to create the PDF file.",
-        savedMsg: "Measurement saved", updatedMsg: "Measurement updated", futureDateWarn: "The measurement date is in the future — make sure this is intentional.", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
+        noEntriesPdf: "No entries to print.", pdfError: "Failed to open print window.", pdfTitle: "Qardis \u2013 measurement history", pdfGen: "Generated: ", pdfHint: "Use Ctrl+P / \u2318+P and select 'Save as PDF'.", pdfHeaderDt: "Date & Time", pdfHeaderNotes: "Notes", pdfExportTitle: "Measurement report", pdfRangeTitle: "Data range", btnExport: "Export", btnSavePdf: "Save as PDF", btnPrint: "Print", pdfSaved: "PDF report saved", pdfSaveError: "Failed to create the PDF file.",
+        savedMsg: "Measurement saved", updatedMsg: "Measurement updated", futureDateWarn: "The measurement date is in the future \u2014 make sure this is intentional.", deletedMsg: "Entry deleted", importConfirm: "Backup data will be merged with existing entries. Proceed?",
         r7:"7 days", r30:"30 days", r90:"3 mos.", rAll:"All",
         
         bpErrorMsg: "Systolic pressure (SYS) must be higher than diastolic (DIA).",
         numRequiredMsg: "Enter numeric values in the measurement fields.",
-        rangeMsg: "Value out of range: SYS 50–300, DIA 30–200, pulse 20–250.",
-        dateRangeMsg: "Enter a valid date (years 2000–2099).",
+        rangeMsg: "Value out of range: SYS 50\u2013300, DIA 30\u2013200, pulse 20\u2013250.",
+        dateRangeMsg: "Enter a valid date (years 2000\u20132099).",
         chartPanHint: "Drag the chart sideways to browse measurements (up to 4 on screen). The toggle switches the axis to real time spacing.",
         axisCatSwitch: "Axis: even", axisTimeSwitch: "Axis: time",
         minParamWarn: "At least one parameter must stay enabled.",
@@ -271,7 +282,7 @@
         privacyNote: "Data is stored only on this device.",
         importSettingsConfirm: "The file also contains settings (language, monitored parameters). Replace your current settings with them?",
         archiveTitle: "Measurement archive",
-        archiveDesc: "Entries older than 9 months can be moved to the archive — they disappear from the list and Trends, but stay on this device and can be restored or exported at any time.",
+        archiveDesc: "Entries older than 9 months can be moved to the archive \u2014 they disappear from the list and Trends, but stay on this device and can be restored or exported at any time.",
         btnArchiveOpen: "Archive",
         archiveEmpty: "No archived entries.",
         archiveCount: "In archive: {n}",
@@ -283,7 +294,7 @@
         archiveRestoredMsg: "Restored ",
         archiveExportedMsg: "Archive downloaded",
         nothingToArchiveMsg: "No entries older than 9 months.",
-        archiveInBackup: "The backup contains measurements, archive and settings — a full device migration in one file.",
+        archiveInBackup: "The backup contains measurements, archive and settings \u2014 a full device migration in one file.",
         importSavedWarning: "Failed to save data (storage limit or private mode?). Imported entries are visible, but will disappear after refreshing the page."
       }
     };
@@ -295,9 +306,9 @@
     };
   })();
 
-  // --- Renderer tabeli trendów ---
-  // Filtr zakresu wykonuje JEDEN raz wywołujący (drawTrends) — tabela dostaje
-  // już przefiltrowaną, posortowaną (od najnowszych) listę.
+  // --- Renderer tabeli trendÃ³w ---
+  // Filtr zakresu wykonuje JEDEN raz wywoÅujÄcy (drawTrends) â tabela dostaje
+  // juÅ¼ przefiltrowanÄ, posortowanÄ (od najnowszych) listÄ.
   function renderTrendsTable(tableMount, filtered, tCb, fmtDateCb){
         tableMount.innerHTML = "";
         if (!filtered.length){
@@ -316,13 +327,13 @@
         if (settings.trackHr)  cols.push({ label: "hrLabel",  unit: "bpm",  key: "hr" });
         if (settings.trackWgt) cols.push({ label: "wgtLabel", unit: "kg",   key: "wgt" });
 
-        // Szerokości kolumn: table-layout: fixed + .data-table th:first-child w style.css
+        // SzerokoÅci kolumn: table-layout: fixed + .data-table th:first-child w style.css
 
         var thead = document.createElement("thead");
         var htr = document.createElement("tr");
         function addTh(text, unit){
           var th = document.createElement("th");
-          th.title = unit ? text + " (" + unit + ")" : text;     // pełny tekst po najechaniu / przytrzymaniu
+          th.title = unit ? text + " (" + unit + ")" : text;     // peÅny tekst po najechaniu / przytrzymaniu
           var l = document.createElement("span"); l.className = "th-l"; l.textContent = text; th.appendChild(l);
           if (unit) { var u = document.createElement("span"); u.className = "th-u"; u.textContent = unit; th.appendChild(u); }
           htr.appendChild(th);
@@ -353,7 +364,7 @@
         tableMount.appendChild(table);
       }
 
-  // --- MODUŁ 5: Main App Logic & UI Coordinator ---
+  // --- MODUÅ 5: Main App Logic & UI Coordinator ---
   var entries = StorageModule.loadEntries();
   var settings = StorageModule.loadSettings();
   var trendsRangeDays = "all";
@@ -366,9 +377,9 @@
 
   function t(key) { return I18nModule.t(key, settings.lang); }
 
-  // Formatery dat są buforowane per locale — Intl.DateTimeFormat tworzenie
-  // przy każdym wierszu listy/tabeli/CSV/PDF było głównym kosztem na słabszych
-  // telefonach. Wspólne helpery dat w jednym miejscu.
+  // Formatery dat sÄ buforowane per locale â Intl.DateTimeFormat tworzenie
+  // przy kaÅ¼dym wierszu listy/tabeli/CSV/PDF byÅo gÅÃ³wnym kosztem na sÅabszych
+  // telefonach. WspÃ³lne helpery dat w jednym miejscu.
   function pad2(n){ return (n<10?"0":"")+n; }
   var dateFmts = {};
   function dateFmt(){
@@ -435,9 +446,9 @@
 
   function applyTheme(){
     document.documentElement.setAttribute("data-theme", settings.theme);
-    // Są dwa metatagi theme-color (z media prefers-color-scheme, dla pierwszego renderu
-    // przed startem skryptu). Ręczny wybór motywu może różnić się od systemowego,
-    // więc ustawiamy ten sam kolor w obu — wtedy wygrywa wybór użytkownika.
+    // SÄ dwa metatagi theme-color (z media prefers-color-scheme, dla pierwszego renderu
+    // przed startem skryptu). RÄczny wybÃ³r motywu moÅ¼e rÃ³Å¼niÄ siÄ od systemowego,
+    // wiÄc ustawiamy ten sam kolor w obu â wtedy wygrywa wybÃ³r uÅ¼ytkownika.
     var color = settings.theme === "dark" ? "#1b1d20" : "#f0f4f9";
     document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){ m.setAttribute("content", color); });
   }
@@ -483,7 +494,7 @@
       card.setAttribute("role", "group");
       var f = fmtDate(e.ts);
       var dte = new Date(e.ts);
-      card.dataset.ym = dte.getFullYear() + "-" + pad2(dte.getMonth());   // scrubber miesięcy
+      card.dataset.ym = dte.getFullYear() + "-" + pad2(dte.getMonth());   // scrubber miesiÄcy
 
       // Kropki w kolorach serii z wykresu (SYS czerwony, DIA niebieski)
       var sysTxt = settings.trackSys && e.sys != null ? escapeHtml(String(e.sys)) : "--";
@@ -505,7 +516,7 @@
         html += '<div class="card-sub">' + subItems.join('') + '</div>';
       }
       if (e.note) {
-        html += '<div class="card-note">✎ ' + escapeHtml(e.note) + '</div>';
+        html += '<div class="card-note">\u270e ' + escapeHtml(e.note) + '</div>';
       }
 
       card.innerHTML = html;
@@ -545,7 +556,7 @@
     entries.splice(idx, 1);
     if (!StorageModule.saveEntries(entries)) toast(t("storageError"));
     if (editingId === id) editingId = null;
-    addSnapshot = null;   // usunięto wpis — zamykamy arkusz bez dirty-check
+    addSnapshot = null;   // usuniÄto wpis â zamykamy arkusz bez dirty-check
     render();
     if($("addOverlay").classList.contains("open")) setModalState($("addOverlay"), false);
 
@@ -569,7 +580,7 @@
     }, UNDO_MS + 600);
   }
 
-  // --- Ekran Trendy: podsumowanie liczbowe + pionowe słupki zakresowe + tabela ---
+  // --- Ekran Trendy: podsumowanie liczbowe + pionowe sÅupki zakresowe + tabela ---
   var DAY_MS = 86400000;
   function mkEl(tag, cls, text){
     var n = document.createElement(tag);
@@ -589,9 +600,9 @@
     return n ? { n: n, avg: sum / n, min: mn, max: mx, key: key } : null;
   }
   function fmt1(v){ return (Math.round(v * 10) / 10).toFixed(1); }
-  function rangeTxt(st, f){ var a = f(st.min), b = f(st.max); return a === b ? a : a + "–" + b; }
+  function rangeTxt(st, f){ var a = f(st.min), b = f(st.max); return a === b ? a : a + "\u2013" + b; }
   function rnd(v){ return String(Math.round(v)); }
-  // Mediana — odporna na pojedyncze skoki; czysta logika (testowalna)
+  // Mediana â odporna na pojedyncze skoki; czysta logika (testowalna)
   function medianOf(list, key){
     var vals = list.map(function(e){ return e[key]; })
       .filter(function(v){ return v != null && isFinite(v); })
@@ -632,7 +643,7 @@
     if (s || d) {
       var avg = [s ? rnd(s.avg) : "--", d ? rnd(d.avg) : "--"].join(" / ");
       var rng = [s ? "SYS " + rangeTxt(s, rnd) : "", d ? "DIA " + rangeTxt(d, rnd) : ""]
-        .filter(Boolean).join(" · ");
+        .filter(Boolean).join(" \u00b7 ");
       var med = [s ? rnd(medianOf(list, "sys")) : "--", d ? rnd(medianOf(list, "dia")) : "--"].join(" / ");
       card("wide", t("sumBp"), avg, "mmHg", rng, med);
     }
@@ -642,12 +653,12 @@
   }
 
   var VISIBLE_MAX = 4;
-  var chartMode = "cat";     // "cat" = oś równa, "time" = oś rzeczywistego czasu
+  var chartMode = "cat";     // "cat" = oÅ rÃ³wna, "time" = oÅ rzeczywistego czasu
   var chartStart = Infinity; // indeks pierwszego widocznego pomiaru (float); Infinity = koniec osi (najnowsze), clamp w drawChart
   function resetChart(){ chartStart = Infinity; }
   function gapLabel(days){
-    if (days < 1) return settings.lang === "en" ? "same day" : "ten sam dzień";
-    if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzień";
+    if (days < 1) return settings.lang === "en" ? "same day" : "ten sam dzie\u0144";
+    if (days === 1) return settings.lang === "en" ? "1 day" : "1 dzie\u0144";
     return days + (settings.lang === "en" ? " days" : " dni");
   }
   function drawChart(list, mount){
@@ -655,18 +666,18 @@
     var pts = (showSys || showDia || showHr) ? list.filter(function(e){
       return (showSys && e.sys != null) || (showDia && e.dia != null) || (showHr && e.hr != null);
     }).sort(function(a,b){ return a.ts - b.ts; }) : [];
-    if (pts.length < 2) { mount.textContent = ""; chartCtx = null; return; }   // wykres od 2 pomiarów
+    if (pts.length < 2) { mount.textContent = ""; chartCtx = null; return; }   // wykres od 2 pomiarÃ³w
 
     var n = pts.length;
     var visN = Math.min(VISIBLE_MAX, n);
-    // chartStart pozostaje UŁAMKOWY (bez Math.round) — to daje płynne
-    // przesuwanie: punkty przesuwają się piksel po pikselu, nie skokami.
+    // chartStart pozostaje UÅAMKOWY (bez Math.round) â to daje pÅynne
+    // przesuwanie: punkty przesuwajÄ siÄ piksel po pikselu, nie skokami.
     chartStart = clamp(chartStart, 0, n - visN);
 
     // Skale Y liczone po WSZYSTKICH punktach okna z zapasem (nie tylko
-    // widocznych) — przesuwanie nie zmienia skali w trakcie panu.
-    // Tętno ma własną skalę (prawa oś, bpm), bo zakres tętna nie pokrywa się
-    // z zakresem ciśnienia (mmHg) — jedna wspólna skala spłaszczyłaby jedną z serii.
+    // widocznych) â przesuwanie nie zmienia skali w trakcie panu.
+    // TÄtno ma wÅasnÄ skalÄ (prawa oÅ, bpm), bo zakres tÄtna nie pokrywa siÄ
+    // z zakresem ciÅnienia (mmHg) â jedna wspÃ³lna skala spÅaszczyÅaby jednÄ z serii.
     var winA = Math.floor(chartStart), winB = Math.min(n - 1, Math.ceil(chartStart + visN - 1) + 1);
     var bpLo = Infinity, bpHi = -Infinity, hrLo = Infinity, hrHi = -Infinity;
     for (var q = winA; q <= winB; q++) {
@@ -682,24 +693,24 @@
       if (hi - lo < 10) { lo -= 5; hi += 5; }
       return [lo, hi];
     }
-    var L, R = null;   // L = skala lewej osi, R = skala prawej osi (tylko tętno)
+    var L, R = null;   // L = skala lewej osi, R = skala prawej osi (tylko tÄtno)
     if (bpOk) {
       L = padScale(bpLo, bpHi);
       if (hrOk) R = padScale(hrLo, hrHi);
     } else {
-      L = padScale(hrLo, hrHi);   // samo tętno — jedna skala
+      L = padScale(hrLo, hrHi);   // samo tÄtno â jedna skala
     }
     var hasRight = !!R;
 
-    // Linie normy 140/90 — rysowane tylko, gdy mieszczą się w skali lewej osi (mmHg).
-    // Widoczne też w skali okna po przesunięciu (skala liczona z zapasem okna).
+    // Linie normy 140/90 â rysowane tylko, gdy mieszczÄ siÄ w skali lewej osi (mmHg).
+    // Widoczne teÅ¼ w skali okna po przesuniÄciu (skala liczona z zapasem okna).
     var normLines = [];
     if (bpOk) {
       if (showSys && 140 >= L[0] && 140 <= L[1]) normLines.push({ v: 140, label: "140 (SYS)" });
       if (showDia && 90 >= L[0] && 90 <= L[1]) normLines.push({ v: 90, label: "90 (DIA)" });
     }
 
-    // Kolorowa legenda z pelnymi opisami — jedna linia na serie, nad wykresem
+    // Kolorowa legenda z pelnymi opisami â jedna linia na serie, nad wykresem
     var legendRows = [];
     if (showSys) legendRows.push({ cls: "lg-sys", text: t("trendsLegendSys") });
     if (showDia) legendRows.push({ cls: "lg-dia", text: t("trendsLegendDia") });
@@ -710,9 +721,9 @@
     var padT = legendRows.length ? 26 + 14 * (legendRows.length - 1) : 26, padB = 34;
     var iw = W - padL - padR, ih = H - padT - padB;
 
-    // Mapowanie ułamkowego indeksu -> X:
-    //  • tryb "cat":  pozycja liniowa względem chartStart (równe odstępy)
-    //  • tryb "time": interpolacja znacznika czasu między indeksami
+    // Mapowanie uÅamkowego indeksu -> X:
+    //  â¢ tryb "cat":  pozycja liniowa wzglÄdem chartStart (rÃ³wne odstÄpy)
+    //  â¢ tryb "time": interpolacja znacznika czasu miÄdzy indeksami
     var tsArr = pts.map(function(p){ return p.ts; });
     function tsAt(f){ return QardisCore.lerpTs(tsArr, f); }
     var tA = tsAt(chartStart), tB = tsAt(chartStart + visN - 1);
@@ -736,19 +747,19 @@
       }
     }
 
-    // Zakres rysowanych indeksów z zapasem, żeby punkty wjeżdżały/wyjeżdżały
-    // płynnie przy krawędziach okna.
+    // Zakres rysowanych indeksÃ³w z zapasem, Å¼eby punkty wjeÅ¼dÅ¼aÅy/wyjeÅ¼dÅ¼aÅy
+    // pÅynnie przy krawÄdziach okna.
     var iFrom = Math.max(0, Math.floor(chartStart));
     var iTo = Math.min(n - 1, Math.ceil(chartStart + visN - 1));
 
-    // Linie normy 140/90 (przerywane) + etykieta przy prawej krawędzi
+    // Linie normy 140/90 (przerywane) + etykieta przy prawej krawÄdzi
     normLines.forEach(function(nl){
       var yN = n1(YL(nl.v));
       svg += '<line x1="'+padL+'" y1="'+yN+'" x2="'+(W-padR)+'" y2="'+yN+'" class="norm-line"/>';
       svg += '<text x="'+(W-padR-4)+'" y="'+n1(yN-4)+'" text-anchor="end" class="norm-label">'+nl.label+'</text>';
     });
 
-    // Daty pod punktami + liczba dni między punktami (w połowie odstępu)
+    // Daty pod punktami + liczba dni miÄdzy punktami (w poÅowie odstÄpu)
     for (var k = iFrom; k <= iTo; k++) {
       var xk = X(k);
       if (xk < padL - 4 || xk > W - padR + 4) continue;
@@ -765,7 +776,7 @@
       var out = "", prev = null;
       for (var m = iFrom; m <= iTo; m++) {
         var e = pts[m];
-        if (e[key] == null) continue;   // brak wartości (np. tętno) — linia łączy sąsiednie punkty, bez dziur
+        if (e[key] == null) continue;   // brak wartoÅci (np. tÄtno) â linia ÅÄczy sÄsiednie punkty, bez dziur
         var x = n1(X(m)), y = n1(ymap(e[key]));
         if (prev !== null) out += '<line x1="'+prev[0]+'" y1="'+prev[1]+'" x2="'+x+'" y2="'+y+'" class="ln-'+cls+'"/>';
         out += '<circle cx="'+x+'" cy="'+y+'" r="4.5" class="dot-'+cls+'"/>';
@@ -775,7 +786,7 @@
     }
     var legend = "";
     legendRows.forEach(function(r, i){
-      legend += '<text x="'+padL+'" y="'+(14 + i*14)+'" class="'+r.cls+'">● '+escapeHtml(r.text)+'</text>';
+      legend += '<text x="'+padL+'" y="'+(14 + i*14)+'" class="'+r.cls+'">\u25cf '+escapeHtml(r.text)+'</text>';
     });
     var content = svg + series("sys", "sys", YL) + series("dia", "dia", YL) +
                   (showHr ? series("hr", "hr", hasRight ? YR : YL) : "") + legend;
@@ -795,8 +806,8 @@
       });
       svgEl.addEventListener("pointermove", function(ev){
         if (!drag || !chartCtx) return;
-        // Delta myszy jest w pikselach CSS — przeliczamy przez slotPx
-        // (jednostki SVG * stosunek ekranu do viewBoxu). Szerokość slotu = 1 pomiar.
+        // Delta myszy jest w pikselach CSS â przeliczamy przez slotPx
+        // (jednostki SVG * stosunek ekranu do viewBoxu). SzerokoÅÄ slotu = 1 pomiar.
         chartStart = clamp(drag.start + (drag.x - ev.clientX) / chartCtx.slotPx, 0, chartCtx.n - chartCtx.visN);
         drawChart(chartCtx.list, mount);
       });
@@ -814,8 +825,8 @@
     }
     var btn = mount.querySelector("#btnAxisMode");
     if (btn) {
-      // Etykieta pokazuje tryb, na który przełączy NASTĘPNE kliknięcie
-      // (przycisk to "akcja", nie wskaźnik stanu).
+      // Etykieta pokazuje tryb, na ktÃ³ry przeÅÄczy NASTÄPNE klikniÄcie
+      // (przycisk to "akcja", nie wskaÅºnik stanu).
       btn.textContent = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
       btn.title = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
       btn.setAttribute("aria-pressed", chartMode === "time" ? "true" : "false");
@@ -825,7 +836,7 @@
     svgEl.setAttribute("viewBox", "0 0 "+W+" "+H);
     svgEl.innerHTML = content;
   }
-  var chartCtx = null;   // {n, visN, slotPx, list} — żywy kontekst dla panu/toggle
+  var chartCtx = null;   // {n, visN, slotPx, list} â Å¼ywy kontekst dla panu/toggle
 
   var chartResizeT = null;
   window.addEventListener("resize", function(){
@@ -835,7 +846,7 @@
   });
 
   function drawTrends(force){
-    // Rysuj tylko gdy ekran Trendy jest aktywny, chyba że wymuszono (zmiana ustawień)
+    // Rysuj tylko gdy ekran Trendy jest aktywny, chyba Å¼e wymuszono (zmiana ustawieÅ)
     if (!force && screenIdx !== 1) return;
     var tableMount = $("trendsTableMount");
     var empty = $("trendsEmpty");
@@ -843,7 +854,7 @@
 
     sumMount.textContent = "";
     $("trendsChart").textContent = "";
-    chartCtx = null;   // brak kontekstu = resize/pan nie rysują starych danych
+    chartCtx = null;   // brak kontekstu = resize/pan nie rysujÄ starych danych
     empty.hidden = true;
     tableMount.hidden = true;
 
@@ -909,7 +920,7 @@
       drawTrends(true);
     }
     buildScrubber();
-    if (btnTop) btnTop.hidden = true;   // po zmianie ekranu przycisk wraca dopiero po przewinięciu
+    if (btnTop) btnTop.hidden = true;   // po zmianie ekranu przycisk wraca dopiero po przewiniÄciu
   }
 
   $("navHistory").onclick = function(){ go(0); };
@@ -933,7 +944,7 @@
     dy = e.touches[0].clientY - startY;
     if (axis === null) {
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-      axis = Math.abs(dx) > Math.abs(dy) * 1.5 ? "x" : "y";   // oś ustalana raz, na początku gestu
+      axis = Math.abs(dx) > Math.abs(dy) * 1.5 ? "x" : "y";   // oÅ ustalana raz, na poczÄtku gestu
     }
     if (axis !== "x") return;
     var half = viewport.clientWidth;
@@ -948,7 +959,7 @@
     if (axis === "x") {
       if (dx < -60 && screenIdx === 0) go(1);
       else if (dx > 60 && screenIdx === 1) go(0);
-      else go(screenIdx);   // dosunięcie z powrotem
+      else go(screenIdx);   // dosuniÄcie z powrotem
     }
     startX = null; startY = null; axis = null;
   }
@@ -972,7 +983,7 @@
         var raw = String(inp.value).replace(",", ".").trim();
         if (raw === "") return null;
         var v = parseFloat(raw);
-        return isFinite(v) ? v : NaN;   // bez przycinania: zakres sprawdza btnSave i pokazuje błąd
+        return isFinite(v) ? v : NaN;   // bez przycinania: zakres sprawdza btnSave i pokazuje bÅÄd
       }
     };
   }
@@ -988,15 +999,15 @@
   var WGT_MIN = LIMITS.wgt[0], WGT_MAX = LIMITS.wgt[1];
   var wgtInput = $("wWgt");
   var weightField = makeNumField("wWgt", WGT_MIN, WGT_MAX);
-  // Jedno miejsce sortowania malejąco po dacie — najnowsze na górze listy,
-  // CSV, raportu i podglądu archiwum. Bez opcji zmiany kierunku (świadoma decyzja).
+  // Jedno miejsce sortowania malejÄco po dacie â najnowsze na gÃ³rze listy,
+  // CSV, raportu i podglÄdu archiwum. Bez opcji zmiany kierunku (Åwiadoma decyzja).
   function sortedDesc(){ return entries.slice().sort(function(a,b){ return b.ts - a.ts; }); }
   function bpString(e){
     return (settings.trackSys && e.sys != null ? e.sys : "--") + " / " +
            (settings.trackDia && e.dia != null ? e.dia : "--");
   }
 
-  // ostatnia znana wartość (nie tylko z najnowszego wpisu, który mógł jej nie mieć)
+  // ostatnia znana wartoÅÄ (nie tylko z najnowszego wpisu, ktÃ³ry mÃ³gÅ jej nie mieÄ)
   function lastKnown(key, fallback){
     var arr = sortedDesc();
     for (var i = 0; i < arr.length; i++) { if (arr[i][key] != null) return arr[i][key]; }
@@ -1026,7 +1037,7 @@
       var b = $(a[2]);
       var lbl = t((a[3] ? "skip" : "add") + a[4]);
       b.setAttribute("aria-label", lbl); b.title = lbl;
-      b.textContent = a[3] ? "✕" : "+";
+      b.textContent = a[3] ? "\u2715" : "+";
     });
     $("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
     $("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
@@ -1035,7 +1046,7 @@
     hrActive = !hrActive;
     if (!editingId) { settings.incHr = hrActive; StorageModule.saveSettings(settings); }
     syncOptionalFields();
-    // Włączenie tętna ustawia fokus na pustym polu (bez podstawiania starej wartości).
+    // WÅÄczenie tÄtna ustawia fokus na pustym polu (bez podstawiania starej wartoÅci).
     if (hrActive) { try { $("wHr").focus(); } catch(e){} }
   };
   $("btnClearWWgt").onclick = function(){
@@ -1052,8 +1063,8 @@
     if (!(navigator.storage && navigator.storage.persist && navigator.storage.persisted)) return;
     navigator.storage.persisted().then(function(p){ return p ? true : navigator.storage.persist(); })
       .then(function(granted){
-        // Flaga "pytano" tylko, gdy trwałość faktycznie przyznano; w przeciwnym
-        // razie (np. iOS Safari w przeglądarce) spróbujemy ponownie w kolejnej sesji.
+        // Flaga "pytano" tylko, gdy trwaÅoÅÄ faktycznie przyznano; w przeciwnym
+        // razie (np. iOS Safari w przeglÄdarce) sprÃ³bujemy ponownie w kolejnej sesji.
         if (granted) { settings.persistAsked = true; StorageModule.saveSettings(settings); }
       })
       .catch(function(){});
@@ -1077,9 +1088,9 @@
     hrActive = entry ? (entry.hr != null) : !!settings.incHr;
     $("boxWHr").classList.toggle("disabled", !hrActive);
 
-    // Pola nowego wpisu są PUSTE (bez placeholderów z przykładowymi wartościami —
-    // jasna cyfra mogła wyglądać jak wypełnione pole) — poprzedni pomiar
-    // nie może przypadkiem zostać zapisany jako nowy odczyt.
+    // Pola nowego wpisu sÄ PUSTE (bez placeholderÃ³w z przykÅadowymi wartoÅciami â
+    // jasna cyfra mogÅa wyglÄdaÄ jak wypeÅnione pole) â poprzedni pomiar
+    // nie moÅ¼e przypadkiem zostaÄ zapisany jako nowy odczyt.
 
     wgtActive = entry ? (entry.wgt != null) : !!settings.incWgt;
     $("boxWWgt").classList.toggle("disabled", !wgtActive);
@@ -1092,8 +1103,8 @@
     if (settings.trackHr) hrField.set(entry ? entry.hr : null);
     addSnapshot = JSON.stringify(collectAddState());
     // Autofokus na pierwsze WIDOCZNE, aktywne pole pomiaru (po fokusie arkusza
-    // z setModalState) — bez automatycznego skoku między polami: SYS bywa
-    // dwucyfrowe (50–99), więc auto-przejście po 3 cyfrach pomijałoby wartości.
+    // z setModalState) â bez automatycznego skoku miÄdzy polami: SYS bywa
+    // dwucyfrowe (50â99), wiÄc auto-przejÅcie po 3 cyfrach pomijaÅoby wartoÅci.
     setTimeout(function(){
       var focusId = null;
       if (settings.trackSys) focusId = "wSys";
@@ -1125,7 +1136,7 @@
     if (!dirty) { setModalState(addOverlay, false); return; }
     openDialog({ title: t("discardTitle"), text: t("discardConfirm"), ok: t("btnDiscard"), danger: true }, function(proceed){
       if (proceed) setModalState(addOverlay, false);
-      else addSnapshot = JSON.stringify(collectAddState());   // przywróć snapshot — arkusz zostaje otwarty
+      else addSnapshot = JSON.stringify(collectAddState());   // przywrÃ³Ä snapshot â arkusz zostaje otwarty
     });
   }
 
@@ -1134,9 +1145,9 @@
   $("btnCancelEntry").onclick = requestCloseAdd;
   $("btnDeleteEntryHeader").onclick = function(){ if(editingId) deleteEntryWithUndo(editingId); };
 
-  // Enter przeskakuje do następnego AKTYWNEGO pola pomiaru
-  // (data → SYS → DIA → tętno → waga). Bez auto-skoków przy wpisywaniu cyfr —
-  // to jawnie decyzja użytkownika. Uwagi (textarea) zachowują Enter jako nową linię.
+  // Enter przeskakuje do nastÄpnego AKTYWNEGO pola pomiaru
+  // (data â SYS â DIA â tÄtno â waga). Bez auto-skokÃ³w przy wpisywaniu cyfr â
+  // to jawnie decyzja uÅ¼ytkownika. Uwagi (textarea) zachowujÄ Enter jako nowÄ liniÄ.
   addOverlay.addEventListener("keydown", function(e){
     if (e.key !== "Enter" || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
     var order = ["dtField", "wSys", "wDia", "wHr", "wWgt"];
@@ -1146,8 +1157,8 @@
     for (var i = idx + 1; i < order.length; i++) {
       var el = $(order[i]);
       var box = el.closest(".field-box");
-      if (box && box.style.display === "none") continue;   // parametr nieśledzony
-      if (el.disabled) continue;                            // tętno/waga wyłączone w tym wpisie
+      if (box && box.style.display === "none") continue;   // parametr nieÅledzony
+      if (el.disabled) continue;                            // tÄtno/waga wyÅÄczone w tym wpisie
       try { el.focus(); if (el.select) el.select(); } catch(err){}
       return;
     }
@@ -1161,7 +1172,7 @@
 
     var errEl = $("bpInlineError");
     function badNum(v){ return v === null || isNaN(v); }
-    // Wpis edytowany, który kiedyś powstał przy wyłączonym parametrze, może mieć w nim pustkę.
+    // Wpis edytowany, ktÃ³ry kiedyÅ powstaÅ przy wyÅÄczonym parametrze, moÅ¼e mieÄ w nim pustkÄ.
     var origEntry = editingId ? entries.find(function(x){ return x.id === editingId; }) : null;
     function missing(v, key){ return badNum(v) && !(origEntry && origEntry[key] == null && v === null); }
     function outOfRange(v, lim){ return v !== null && !isNaN(v) && (v < lim[0] || v > lim[1]); }
@@ -1171,7 +1182,7 @@
       try { errEl.scrollIntoView({block:"nearest", behavior:"smooth"}); } catch(e){}
       if (focusEl) { try { focusEl.focus(); } catch(e){} }
     }
-    // Pusty obowiązkowy parametr = błąd (pole zawsze zaczyna puste).
+    // Pusty obowiÄzkowy parametr = bÅÄd (pole zawsze zaczyna puste).
     if ((settings.trackSys && missing(sysVal, "sys")) || (settings.trackDia && missing(diaVal, "dia")) ||
         (settings.trackHr && hrActive && missing(hrVal, "hr"))) {
       showFormError("numRequiredMsg"); return;
@@ -1191,13 +1202,13 @@
     var note = $("noteField").value.trim();
     var dtVal = $("dtField").value;
     var ts = dtVal ? new Date(dtVal).getTime() : Date.now();
-    // Data poza zakresem akceptowanym przy ładowaniu = wpis zniknąłby po odświeżeniu.
+    // Data poza zakresem akceptowanym przy Åadowaniu = wpis zniknÄÅby po odÅwieÅ¼eniu.
     if (!QardisCore.validFormTs(ts)) {
       showFormError("dateRangeMsg", $("dtField")); return;
     }
-    var okMsg = "✓ " + t(editingId ? "updatedMsg" : "savedMsg");
+    var okMsg = "\u2713 " + t(editingId ? "updatedMsg" : "savedMsg");
     var okMs = 2200;
-    if (ts > Date.now() + 60000) { okMsg += ". ⚠ " + t("futureDateWarn"); okMs = 4500; }
+    if (ts > Date.now() + 60000) { okMsg += ". \u26a0 " + t("futureDateWarn"); okMs = 4500; }
     
     var e = editingId ? entries.find(function(x){ return x.id===editingId; }) : null;
     if (e) {
@@ -1208,14 +1219,21 @@
       if (settings.trackWgt) updated.wgt = wgtVal;
       Object.assign(e, updated);
     } else {
-      // Nowy wpis — także gdy edytowany wpis zniknął w międzyczasie (usunięty w innej karcie):
-      // dane użytkownika nie przepadają po cichu.
+      // Nowy wpis â takÅ¼e gdy edytowany wpis zniknÄÅ w miÄdzyczasie (usuniÄty w innej karcie):
+      // dane uÅ¼ytkownika nie przepadajÄ po cichu.
       entries.push({id: makeId(), ts:ts, note:note, sys:sysVal, dia:diaVal, hr:hrVal, wgt:wgtVal});
     }
-    // Najpierw zapis, potem komunikat — „zapisano” tylko, gdy zapis się udał.
-    if (StorageModule.saveEntries(entries)) toast(okMsg, okMs);
+    // Najpierw zapis, potem komunikat â âzapisanoâ tylko, gdy zapis siÄ udaÅ.
+    if (StorageModule.saveEntries(entries)) {
+      toast(okMsg, okMs);
+      // Nowy (nie edytowany) wpis liczy siÄ do przypominacza o kopii zapasowej.
+      if (!editingId) {
+        settings.entriesSinceBackup = (settings.entriesSinceBackup || 0) + 1;
+        StorageModule.saveSettings(settings);
+      }
+    }
     else toast(t("storageError"), 6000, true);
-    addSnapshot = null;   // zapisano — zamykamy bez dirty-check
+    addSnapshot = null;   // zapisano â zamykamy bez dirty-check
     setModalState(addOverlay, false);
     render();
     requestPersist();
@@ -1225,10 +1243,10 @@
     openDialog({ title: t("titleBtnBackup"), text: t("privacyAlert") + "\n\n" + t("archiveInBackup"), ok: t("btnExport") }, function(proceed){
     if (!proceed) return;
     var exp = {};
-    // Klucze wyprowadzone z wartości domyślnych (bez flag technicznych
-    // persistAsked/lastBackupAt i defWgt) — jedno źródło prawdy o kształcie ustawień.
+    // Klucze wyprowadzone z wartoÅci domyÅlnych (bez flag technicznych
+    // persistAsked/lastBackupAt/entriesSinceBackup i defWgt) â jedno ÅºrÃ³dÅo prawdy o ksztaÅcie ustawieÅ.
     Object.keys(StorageModule.defaults()).forEach(function(k){
-      if (k !== "persistAsked" && k !== "lastBackupAt" && k !== "defWgt") exp[k] = settings[k];
+      if (k !== "persistAsked" && k !== "lastBackupAt" && k !== "entriesSinceBackup" && k !== "defWgt") exp[k] = settings[k];
     });
     var backupObj = {
       schemaVersion: 3,
@@ -1240,9 +1258,10 @@
     };
     downloadFile("qardis-kopia-"+ymd(new Date())+".json", JSON.stringify(backupObj, null, 2));
     settings.lastBackupAt = Date.now();
+    settings.entriesSinceBackup = 0;   // kopia utworzona â licznik przypominacza od nowa
     StorageModule.saveSettings(settings);
     setModalState(toolsOverlay, false);
-    toast("✓ " + t("backupDone"));
+    toast("\u2713 " + t("backupDone"));
     });
   };
 
@@ -1256,7 +1275,7 @@
     if (deleteTimeout) { clearTimeout(deleteTimeout); deleteTimeout = null; }
     settings = StorageModule.loadSettings();
     applyTheme(); applyLanguage(); applyFontSize(); render();
-    toast("✓ " + t("wipeDone"));
+    toast("\u2713 " + t("wipeDone"));
     });
   };
 
@@ -1272,21 +1291,21 @@
       try{
         var j = JSON.parse(r.result);
         if (!QardisCore.validateImport(j)) throw new Error("invalid schema or ranges");
-        // Wersja formatu: odrzucamy tylko NOWSZE niż znane (v > 3), bo
-        // starsze potrafimy poprawnie wczytać: kopia v3/v2 (v3 = z archiwum),
+        // Wersja formatu: odrzucamy tylko NOWSZE niÅ¼ znane (v > 3), bo
+        // starsze potrafimy poprawnie wczytaÄ: kopia v3/v2 (v3 = z archiwum),
         // starsze obiekty bez pola, plik archiwum (type: "qardis-archive", v1)
         // i surowa tablica.
         var v = (j && !Array.isArray(j)) ? j.schemaVersion : undefined;
         if (v !== undefined && !(v >= 1 && v <= 3)) throw new Error("unsupported schemaVersion");
         var list = j.entries || j;
-        // Deduplikacja i sanityzacja importu w core.js (mergeImported) —
+        // Deduplikacja i sanityzacja importu w core.js (mergeImported) â
         // testowana jednostkowo w tests.js.
         var res = QardisCore.mergeImported(list, entries, sanitizeEntry, makeId);
         res.added.forEach(function(e){ entries.push(e); });
         var added = res.added.length, skipped = res.skipped;
         var saved = StorageModule.saveEntries(entries);
-        if (!saved) toast(t("importSavedWarning"), 9000, true);   // dane tylko w RAM do przeładowania
-        // Kopia v3 zawiera archiwum — scal po id z lokalnym archiwum
+        if (!saved) toast(t("importSavedWarning"), 9000, true);   // dane tylko w RAM do przeÅadowania
+        // Kopia v3 zawiera archiwum â scal po id z lokalnym archiwum
         // (QardisCore.mergeArchive, testowane w tests.js).
         if (j && !Array.isArray(j) && Array.isArray(j.archive)) {
           var arc = StorageModule.loadArchive();
@@ -1302,14 +1321,16 @@
           if (!yes) return;
           var keepAsked = settings.persistAsked;
           var keepBackupAt = settings.lastBackupAt;
+          var keepSinceBackup = settings.entriesSinceBackup;
           settings = StorageModule.sanitizeSettings(j.settings);
           settings.persistAsked = keepAsked;
           settings.lastBackupAt = keepBackupAt;
+          settings.entriesSinceBackup = keepSinceBackup;
           if (!StorageModule.saveSettings(settings)) toast(t("storageError"));
             applyTheme(); applyLanguage(); applyFontSize(); render();
           });
         }
-        toast("✓ " + t("importedMsg")+added+pluralEntries(added)+(skipped ? t("importSkipped")+skipped : ""));
+        toast("\u2713 " + t("importedMsg")+added+pluralEntries(added)+(skipped ? t("importSkipped")+skipped : ""));
       }catch(err){ toast(err && err.message === "unsupported schemaVersion" ? t("importVersionError") : t("importError")); }
     };
       r.readAsText(f);
@@ -1336,7 +1357,7 @@
     downloadFile("qardis-dane-"+ymd(new Date())+".csv",
       "\uFEFF" + head + "\r\n" + rows.join("\r\n"), "text/csv");
     setModalState(toolsOverlay, false);
-    toast("✓ " + t("csvDone"));
+    toast("\u2713 " + t("csvDone"));
   };
 
   bindRangeControls("pdfRange", function(r){
@@ -1370,20 +1391,20 @@
 
   // --- Zapis PDF bez okna drukowania ---
   // Strony rysujemy na canvasie (A4 poziomo, 2x) i pakujemy jako JPEG do PDF
-  // (QardisCore.buildPdf). Dzięki temu nie trzeba osadzać fontów (polskie znaki
-  // działają od razu), a CSP nie blokuje niczego. Tekst w pliku nie jest zaznaczalny —
-  // do tego służy opcja „Drukuj”. Kodowanie przez canvas.toBlob (nie blokuje wątku
-  // UI jak toDataURL+atob), z oddaniem sterowania między stronami.
-  // Pierwsza strona raportu to WYKRES (przebieg dla lekarza), dalej tabela wyników.
+  // (QardisCore.buildPdf). DziÄki temu nie trzeba osadzaÄ fontÃ³w (polskie znaki
+  // dziaÅajÄ od razu), a CSP nie blokuje niczego. Tekst w pliku nie jest zaznaczalny â
+  // do tego sÅuÅ¼y opcja âDrukujâ. Kodowanie przez canvas.toBlob (nie blokuje wÄtku
+  // UI jak toDataURL+atob), z oddaniem sterowania miÄdzy stronami.
+  // Pierwsza strona raportu to WYKRES (przebieg dla lekarza), dalej tabela wynikÃ³w.
   var PDF_PW = 842, PDF_PH = 595, PDF_S = 2;
   function canvasToJpegBytes(cv){
     return new Promise(function(res, rej){
       cv.toBlob(function(b){ b ? res(b.arrayBuffer()) : rej(new Error("canvas export failed")); }, "image/jpeg", 0.82);
     }).then(function(buf){ return new Uint8Array(buf); });
   }
-  // Rysuje wykres z całego zakresu raportu: SYS/DIA na lewej osi (mmHg),
-  // tętno na prawej osi (bpm) — skala tętna nie pokrywa się z ciśnieniem.
-  // Zwraca false, gdy danych jest za mało na wykres.
+  // Rysuje wykres z caÅego zakresu raportu: SYS/DIA na lewej osi (mmHg),
+  // tÄtno na prawej osi (bpm) â skala tÄtna nie pokrywa siÄ z ciÅnieniem.
+  // Zwraca false, gdy danych jest za maÅo na wykres.
   function drawPdfChartPage(ctx, arr, PW, PH, M){
     var FONT = "Arial, Helvetica, sans-serif";
     var showSys = settings.trackSys, showDia = settings.trackDia, showHr = settings.trackHr;
@@ -1405,8 +1426,8 @@
       if (hi - lo < 10) { lo -= 5; hi += 5; }
       return [lo, hi];
     }
-    var L = bpOk ? pad(bpLo, bpHi) : pad(hrLo, hrHi);          // lewa oś
-    var R = (bpOk && hrOk) ? pad(hrLo, hrHi) : null;           // prawa oś (tylko tętno)
+    var L = bpOk ? pad(bpLo, bpHi) : pad(hrLo, hrHi);          // lewa oÅ
+    var R = (bpOk && hrOk) ? pad(hrLo, hrHi) : null;           // prawa oÅ (tylko tÄtno)
     var T = M + 60, B = PH - M - 30;
     var Lx = M + 44, Rx = PW - M - (R ? 44 : 10);
     var iw = Rx - Lx, ih = B - T;
@@ -1428,7 +1449,7 @@
         ctx.fillText(String(Math.round(hv)), Rx + 5, y + 3);
       }
     }
-    var step = Math.max(1, Math.ceil(pts.length / 8));   // podpróbkowane daty, żeby się nie nakładały
+    var step = Math.max(1, Math.ceil(pts.length / 8));   // podprÃ³bkowane daty, Å¼eby siÄ nie nakÅadaÅy
     ctx.fillStyle = "#555"; ctx.font = "9px " + FONT; ctx.textAlign = "center";
     for (var k = 0; k < pts.length; k += step) {
       ctx.fillText(shortDateStr(pts[k].ts), X(k), B + 14);
@@ -1450,9 +1471,9 @@
     if (showDia) drawSeries("dia", YL, "#2b6cb0");
     if (showHr)  drawSeries("hr", R ? YR : YL, "#15803d");
     var lx = Lx; ctx.textAlign = "left"; ctx.font = "bold 10px " + FONT;
-    if (showSys) { ctx.fillStyle = "#c53030"; ctx.fillText("● SYS (mmHg)", lx, M + 46); lx += 110; }
-    if (showDia) { ctx.fillStyle = "#2b6cb0"; ctx.fillText("● DIA (mmHg)", lx, M + 46); lx += 110; }
-    if (showHr)  { ctx.fillStyle = "#15803d"; ctx.fillText("● HR (bpm" + (R ? ", prawa oś" : "") + ")", lx, M + 46); }
+    if (showSys) { ctx.fillStyle = "#c53030"; ctx.fillText("\u25cf SYS (mmHg)", lx, M + 46); lx += 110; }
+    if (showDia) { ctx.fillStyle = "#2b6cb0"; ctx.fillText("\u25cf DIA (mmHg)", lx, M + 46); lx += 110; }
+    if (showHr)  { ctx.fillStyle = "#15803d"; ctx.fillText("\u25cf HR (bpm" + (R ? ", prawa o\u015b" : "") + ")", lx, M + 46); }
     return true;
   }
   async function renderReportPages(arr, cols){
@@ -1478,7 +1499,7 @@
       };
     });
 
-    // Paginacja tabeli: pierwsza strona tabeli ma blok tytułowy (gdy nie ma wykresu)
+    // Paginacja tabeli: pierwsza strona tabeli ma blok tytuÅowy (gdy nie ma wykresu)
     var limit = PH - M - 8, pageRows = [], cur = [], y = M + 46 + HEAD_H;
     rows.forEach(function(r){
       if (cur.length && y + r.h > limit) { pageRows.push(cur); cur = []; y = M + HEAD_H; }
@@ -1490,7 +1511,7 @@
       .concat(cols.map(function(c){ return { w: COL_W, label: t(c.label), unit: c.unit }; }))
       .concat([{ w: noteW, label: t("pdfHeaderNotes"), unit: "" }]);
 
-    // Strona 1: wykres (oś czasu = chronologia pomiarów, pełny zakres raportu)
+    // Strona 1: wykres (oÅ czasu = chronologia pomiarÃ³w, peÅny zakres raportu)
     var out = [];
     var chartFirst = false;
     ctx.setTransform(S, 0, 0, S, 0, 0);
@@ -1560,20 +1581,20 @@
   function savePdf(){
     var arr = reportEntries();
     if (!arr.length){ toast(t("trendsNoData")); return; }
-    setTimeout(function(){   // krótka zwłoka: arkusz zdąży się zamknąć przed ciężką pracą
+    setTimeout(function(){   // krÃ³tka zwÅoka: arkusz zdÄÅ¼y siÄ zamknÄÄ przed ciÄÅ¼kÄ pracÄ
       renderReportPages(arr, reportCols())
         .then(function(pages){
           var bytes = QardisCore.buildPdf(pages, PDF_PW, PDF_PH, t("pdfTitle"));
           downloadFile("qardis-raport-" + ymd(new Date()) + ".pdf", new Blob([bytes], { type: "application/pdf" }));
-          toast("✓ " + t("pdfSaved"));
+          toast("\u2713 " + t("pdfSaved"));
         })
         .catch(function(){ toast(t("pdfSaveError"), 5000, true); });
     }, 40);
   }
 
-  // --- Drukuj (okno wydruku przeglądarki) ---
+  // --- Drukuj (okno wydruku przeglÄdarki) ---
   // Statyczny SVG wykresu dla okna wydruku (ta sama geometria co strona wykresu
-  // w PDF: SYS/DIA lewa oś, tętno prawa oś, pełny zakres raportu).
+  // w PDF: SYS/DIA lewa oÅ, tÄtno prawa oÅ, peÅny zakres raportu).
   function buildPrintChartSvg(arr, W, H){
     var showSys = settings.trackSys, showDia = settings.trackDia, showHr = settings.trackHr;
     var pts = arr.filter(function(e){
@@ -1647,9 +1668,9 @@
         + "<td>"+escapeHtml(e.note||"")+"</td></tr>";
     }).join("");
     var loc = settings.lang === "en" ? "en-US" : "pl-PL";
-    // Style jako osobny ciąg: okno about:blank dziedziczy CSP otwierającego,
-    // więc inline <style> byłby zablokowany przez 'style-src self'. Arkusz
-    // konstruowany (CSSOM) omija restrykcje CSP — patrz adoptedStyleSheets niżej.
+    // Style jako osobny ciÄg: okno about:blank dziedziczy CSP otwierajÄcego,
+    // wiÄc inline <style> byÅby zablokowany przez 'style-src self'. Arkusz
+    // konstruowany (CSSOM) omija restrykcje CSP â patrz adoptedStyleSheets niÅ¼ej.
     var cssRules = [
       '@page{size:A4 landscape;margin:12mm;}',
       'body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;}',
@@ -1675,13 +1696,13 @@
       +'<tbody>'+rows+'</tbody></table></body></html>';
 
     var w = window.open("", "_blank");
-    if (!w) { toast(t("pdfError")); return; }   // blokada pop-upów lub tryb prywatny
+    if (!w) { toast(t("pdfError")); return; }   // blokada pop-upÃ³w lub tryb prywatny
     try {
       w.document.open();
       w.document.write(html);
       w.document.close();
-      // Style przez CSSOM (omija style-src CSP). Safari < 16.4 nie ma adoptedStyleSheets —
-      // wtedy pusty <style> + insertRule (też CSSOM), zamiast przerywać cały eksport.
+      // Style przez CSSOM (omija style-src CSP). Safari < 16.4 nie ma adoptedStyleSheets â
+      // wtedy pusty <style> + insertRule (teÅ¼ CSSOM), zamiast przerywaÄ caÅy eksport.
       try {
         var sheet = new w.CSSStyleSheet();
         sheet.replaceSync(cssRules.join(""));
@@ -1692,7 +1713,7 @@
         cssRules.forEach(function(r){ try { st.sheet.insertRule(r, st.sheet.cssRules.length); } catch(e3){} });
       }
       w.document.title = t("pdfTitle");
-      // Po wydruku (lub anulowaniu) zamknij okno, żeby nie zostawała pusta karta.
+      // Po wydruku (lub anulowaniu) zamknij okno, Å¼eby nie zostawaÅa pusta karta.
       w.onafterprint = function(){ try { w.close(); } catch(e){} };
       setTimeout(function(){ try { w.focus(); w.print(); } catch(err){ toast(t("pdfError")); } }, 200);
     } catch(err){
@@ -1721,13 +1742,13 @@
     var key = btn.dataset.param;
     if (settingsDraft[key]) {
       var othersOn = ["trackSys","trackDia","trackHr","trackWgt"].some(function(k){ return k !== key && settingsDraft[k]; });
-      if (!othersOn) { toast("⚠ " + t("minParamWarn")); return; }   // ostatniego nie wyłączamy
+      if (!othersOn) { toast("\u26a0 " + t("minParamWarn")); return; }   // ostatniego nie wyÅÄczamy
     }
     settingsDraft[key] = !settingsDraft[key];
     renderMonitoredButtons();
   });
 
-  // Wspólny handler segmentów ustawień (jak bindRangeControls dla zakresów)
+  // WspÃ³lny handler segmentÃ³w ustawieÅ (jak bindRangeControls dla zakresÃ³w)
   function bindSegmented(id, key, apply){
     $(id).addEventListener("click", function(e){
       var btn = e.target.closest("button"); if (!btn || !settingsDraft) return;
@@ -1736,7 +1757,7 @@
       apply();
     });
   }
-  bindSegmented("langSwitch", "lang", function(){ applyLanguage(); drawTrends(true); });   // legenda wykresu nie jest data-i18n — trzeba ją przerysować
+  bindSegmented("langSwitch", "lang", function(){ applyLanguage(); drawTrends(true); });   // legenda wykresu nie jest data-i18n â trzeba jÄ przerysowaÄ
   bindSegmented("fontSizeSwitch", "fontSize", applyFontSize);
 
   settingsOverlay.addEventListener("click", function(e){ if (e.target === settingsOverlay) cancelSettings(); });
@@ -1747,7 +1768,7 @@
     setModalState(settingsOverlay, false);
     settingsDraft=null; settingsBefore=null;
     render();
-    toast("✓ " + t("settingsSaved"));
+    toast("\u2713 " + t("settingsSaved"));
   }
   function cancelSettings(){
     setModalState(settingsOverlay, false);
@@ -1775,7 +1796,7 @@
     var bg = [$("viewport"), $("dock")];
     if (isOpen) {
       if (!document.querySelector(".overlay.open")) lastFocusEl = document.activeElement;
-      // Okno potwierdzenia leży nad arkuszem: arkusz pod spodem też nie może łapać Tab/czytnika.
+      // Okno potwierdzenia leÅ¼y nad arkuszem: arkusz pod spodem teÅ¼ nie moÅ¼e ÅapaÄ Tab/czytnika.
       document.querySelectorAll(".overlay.open").forEach(function(o){ if (o !== el) o.setAttribute("inert", ""); });
       el.classList.add("open");
       el.removeAttribute("inert");
@@ -1838,19 +1859,20 @@
       else if (toolsOverlay.classList.contains("open")) setModalState(toolsOverlay, false);
       else if (pdfOverlayEl.classList.contains("open")) setModalState(pdfOverlayEl, false);
       else if (archiveOverlayEl && archiveOverlayEl.classList.contains("open")) setModalState(archiveOverlayEl, false);
+      else if (backupOverlayEl && backupOverlayEl.classList.contains("open")) setModalState(backupOverlayEl, false);
     }
   });
 
   var toastEl = null, toastTimers = [];
   var UNDO_MS = 6000;
-  // Wygląd toastów: klasy .toast / .toast-undo / .toast-hide w style.css
+  // WyglÄd toastÃ³w: klasy .toast / .toast-undo / .toast-hide w style.css
 
   var toastQueue = [];
 
   function clearToast(){
     toastTimers.forEach(clearTimeout);
     toastTimers = [];
-    toastQueue = [];   // jawnie zamknięte toasty kasują również kolejkę
+    toastQueue = [];   // jawnie zamkniÄte toasty kasujÄ rÃ³wnieÅ¼ kolejkÄ
     if (toastEl) { toastEl.remove(); toastEl = null; }
   }
 
@@ -1908,14 +1930,14 @@
     showToast(el, msg + " " + t("btnUndo"), UNDO_MS, true);
   }
 
-  // --- Nawigacja po długiej liście: scrubber miesięcy + przycisk „na początek" ---
-  // Lista jest zawsze od najnowszych na górze, więc góra railsa = najnowszy miesiąc.
-  // Scrubber pokazuje się przy danych z co najmniej 2 miesięcy; przeciągnięcie
-  // po prawej krawędzi przewija do pierwszego pomiaru wybranego miesiąca.
+  // --- Nawigacja po dÅugiej liÅcie: scrubber miesiÄcy + przycisk âna poczÄtek" ---
+  // Lista jest zawsze od najnowszych na gÃ³rze, wiÄc gÃ³ra railsa = najnowszy miesiÄc.
+  // Scrubber pokazuje siÄ przy danych z co najmniej 2 miesiÄcy; przeciÄgniÄcie
+  // po prawej krawÄdzi przewija do pierwszego pomiaru wybranego miesiÄca.
   var homeScEl = $("homeScreen");
   var btnTop = $("btnTop");
   var scrubEl = $("listScrubber");
-  var scrubMonths = [];   // [{ym, label}] — najnowsze pierwsze
+  var scrubMonths = [];   // [{ym, label}] â najnowsze pierwsze
   var scrubDrag = false;
 
   function monthLabel(ts){
@@ -1997,11 +2019,11 @@
       var d = StorageModule.corruptRaw(); if (!d) return;
       downloadFile("qardis-dane-uszkodzone-"+ymd(new Date())+".json", d);
       setModalState(toolsOverlay, false);
-      toast("✓ " + t("corruptExported"));
+      toast("\u2713 " + t("corruptExported"));
     };
   }
   refreshCorruptBtn();
-  // === Archiwum pomiarów (wpisy starsze niż 9 mies.) ===
+  // === Archiwum pomiarÃ³w (wpisy starsze niÅ¼ 9 mies.) ===
   var ARCHIVE_MS = 273 * 24 * 60 * 60 * 1000;
   var archiveOverlayEl = $("archiveOverlay");
 
@@ -2017,7 +2039,7 @@
     }
     var mn = Infinity, mx = -Infinity;
     archive.forEach(function(e){ if (e.ts < mn) mn = e.ts; if (e.ts > mx) mx = e.ts; });
-    el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " – " + fmtDate(mx).date + ")";
+    el.textContent = t("archiveCount").replace("{n}", archive.length) + " (" + fmtDate(mn).date + " \u2013 " + fmtDate(mx).date + ")";
     if (peek) {
       peek.hidden = false;
       peek.textContent = list && !list.hidden && list.childNodes.length ? t("archiveHide") : t("archiveShow");
@@ -2027,7 +2049,7 @@
     var list = $("archiveList");
     var archive = StorageModule.loadArchive()
       .sort(function(a,b){ return b.ts - a.ts; })   // od najnowszych
-      .slice(0, 50);   // limit czytelności; pełne dane w eksporcie
+      .slice(0, 50);   // limit czytelnoÅci; peÅne dane w eksporcie
     list.textContent = "";
     archive.forEach(function(e){
       var f = fmtDate(e.ts);
@@ -2040,7 +2062,7 @@
       if (e.sys != null || e.dia != null) parts.push((e.sys != null ? e.sys : "--") + "/" + (e.dia != null ? e.dia : "--"));
       if (e.hr != null) parts.push(e.hr + " bpm");
       if (e.wgt != null) parts.push(e.wgt + " kg");
-      v.textContent = parts.join(" · ") || "—";
+      v.textContent = parts.join(" \u00b7 ") || "\u2014";
       row.appendChild(d); row.appendChild(v);
       list.appendChild(row);
     });
@@ -2070,7 +2092,7 @@
     resetArchivePeek();
     updateArchiveSummary();
     render();
-    toast("✓ " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
+    toast("\u2713 " + t("archivedMsg") + toMove.length + pluralEntries(toMove.length));
   }
   function restoreArchive(){
     var archive = StorageModule.loadArchive();
@@ -2084,14 +2106,14 @@
     resetArchivePeek();
     updateArchiveSummary();
     render();
-    toast("✓ " + t("archiveRestoredMsg") + added + pluralEntries(added));
+    toast("\u2713 " + t("archiveRestoredMsg") + added + pluralEntries(added));
   }
   function exportArchive(){
     var archive = StorageModule.loadArchive();
     if (!archive.length) { toast(t("archiveEmpty")); return; }
     var obj = { schemaVersion: 1, type: "qardis-archive", exportedAt: new Date().toISOString(), entries: archive };
     downloadFile("qardis-archiwum-"+ymd(new Date())+".json", JSON.stringify(obj, null, 2));
-    toast("✓ " + t("archiveExportedMsg"));
+    toast("\u2713 " + t("archiveExportedMsg"));
   }
   if (archiveOverlayEl) {
     $("btnArchiveOpen").onclick = function(){
@@ -2106,23 +2128,39 @@
     $("btnArchiveExport").onclick = exportArchive;
   }
 
+  // Przypominacz o kopii zapasowej (audyt UX): arkusz zamiast toasta â po 30 dniach
+  // od ostatniej kopii LUB po 20 nowych wpisach; uÅ¼ytkownik sam z siebie nie pamiÄta.
+  var backupOverlayEl = $("backupOverlay");
   (function backupReminder(){
     if (!entries.length) return;
-    var MONTH = 30 * 24 * 60 * 60 * 1000;
-    if (!settings.lastBackupAt || Date.now() - settings.lastBackupAt > MONTH) {
-      toast("⏰ " + t("backupReminder"), 9000);
-    }
+    var MONTH = 30 * 24 * 60 * 60 * 1000, EVERY = 20;
+    var overdue = !settings.lastBackupAt || Date.now() - settings.lastBackupAt > MONTH;
+    var many = (settings.entriesSinceBackup || 0) >= EVERY;
+    if ((overdue || many) && backupOverlayEl) setModalState(backupOverlayEl, true);
   })();
+  if (backupOverlayEl) {
+    $("btnBackupNow").onclick = function(){
+      setModalState(backupOverlayEl, false);
+      $("btnBackup").onclick();   // ta sama ÅcieÅ¼ka co z menu âDane i eksportâ
+    };
+    $("btnBackupLater").onclick = function(){
+      // âNie terazâ = uÅpienie przypominacza: licznik od zera, zegar 30 dni od dziÅ.
+      settings.entriesSinceBackup = 0;
+      settings.lastBackupAt = Date.now();
+      StorageModule.saveSettings(settings);
+      setModalState(backupOverlayEl, false);
+    };
+  }
 
-  // Synchronizacja między kartami/oknami PWA tego samego originu.
+  // Synchronizacja miÄdzy kartami/oknami PWA tego samego originu.
   window.addEventListener("storage", function(ev){
     if (ev.key === StorageModule.entriesKey()) {
-      // Podczas edycji wpisu nie przerywamy formularza – odświeżamy tylko dane;
-      // scaleniem zmian z innej karty przy naszym zapisie zajmie się saveEntries.
+      // Podczas edycji wpisu nie przerywamy formularza â odÅwieÅ¼amy tylko dane;
+      // scaleniem zmian z innej karty przy naszym zapisie zajmie siÄ saveEntries.
       entries = StorageModule.loadEntries();
       if (editingId === null) render(); else drawTrends(true);
     } else if (ev.key === StorageModule.settingsKey()) {
-      // Nie nadpisujemy ustawień, gdy użytkownik ma otwarty arkusz ustawień/edycji.
+      // Nie nadpisujemy ustawieÅ, gdy uÅ¼ytkownik ma otwarty arkusz ustawieÅ/edycji.
       var busy = $("settingsOverlay").classList.contains("open")
         || $("addOverlay").classList.contains("open");
       if (!busy) {
@@ -2132,8 +2170,8 @@
     }
   });
 
-  // Karta w tle (zwłaszcza mobilna PWA) nie dostaje zdarzeń „storage”: po powrocie sprawdzamy,
-  // czy dane się zmieniły, zanim użytkownik zapisze coś na nieaktualnym stanie.
+  // Karta w tle (zwÅaszcza mobilna PWA) nie dostaje zdarzeÅ âstorageâ: po powrocie sprawdzamy,
+  // czy dane siÄ zmieniÅy, zanim uÅ¼ytkownik zapisze coÅ na nieaktualnym stanie.
   function refreshIfStale(){
     if (document.visibilityState === "hidden") return;
     if ($("addOverlay").classList.contains("open") || !StorageModule.isStale()) return;
@@ -2151,7 +2189,7 @@
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js").catch(function(e){ /* instalacja PWA niedostępna; aplikacja działa online */ });
+      navigator.serviceWorker.register("sw.js").catch(function(e){ /* instalacja PWA niedostÄpna; aplikacja dziaÅa online */ });
     });
   }
 })();

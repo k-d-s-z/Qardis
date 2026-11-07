@@ -143,6 +143,16 @@
   eq("pdf: offsety obiektów poprawne", offs.every(function(l, k){ return txt.slice(parseInt(l, 10)).indexOf((k + 1) + " 0 obj") === 0; }), true);
   eq("pdf: tytuł UTF-16BE", /\/Title <FEFF0051/.test(txt), true);
 
+  // stepValue (przyciski +/- przy polach pomiaru)
+  eq("step: z wpisanej wartosci +1", C.stepValue(120, 1, C.LIMITS.sys, 118, 0), 121);
+  eq("step: puste pole + -> ostatni pomiar +1", C.stepValue(null, 1, C.LIMITS.sys, 118, 0), 119);
+  eq("step: puste pole - -> ostatni pomiar -1", C.stepValue(null, -1, C.LIMITS.sys, 118, 0), 117);
+  eq("step: NaN traktowane jak puste", C.stepValue(NaN, 1, C.LIMITS.hr, 70, 0), 71);
+  eq("step: gorna granica", C.stepValue(300, 1, C.LIMITS.sys, 120, 0), 300);
+  eq("step: dolna granica", C.stepValue(30, -1, C.LIMITS.dia, 80, 0), 30);
+  eq("step: waga 0,1 bez bledu float", C.stepValue(75.1, 0.1, C.LIMITS.wgt, 75, 1), 75.2);
+  eq("step: waga puste - -> ostatnia -0,1", C.stepValue(null, -0.1, C.LIMITS.wgt, 75, 1), 74.9);
+
   var failed = results.filter(function(r){ return !r.ok; });
   if (isNode) {
     results.forEach(function(r){ console.log((r.ok ? "PASS " : "FAIL ") + r.name + (r.ok ? "" : "  got=" + JSON.stringify(r.got) + " want=" + JSON.stringify(r.want))); });

@@ -179,8 +179,8 @@
         numRequiredMsg: "Podaj warto\u015bci liczbowe w polach pomiaru.",
         rangeMsg: "Warto\u015b\u0107 poza zakresem: SYS 50\u2013300, DIA 30\u2013200, t\u0119tno 20\u2013250.",
         dateRangeMsg: "Podaj poprawn\u0105 dat\u0119 (lata 2000\u20132099).",
-        chartPanHint: "Przeci\u0105gnij wykres w bok, aby przegl\u0105da\u0107 kolejne pomiary (do 4 na ekran). Prze\u0142\u0105cznik zmienia o\u015b na rzeczywisty up\u0142yw czasu.",
-        axisCatSwitch: "O\u015b: r\u00f3wna", axisTimeSwitch: "O\u015b: czasowa",
+        chartPanHint: "Przeci\u0105gnij wykres w bok, aby przegl\u0105da\u0107 kolejne pomiary (do 4 na ekran). O\u015b r\u00f3wna uk\u0142ada pomiary w r\u00f3wnych odst\u0119pach, o\u015b czasowa \u2013 wed\u0142ug rzeczywistego up\u0142ywu czasu.",
+        axisCat: "O\u015b r\u00f3wna", axisTime: "O\u015b czasowa", axisGroup: "Rodzaj osi poziomej",
         minParamWarn: "Co najmniej jeden parametr musi pozosta\u0107 w\u0142\u0105czony.",
         privacyAlert: "Uwaga: Ten plik zawiera wra\u017cliwe dane dotycz\u0105ce zdrowia. Przechowuj go w bezpiecznym miejscu i nie udost\u0119pniaj osobom nieupowa\u017cnionym.",
         storageError: "Nie uda\u0142o si\u0119 zapisa\u0107 danych (mo\u017ce tryb prywatny?).",
@@ -198,6 +198,9 @@
         
         addHr: "Dodaj t\u0119tno", addWgt: "Dodaj wag\u0119",
         wgtDec: "Zmniejsz wag\u0119 o 0,1 kg", wgtInc: "Zwi\u0119ksz wag\u0119 o 0,1 kg", wgtLabelKg: "Waga [kg]",
+        sysDec: "Zmniejsz ci\u015bnienie skurczowe o 1", sysInc: "Zwi\u0119ksz ci\u015bnienie skurczowe o 1",
+        diaDec: "Zmniejsz ci\u015bnienie rozkurczowe o 1", diaInc: "Zwi\u0119ksz ci\u015bnienie rozkurczowe o 1",
+        hrDec: "Zmniejsz t\u0119tno o 1", hrInc: "Zwi\u0119ksz t\u0119tno o 1",
         wgtErrorMsg: "Podaj wag\u0119 w zakresie 20\u2013300 kg (np. 75,5).",
         titleBtnWipe: "Usu\u0144 wszystkie dane",
         wipeConfirm: "Usun\u0105\u0107 WSZYSTKIE pomiary, archiwum i ustawienia z tego urz\u0105dzenia? Tej operacji nie mo\u017cna cofn\u0105\u0107. Je\u015bli chcesz zachowa\u0107 dane, najpierw utw\u00f3rz kopi\u0119 zapasow\u0105 (zawiera r\u00f3wnie\u017c archiwum).",
@@ -256,8 +259,8 @@
         numRequiredMsg: "Enter numeric values in the measurement fields.",
         rangeMsg: "Value out of range: SYS 50\u2013300, DIA 30\u2013200, pulse 20\u2013250.",
         dateRangeMsg: "Enter a valid date (years 2000\u20132099).",
-        chartPanHint: "Drag the chart sideways to browse measurements (up to 4 on screen). The toggle switches the axis to real time spacing.",
-        axisCatSwitch: "Axis: even", axisTimeSwitch: "Axis: time",
+        chartPanHint: "Drag the chart sideways to browse measurements (up to 4 on screen). Even axis spaces measurements equally, time axis follows the real time between them.",
+        axisCat: "Even axis", axisTime: "Time axis", axisGroup: "Horizontal axis type",
         minParamWarn: "At least one parameter must stay enabled.",
         privacyAlert: "Notice: This file contains sensitive health data. Store it in a secure place and do not share it with unauthorized persons.",
         storageError: "Failed to save data (private browsing mode?).",
@@ -275,6 +278,9 @@
         
         addHr: "Add pulse", addWgt: "Add weight",
         wgtDec: "Decrease weight by 0.1 kg", wgtInc: "Increase weight by 0.1 kg", wgtLabelKg: "Weight [kg]",
+        sysDec: "Decrease systolic pressure by 1", sysInc: "Increase systolic pressure by 1",
+        diaDec: "Decrease diastolic pressure by 1", diaInc: "Increase diastolic pressure by 1",
+        hrDec: "Decrease pulse by 1", hrInc: "Increase pulse by 1",
         wgtErrorMsg: "Enter a weight between 20 and 300 kg (e.g. 75.5).",
         titleBtnWipe: "Delete all data",
         wipeConfirm: "Delete ALL measurements, the archive and settings from this device? This cannot be undone. If you want to keep your data, create a backup first (it also includes the archive).",
@@ -793,7 +799,9 @@
 
     var svgEl = mount.querySelector("svg");
     if (!svgEl) {
-      mount.innerHTML = '<div class="chart-bar"><button type="button" id="btnAxisMode" class="chart-toggle" aria-pressed="false"></button></div>'
+      mount.innerHTML = '<div class="chart-bar"><div class="segmented-control" role="group" aria-label="' + escapeHtml(t("axisGroup")) + '">'
+        + '<button type="button" data-axis="cat" aria-pressed="false">' + escapeHtml(t("axisCat")) + '</button>'
+        + '<button type="button" data-axis="time" aria-pressed="false">' + escapeHtml(t("axisTime")) + '</button></div></div>'
         + '<svg viewBox="0 0 320 250" role="img" aria-label="'+escapeHtml(t("trendsTitle"))+'"></svg>'
         + '<div class="chart-hint">' + escapeHtml(t("chartPanHint")) + '</div>';
       svgEl = mount.querySelector("svg");
@@ -818,19 +826,16 @@
     if (!mount.dataset.chartInit) {
       mount.dataset.chartInit = "1";
       mount.addEventListener("click", function(ev){
-        if (!ev.target.closest("#btnAxisMode") || !chartCtx) return;
-        chartMode = (chartMode === "cat") ? "time" : "cat";
+        var b = ev.target.closest("[data-axis]");
+        if (!b || !chartCtx || b.dataset.axis === chartMode) return;
+        chartMode = b.dataset.axis;
         drawChart(chartCtx.list, mount);
       });
     }
-    var btn = mount.querySelector("#btnAxisMode");
-    if (btn) {
-      // Etykieta pokazuje tryb, na ktÃ³ry przeÅÄczy NASTÄPNE klikniÄcie
-      // (przycisk to "akcja", nie wskaÅºnik stanu).
-      btn.textContent = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
-      btn.title = (chartMode === "cat") ? t("axisTimeSwitch") : t("axisCatSwitch");
-      btn.setAttribute("aria-pressed", chartMode === "time" ? "true" : "false");
-    }
+    // Dwa przyciski = jawny wybor trybu; aktywny ma aria-pressed="true" (wyroznienie w CSS).
+    mount.querySelectorAll("[data-axis]").forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.axis === chartMode ? "true" : "false");
+    });
     var rectW = (svgEl.getBoundingClientRect && svgEl.getBoundingClientRect().width) || W;
     chartCtx = { n: n, visN: visN, slotPx: (rectW / W) * (iw / visN), list: list };
     svgEl.setAttribute("viewBox", "0 0 "+W+" "+H);
@@ -1013,34 +1018,52 @@
     for (var i = 0; i < arr.length; i++) { if (arr[i][key] != null) return arr[i][key]; }
     return fallback;
   }
-  function bumpWeight(d){
-    var cur = weightField.get();
-    if (cur === null || isNaN(cur)) cur = lastKnown("wgt", settings.defWgt);
-    weightField.set(Math.round(clamp(cur + d, WGT_MIN, WGT_MAX) * 10) / 10);
+  // Przyciski +/- przy kazdym polu pomiaru. Puste pole: start od ostatniej
+  // znanej wartosci (lastKnown; gdy brak pomiarow - wartosc zapasowa), potem
+  // krok o 1 (waga: 0,1). Logika liczenia: QardisCore.stepValue (testowana).
+  var STEPPERS = {
+    wSys: { key: "sys", field: sysField,    lim: LIMITS.sys, step: 1,   dec: 0, fallback: 120 },
+    wDia: { key: "dia", field: diaField,    lim: LIMITS.dia, step: 1,   dec: 0, fallback: 80 },
+    wHr:  { key: "hr",  field: hrField,     lim: LIMITS.hr,  step: 1,   dec: 0, fallback: 70 },
+    wWgt: { key: "wgt", field: weightField, lim: LIMITS.wgt, step: 0.1, dec: 1, fallback: null }
+  };
+  function bumpField(id, dir){
+    var s = STEPPERS[id];
+    var fb = (s.fallback !== null) ? s.fallback : settings.defWgt;
+    var cur = s.field.get();
+    if (cur === null || isNaN(cur)) cur = lastKnown(s.key, fb);
+    s.field.set(QardisCore.stepValue(cur, dir * s.step, s.lim, fb, s.dec));
   }
-  document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){
-    var d = parseFloat(b.dataset.wstep), delay = null, iv = null;
+  document.querySelectorAll(".num-btns button[data-target]").forEach(function(b){
+    var id = b.dataset.target, dir = parseFloat(b.dataset.dir), delay = null, iv = null;
     function stop(){ clearTimeout(delay); clearInterval(iv); iv = null; }
     b.addEventListener("pointerdown", function(e){
-      e.preventDefault(); bumpWeight(d); stop();
-      delay = setTimeout(function(){ iv = setInterval(function(){ bumpWeight(d); }, 90); }, 450);
+      e.preventDefault(); bumpField(id, dir); stop();
+      delay = setTimeout(function(){ iv = setInterval(function(){ bumpField(id, dir); }, 90); }, 450);
     });
     ["pointerup","pointerleave","pointercancel"].forEach(function(ev){ b.addEventListener(ev, stop); });
-    b.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); bumpWeight(d); } });
+    b.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); bumpField(id, dir); } });
+  });
+  // Strzalki gora/dol na klawiaturze (desktop) dzialaja tak samo jak +/-
+  // (z pustego pola: ostatni pomiar +/- krok, a nie skok do minimum zakresu).
+  Object.keys(STEPPERS).forEach(function(id){
+    $(id).addEventListener("keydown", function(e){
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      e.preventDefault();
+      bumpField(id, e.key === "ArrowUp" ? 1 : -1);
+    });
   });
 
   function syncOptionalFields(){
     [["boxWHr","wHr","btnClearWHr",hrActive,"Hr"],["boxWWgt","wWgt","btnClearWWgt",wgtActive,"Wgt"]].forEach(function(a){
       $(a[0]).classList.toggle("disabled", !a[3]);
       $(a[1]).disabled = !a[3];
-      if (a[1] === "wWgt") document.querySelectorAll("#boxWWgt .num-btns button").forEach(function(b){ b.disabled = !a[3]; });
+      $(a[0]).querySelectorAll(".num-btns button").forEach(function(b){ b.disabled = !a[3]; });
       var b = $(a[2]);
       var lbl = t((a[3] ? "skip" : "add") + a[4]);
       b.setAttribute("aria-label", lbl); b.title = lbl;
       b.textContent = a[3] ? "\u2715" : "+";
     });
-    $("btnWgtDec").setAttribute("aria-label", t("wgtDec"));
-    $("btnWgtInc").setAttribute("aria-label", t("wgtInc"));
   }
   $("btnClearWHr").onclick = function(){
     hrActive = !hrActive;

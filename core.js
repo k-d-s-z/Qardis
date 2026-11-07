@@ -226,8 +226,19 @@ window.QardisCore = (function(){
     return out;
   }
 
+  // Krok przyciskow +/- w polu pomiaru. Puste/niepoprawne pole (cur null/NaN)
+  // startuje od wartosci zapasowej (ostatni znany pomiar), potem +/- d;
+  // wynik zawsze w zakresie lim, zaokraglony do decimals miejsc (waga: 1).
+  function stepValue(cur, d, lim, fallback, decimals){
+    var base = (typeof cur === "number" && isFinite(cur)) ? cur : fallback;
+    var v = Math.min(lim[1], Math.max(lim[0], base + d));
+    var f = Math.pow(10, decimals || 0);
+    return Math.round(v * f) / f;
+  }
+
   return {
     LIMITS: LIMITS,
+    stepValue: stepValue,
     MAX_TS: MAX_TS,
     MIN_TS: MIN_TS,
     validFormTs: validFormTs,

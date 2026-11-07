@@ -116,6 +116,26 @@ aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj)
   pojedyncze skoki ciśnienia niż średnia; PL „mediana", EN „median".
 - `statOf` zwraca teraz klucz pola (używany przez kartę mediany).
 
+## 2026-11-07 — przyciski −/+ przy każdym pomiarze, jawny wybór osi wykresu
+
+Poprawki po kilkutygodniowych testach z użytkownikami.
+
+- **Przyciski −/+ przy każdym polu pomiaru** (skurczowe, rozkurczowe, tętno,
+  waga) — tak jak dotąd przy wadze: z pustego pola pierwszy klik startuje od
+  ostatniej znanej wartości i zmienia ją o 1 (waga: 0,1); przytrzymanie
+  powtarza krok. Wynik zawsze mieści się w zakresie pola. Logika w
+  `QardisCore.stepValue` (testy w tests.js); wyłączone tętno/waga blokują też
+  swoje przyciski.
+- **Natywne strzałki góra/dół w polach liczbowych ukryte** (desktop) —
+  zastąpione przyciskami −/+. Klawisze ↑/↓ nadal działają i zachowują się tak
+  samo jak −/+ (z pustego pola: ostatni pomiar ±1, a nie skok do minimum zakresu).
+- **Trendy — wybór osi**: pojedynczy przycisk-akcja „Oś: czasowa/równa”
+  zastąpiony dwoma przyciskami „Oś równa” | „Oś czasowa”. Aktywny tryb jest
+  podświetlony (`aria-pressed`), więc nie trzeba zgadywać, czy napis opisuje
+  obecny stan, czy to, co włączy się po kliknięciu. Zmieniony opis pod wykresem.
+- Etykiety dostępności nowych przycisków w PL/EN (`data-i18n-aria`); usunięte
+  nieużywane klucze `axisCatSwitch`/`axisTimeSwitch` i styl `.chart-toggle`.
+
 ## Wcześniejsze wydania (z nagłówka sw.js)
 
 1) Nazwa cache JAWNA: ustala ją instalacja i trzyma w CACHE_NAME.

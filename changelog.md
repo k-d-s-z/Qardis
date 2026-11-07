@@ -105,17 +105,6 @@ aktualizuje tylko linię „Build:” w `sw.js`; szczegóły zmian żyją tutaj)
   brak martwego kodu po refaktorach, escapowanie HTML w kartach/archiwum
   poprawne, service worker spójny z listą zasobów.
 
-## 2026-10-07 (siódma tura) — normy 140/90 na wykresie, mediana w podsumowaniu
-
-- **Linie normy na wykresie**: przerywane poziome linie progowe 140 (SYS)
-  i 90 (DIA) z małymi etykietami przy prawej krawędzi — rysowane tylko,
-  gdy mieszczą się w skali lewej osi i gdy dana seria jest śledzona;
-  dyskretne (półprzezroczysty szary), nie konkurują z seriami danych.
-- **Mediana w podsumowaniu trendów**: każda karta (ciśnienie, tętno, waga)
-  pokazuje teraz medianę obok średniej i min–maks — odporniejsza na
-  pojedyncze skoki ciśnienia niż średnia; PL „mediana", EN „median".
-- `statOf` zwraca teraz klucz pola (używany przez kartę mediany).
-
 ## 2026-11-07 — przyciski −/+ przy każdym pomiarze, jawny wybór osi wykresu
 
 Poprawki po kilkutygodniowych testach z użytkownikami.
@@ -125,7 +114,8 @@ Poprawki po kilkutygodniowych testach z użytkownikami.
   ostatniej znanej wartości i zmienia ją o 1 (waga: 0,1); przytrzymanie
   powtarza krok. Wynik zawsze mieści się w zakresie pola. Logika w
   `QardisCore.stepValue` (testy w tests.js); wyłączone tętno/waga blokują też
-  swoje przyciski.
+  swoje przyciski. Przyciski −/+ są poza kolejnością Tab (Tab przechodzi od razu
+  do następnego pola; z klawiatury służą ↑/↓).
 - **Natywne strzałki góra/dół w polach liczbowych ukryte** (desktop) —
   zastąpione przyciskami −/+. Klawisze ↑/↓ nadal działają i zachowują się tak
   samo jak −/+ (z pustego pola: ostatni pomiar ±1, a nie skok do minimum zakresu).

@@ -11,7 +11,7 @@
    a sÅaba sieÄ nie dodaje oczekiwania przy starcie); ikony i manifest
    stale-while-revalidate.
 
-   Build: 2026-11-07T07:30:25Z
+   Build: 2026-11-07T07:48:09Z
 */
 const PREFIX = "qardis-";
 const NAV_TIMEOUT_MS = 2000;
